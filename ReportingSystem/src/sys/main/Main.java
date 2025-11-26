@@ -26,6 +26,8 @@ public class Main extends javax.swing.JFrame {
         
         setFullScreenMode();
         
+        showForm(new Dashboard());
+        
         menu1.setEvent(new MenuEvent() {
             @Override
             public void selected(int index, int subIndex) {
