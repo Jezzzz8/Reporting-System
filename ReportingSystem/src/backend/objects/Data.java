@@ -660,20 +660,31 @@ public class Data {
         
         public static int getPendingRequestsCount() {
             String query = "SELECT COUNT(*) as pending_count FROM Verification_Request_tb WHERE status_id = 1";
-            
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(query);
-                 ResultSet rs = stmt.executeQuery()) {
-                
-                if (rs.next()) {
-                    return rs.getInt("pending_count");
+            Connection conn = null;
+
+            try {
+                conn = DatabaseConnection.getConnection();
+                if (conn == null) {
+                    System.err.println("Failed to get database connection");
+                    return 0;
+                }
+
+                try (PreparedStatement stmt = conn.prepareStatement(query);
+                     ResultSet rs = stmt.executeQuery()) {
+
+                    if (rs.next()) {
+                        return rs.getInt("pending_count");
+                    }
                 }
             } catch (SQLException e) {
                 System.err.println("Error getting pending requests count: " + e.getMessage());
+                e.printStackTrace();
+            } finally {
+                DatabaseConnection.closeConnection(conn);
             }
             return 0;
         }
-        
+
         public static boolean addRequest(VerificationRequest request) {
             String query = "INSERT INTO Verification_Request_tb (citizen_id, requester_id, reason_id) " +
                           "VALUES (?, ?, ?)";
