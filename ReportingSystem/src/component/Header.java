@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.geom.Rectangle2D;
+import javax.swing.ImageIcon;
 
 /**
  *
@@ -41,31 +43,42 @@ public class Header extends javax.swing.JPanel {
         shadowRenderer1 = new sys.swing.shadow.ShadowRenderer();
         jLabel2 = new javax.swing.JLabel();
 
+        setPreferredSize(new java.awt.Dimension(540, 50));
+
         jLabel2.setBackground(new java.awt.Color(25, 25, 25));
-        jLabel2.setFont(new java.awt.Font("Times New Roman", 0, 18)); // NOI18N
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(25, 25, 25));
+        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/psa_logo.png"))); // NOI18N
-        jLabel2.setText("PSA REPORT");
-        jLabel2.setMaximumSize(new java.awt.Dimension(484, 75));
-        jLabel2.setMinimumSize(new java.awt.Dimension(484, 75));
-        jLabel2.setPreferredSize(new java.awt.Dimension(500, 75));
+        jLabel2.setIconTextGap(50);
+        jLabel2.setMaximumSize(new java.awt.Dimension(500, 60));
+        jLabel2.setMinimumSize(new java.awt.Dimension(500, 60));
+        jLabel2.setPreferredSize(new java.awt.Dimension(500, 60));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+                .addGap(40, 40, 40)
+                .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
+
+        try {
+            ImageIcon originalIcon = new javax.swing.ImageIcon(getClass().getResource("/component/psa_logo.png"));
+            Image scaledImage = originalIcon.getImage().getScaledInstance(250, 50, Image.SCALE_SMOOTH);
+            jLabel2.setIcon(new ImageIcon(scaledImage));
+        } catch (Exception e) {
+            // Handle exception or set default icon
+            jLabel2.setIcon(null);
+        }
     }// </editor-fold>//GEN-END:initComponents
 
 

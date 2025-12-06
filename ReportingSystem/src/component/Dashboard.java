@@ -1,43 +1,186 @@
 package component;
 
-import backend.database.DatabaseConnection;
 import backend.objects.Data;
+import backend.objects.Data.User;
+import backend.objects.Data.Citizen;
+import backend.objects.Data.IDStatus;
+import backend.objects.Data.Appointment;
+import backend.objects.Data.Document;
+import backend.objects.Data.Notification;
 import sys.effect.RippleEffect;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import javax.swing.BorderFactory;
+import javax.swing.JTable;
 
 public class Dashboard extends javax.swing.JPanel {
+    
+    private User currentUser;
+    private Citizen currentCitizen;
+    private int currentView = 1; // 1=Application Timeline, 2=Appointment, 3=Documents, 4=Notifications
 
-    public Dashboard() {
+    public Dashboard(User user) {
+        this.currentUser = user;
         initComponents();
-        initComponents();
+        customizeTableHeaders(); // Add this line to customize table headers
         testDatabaseConnection();
         enhanceDashboard();
+        loadCitizenData();
         loadDashboardData();
-        loadTableData();
+        loadApplicationTimelineTable(); // Default view
+        setupSearchFunctionality(); // Add search functionality
+    }
+    
+    private void customizeTableHeaders() {
+        // Create a custom header renderer with the desired color
+        TableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setBackground(new Color(142, 217, 255)); // Set header background color
+                setForeground(Color.BLACK); // Set header text color
+                setFont(new Font("Times New Roman", Font.BOLD, 12)); // Set header font
+                setHorizontalAlignment(CENTER); // Center align header text
+                return this;
+            }
+        };
+        
+        // Apply the custom header renderer to all tables
+        if (ApplicationTimelineTable != null) {
+            JTableHeader header = ApplicationTimelineTable.getTableHeader();
+            header.setDefaultRenderer(headerRenderer);
+            header.setReorderingAllowed(false);
+        }
+        
+        if (MyAppointmentDetailsTable != null) {
+            JTableHeader header = MyAppointmentDetailsTable.getTableHeader();
+            header.setDefaultRenderer(headerRenderer);
+            header.setReorderingAllowed(false);
+        }
+        
+        if (RequiredDocumentsTable != null) {
+            JTableHeader header = RequiredDocumentsTable.getTableHeader();
+            header.setDefaultRenderer(headerRenderer);
+            header.setReorderingAllowed(false);
+        }
+        
+        if (MyNotificationsTable != null) {
+            JTableHeader header = MyNotificationsTable.getTableHeader();
+            header.setDefaultRenderer(headerRenderer);
+            header.setReorderingAllowed(false);
+        }
+    }
+    
+    // Alternative method with more customization options
+    private void customizeTableHeadersEnhanced() {
+        // Custom renderer with the specified color
+        TableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                // Set the specific color (142, 217, 255)
+                Color headerColor = new Color(142, 217, 255);
+                setBackground(headerColor);
+                
+                // Customize other header properties
+                setForeground(Color.BLACK); // Black text
+                setFont(new Font("Times New Roman", Font.BOLD, 12));
+                setHorizontalAlignment(CENTER);
+                
+                // Add a border if desired
+                setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 1, Color.WHITE),
+                    BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                ));
+                
+                return this;
+            }
+        };
+        
+        // Apply to all tables
+        applyHeaderRenderer(ApplicationTimelineTable, headerRenderer);
+        applyHeaderRenderer(MyAppointmentDetailsTable, headerRenderer);
+        applyHeaderRenderer(RequiredDocumentsTable, headerRenderer);
+        applyHeaderRenderer(MyNotificationsTable, headerRenderer);
+    }
+    
+    private void applyHeaderRenderer(javax.swing.JTable table, TableCellRenderer renderer) {
+        if (table != null) {
+            JTableHeader header = table.getTableHeader();
+            header.setDefaultRenderer(renderer);
+            
+            // Additional header settings
+            header.setReorderingAllowed(false);
+            header.setResizingAllowed(true);
+            
+            // Set header height
+            header.setPreferredSize(new Dimension(header.getWidth(), 35));
+        }
+    }
+    
+    
+    private void loadCitizenData() {
+        // Get citizen data for current user
+        currentCitizen = Data.Citizen.getCitizenByUserId(currentUser.getUserId());
+        if (currentCitizen == null) {
+            System.out.println("No citizen record found for user ID: " + currentUser.getUserId());
+            // If no citizen record exists, create a default one
+            createDefaultCitizenRecord();
+        } else {
+            System.out.println("Loaded citizen data for: " + currentCitizen.getFullName());
+        }
+    }
+    
+    private void createDefaultCitizenRecord() {
+        try {
+            // Check if user already has a citizen record
+            currentCitizen = Data.Citizen.getCitizenByUserId(currentUser.getUserId());
+            if (currentCitizen != null) return;
+            
+            // Create a new citizen record for the user
+            Citizen newCitizen = new Citizen();
+            newCitizen.setUserId(currentUser.getUserId());
+            newCitizen.setFullName(currentUser.getFullName());
+            newCitizen.setPhone(currentUser.getPhone());
+            newCitizen.setApplicationDate(new java.sql.Date(System.currentTimeMillis()));
+            
+            // Try to add citizen
+            boolean success = Data.Citizen.addCitizen(newCitizen);
+            if (success) {
+                // Reload citizen data
+                currentCitizen = Data.Citizen.getCitizenByUserId(currentUser.getUserId());
+                System.out.println("Created default citizen record for user: " + currentUser.getUsername());
+                
+                // Create default status
+                IDStatus defaultStatus = new IDStatus();
+                defaultStatus.setCitizenId(currentCitizen.getCitizenId());
+                defaultStatus.setStatus("Application Submitted");
+                defaultStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
+                defaultStatus.setNotes("Application has been submitted for processing");
+                Data.IDStatus.addStatus(defaultStatus);
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating default citizen record: " + e.getMessage());
+        }
     }
     
     private void testDatabaseConnection() {
         try {
-            System.out.println("Testing database connection...");
-
+            System.out.println("Testing database connection for user: " + currentUser.getUsername());
+            
             // Test getting citizens
-            List<Data.Citizen> citizens = Data.Citizen.getAllCitizens();
+            List<Citizen> citizens = Data.Citizen.getAllCitizens();
             System.out.println("Total citizens in database: " + citizens.size());
-
-            // Test getting verification requests
-            List<Data.VerificationRequest> requests = Data.VerificationRequest.getAllRequests();
-            System.out.println("Total verification requests in database: " + requests.size());
-
-            // Test getting pending requests count
-            int pendingCount = Data.VerificationRequest.getPendingRequestsCount();
-            System.out.println("Pending requests count: " + pendingCount);
 
         } catch (Exception e) {
             System.err.println("Database connection test failed: " + e.getMessage());
@@ -51,98 +194,110 @@ public class Dashboard extends javax.swing.JPanel {
         
         // Add action listeners for buttons
         setupButtonActions();
-        
     }
 
     private void applyRippleEffects() {
-        if (approvedActionBtn != null) {
-            RippleEffect approvedRipple = new RippleEffect(approvedActionBtn);
+        if (DaySinceApplicationActionBtn != null) {
+            RippleEffect approvedRipple = new RippleEffect(DaySinceApplicationActionBtn);
             approvedRipple.setRippleColor(new Color(255, 255, 255, 100));
         }
         
-        if (readyActionBtn != null) {
-            RippleEffect readyRipple = new RippleEffect(readyActionBtn);
+        if (NotificationsActionBtn != null) {
+            RippleEffect readyRipple = new RippleEffect(NotificationsActionBtn);
             readyRipple.setRippleColor(new Color(255, 255, 255, 100));
         }
         
-        if (pendingActionBtn != null) {
-            RippleEffect pendingRipple = new RippleEffect(pendingActionBtn);
+        if (MyApplicationStatusActionBtn != null) {
+            RippleEffect pendingRipple = new RippleEffect(MyApplicationStatusActionBtn);
             pendingRipple.setRippleColor(new Color(255, 255, 255, 100));
         }
         
-        if (urgentActionBtn != null) {
-            RippleEffect urgentRipple = new RippleEffect(urgentActionBtn);
+        if (MyAppointmentActionBtn != null) {
+            RippleEffect urgentRipple = new RippleEffect(MyAppointmentActionBtn);
             urgentRipple.setRippleColor(new Color(255, 255, 255, 100));
         }
     }
 
     private void setupButtonActions() {
-        if (pendingActionBtn != null) {
-            pendingActionBtn.addActionListener((ActionEvent e) -> {
-                showPendingRequests();
+        if (MyApplicationStatusActionBtn != null) {
+            MyApplicationStatusActionBtn.addActionListener((ActionEvent e) -> {
+                showApplicationTimeline();
             });
         }
         
-        if (approvedActionBtn != null) {
-            approvedActionBtn.addActionListener((ActionEvent e) -> {
-                showApprovedRequests();
+        if (DaySinceApplicationActionBtn != null) {
+            DaySinceApplicationActionBtn.addActionListener((ActionEvent e) -> {
+                showDaysSinceApplication();
             });
         }
         
-        if (urgentActionBtn != null) {
-            urgentActionBtn.addActionListener((ActionEvent e) -> {
-                showUrgentRequests();
+        if (MyAppointmentActionBtn != null) {
+            MyAppointmentActionBtn.addActionListener((ActionEvent e) -> {
+                showAppointmentDetails();
             });
         }
         
-        if (readyActionBtn != null) {
-            readyActionBtn.addActionListener((ActionEvent e) -> {
-                showReadyRequests();
+        if (NotificationsActionBtn != null) {
+            NotificationsActionBtn.addActionListener((ActionEvent e) -> {
+                showNotifications();
             });
         }
+        
+        // Add document view button if exists
+        if (RequiredDocumentsTablePanel != null) {
+            // You can add a separate button for documents or use existing ones
+        }
+    }
+    
+    private void setupSearchFunctionality() {
+        searchField.addActionListener((ActionEvent e) -> {
+            String searchTerm = searchField.getText().trim();
+            if (!searchTerm.isEmpty()) {
+                filterCurrentTable(searchTerm);
+            } else {
+                reloadCurrentView();
+            }
+        });
     }
 
     private void loadDashboardData() {
         try {
-            // Load the correct data for each card
-            int totalCitizens = Data.Citizen.getTotalCitizens();
-            int pendingRequests = Data.VerificationRequest.getPendingRequestsCount();
-            int totalUsers = Data.User.getAllUsers().size();
-
-            // Get approved requests count (status_id = 2)
-            int approvedRequests = getApprovedRequestsCount();
-
-            // Get urgent requests (pending for more than 3 days)
-            int urgentRequests = getUrgentRequestsCount();
-
-            // Get ready for pickup count (approved requests)
-            int readyRequests = approvedRequests; // Or you might have a separate status for "ready"
-
-            // Update the BoxPanels with CORRECT data
-            if (approvedValueLabel != null) {
-                approvedValueLabel.setText(String.valueOf(approvedRequests));
-                approvedTitleLabel.setText("Approved Requests");
+            if (currentCitizen == null) {
+                setDefaultValues();
+                return;
             }
 
-            if (pendingValueLabel != null) {
-                pendingValueLabel.setText(String.valueOf(pendingRequests));
-                pendingTitleLabel.setText("Pending Requests");
+            // Box 1: My Application Status
+            IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+            String statusText = (status != null) ? status.getStatus() : "Application Submitted";
+            MyApplicationStatusValueLabel.setText(statusText);
+            MyApplicationStatusTitleLabel.setText("My Application Status");
+
+            // Box 2: Days Since Application
+            if (currentCitizen.getApplicationDate() != null) {
+                long diff = new Date().getTime() - currentCitizen.getApplicationDate().getTime();
+                int days = (int) (diff / (1000 * 60 * 60 * 24));
+                DaySinceApplicationValueLabel.setText(String.valueOf(days));
+                DaySinceApplicationTitleLabel.setText("Days Since Application");
+            } else {
+                DaySinceApplicationValueLabel.setText("N/A");
             }
 
-            if (readyValueLabel != null) {
-                readyValueLabel.setText(String.valueOf(readyRequests));
-                readyTitleLabel.setText("Ready for Pickup");
+            // Box 3: My Appointment
+            Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+            if (appointment != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd");
+                MyAppointmentCountLabel.setText(sdf.format(appointment.getAppDate()));
+                MyAppointmentTitleLabel.setText("My Appointment");
+            } else {
+                MyAppointmentCountLabel.setText("No");
+                MyAppointmentTitleLabel.setText("Appointment");
             }
 
-            if (urgentCountLabel != null) {
-                urgentCountLabel.setText(String.valueOf(urgentRequests));
-                urgentTitleLabel.setText("Urgent Cases");
-            }
-
-            System.out.println("Dashboard data loaded successfully!");
-            System.out.println("Approved: " + approvedRequests + ", Pending: " + pendingRequests + 
-                              ", Ready: " + readyRequests + ", Urgent: " + urgentRequests);
-
+            // Box 4: Notifications - Use the new Notification class
+            int notificationCount = Data.Notification.getUnreadCount(currentCitizen.getCitizenId());
+            NotificationsValueLabel.setText(String.valueOf(notificationCount));
+            NotificationsTitleLabel.setText("Notifications");
         } catch (Exception e) {
             System.err.println("Error loading dashboard data: " + e.getMessage());
             e.printStackTrace();
@@ -150,292 +305,460 @@ public class Dashboard extends javax.swing.JPanel {
         }
     }
     
-    private int getApprovedRequestsCount() {
-        String query = "SELECT COUNT(*) as approved_count FROM Verification_Request_tb WHERE status_id = 2";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
-
-            if (rs.next()) {
-                return rs.getInt("approved_count");
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getting approved requests count: " + e.getMessage());
-        }
-        return 0;
-    }
-    
-    private int getUrgentRequestsCount() {
-        String query = "SELECT COUNT(*) as urgent_count FROM Verification_Request_tb " +
-                      "WHERE status_id = 1 AND request_datetime < DATE_SUB(NOW(), INTERVAL 3 DAY)";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
-
-            if (rs.next()) {
-                return rs.getInt("urgent_count");
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getting urgent requests count: " + e.getMessage());
-        }
-        return 0;
-    }
-    
-    private void loadTableData() {
-        loadPendingTable();
-    }
-
-    private void loadPendingTable() {
-        DefaultTableModel model = (DefaultTableModel) DetailsTable.getModel();
+    private void loadApplicationTimelineTable() {
+        DefaultTableModel model = (DefaultTableModel) ApplicationTimelineTable.getModel();
         model.setRowCount(0);
+        currentView = 1;
 
         try {
-            System.out.println("Loading pending table data...");
+            if (currentCitizen == null) {
+                model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
+                return;
+            }
+            
+            // Row 1: Application Submitted
+            model.addRow(new Object[]{
+                formatDate(currentCitizen.getApplicationDate()),
+                "Application Submitted",
+                "Your National ID application has been submitted",
+                "System",
+                "Awaiting processing"
+            });
 
-            List<Data.VerificationRequest> allRequests = Data.VerificationRequest.getAllRequests();
-            System.out.println("Total requests found: " + allRequests.size());
+            // Get status history
+            IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+            if (status != null) {
+                model.addRow(new Object[]{
+                    formatDate(status.getUpdateDate()),
+                    status.getStatus(),
+                    "Application status updated",
+                    "PSA Staff",
+                    status.getNotes()
+                });
+            }
 
-            int pendingCount = 0;
-            for (Data.VerificationRequest request : allRequests) {
-                if (request.getStatusId() == 1) { // Pending status
-                    pendingCount++;
-                    Data.Citizen citizen = Data.Citizen.getCitizenById(request.getCitizenId());
-                    Data.User requester = Data.User.getUserById(request.getRequesterId());
+            // Get appointment if exists
+            Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+            if (appointment != null) {
+                model.addRow(new Object[]{
+                    formatDate(appointment.getCreatedDate()),
+                    "Appointment Scheduled",
+                    "Appointment scheduled for ID pickup",
+                    "You",
+                    "Time: " + appointment.getAppTime()
+                });
+            }
 
-                    String citizenName = (citizen != null) ? citizen.getFullName() : "Unknown";
-                    String requesterName = (requester != null) ? requester.getFullName() : "Unknown";
-                    String reason = getReasonName(request.getReasonId());
-                    String status = getStatusName(request.getStatusId());
-
-                    System.out.println("Adding row - Request ID: " + request.getRequestId() + 
-                                     ", Citizen: " + citizenName + ", Status: " + status);
-
+            // Get additional status history if available
+            List<IDStatus> allStatus = Data.IDStatus.getAllStatus();
+            for (IDStatus stat : allStatus) {
+                if (stat.getCitizenId() == currentCitizen.getCitizenId()) {
+                    // Skip if already added
+                    if (status != null && stat.getStatusId() == status.getStatusId()) {
+                        continue;
+                    }
                     model.addRow(new Object[]{
-                        request.getRequestId(),
-                        citizenName,
-                        requesterName,
-                        reason,
-                        status,
-                        request.getRequestDatetime()
+                        formatDate(stat.getUpdateDate()),
+                        stat.getStatus(),
+                        "Previous status update",
+                        "PSA Staff",
+                        stat.getNotes()
                     });
                 }
             }
 
-            System.out.println("Pending requests found: " + pendingCount);
-
             if (model.getRowCount() == 0) {
-                System.out.println("No pending requests found, adding placeholder row");
-                model.addRow(new Object[]{"No pending requests", "", "", "", "", ""});
-            } else {
-                System.out.println("Successfully loaded " + model.getRowCount() + " rows");
+                model.addRow(new Object[]{"No timeline data available", "", "", "", ""});
             }
 
         } catch (Exception e) {
-            System.err.println("Error loading pending table: " + e.getMessage());
-            e.printStackTrace();
-            model.addRow(new Object[]{"Error loading data", "", "", "", "", ""});
+            System.err.println("Error loading application timeline: " + e.getMessage());
+            model.addRow(new Object[]{"Error loading data", "", "", "", ""});
         } finally {
-        // Force GUI refresh
-        model.fireTableDataChanged();
-        DetailsTable.revalidate();
-        DetailsTable.repaint();
+            model.fireTableDataChanged();
+            ApplicationTimelineTable.revalidate();
+            ApplicationTimelineTable.repaint();
+            
+            // Ensure header styling is applied
+            customizeTableHeaders();
         }
     }
     
-    private void loadApprovedTable() {
-        DefaultTableModel model = (DefaultTableModel) DetailsTable.getModel();
+    private void loadAppointmentDetailsTable() {
+        DefaultTableModel model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
         model.setRowCount(0);
-        
-        try {
-            List<Data.VerificationRequest> allRequests = Data.VerificationRequest.getAllRequests();
-            
-            for (Data.VerificationRequest request : allRequests) {
-                if (request.getStatusId() == 2) { // Approved status
-                    Data.Citizen citizen = Data.Citizen.getCitizenById(request.getCitizenId());
-                    Data.User requester = Data.User.getUserById(request.getRequesterId());
-                    
-                    String citizenName = (citizen != null) ? citizen.getFullName() : "Unknown";
-                    String requesterName = (requester != null) ? requester.getFullName() : "Unknown";
-                    String reason = getReasonName(request.getReasonId());
-                    String status = getStatusName(request.getStatusId());
-                    
-                    model.addRow(new Object[]{
-                        request.getRequestId(),
-                        citizenName,
-                        requesterName,
-                        reason,
-                        status,
-                        request.getRequestDatetime()
-                    });
-                }
-            }
-            
-            if (model.getRowCount() == 0) {
-                model.addRow(new Object[]{"No approved requests", "", "", "", "", ""});
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading approved table: " + e.getMessage());
-            model.addRow(new Object[]{"Error loading data", "", "", "", "", ""});
-        }
-    }
-
-    private void loadUrgentTable() {
-        DefaultTableModel model = (DefaultTableModel) DetailsTable.getModel();
-        model.setRowCount(0);
+        currentView = 2;
 
         try {
-            // For urgent, show requests that are more than 3 days old and still pending
-            List<Data.VerificationRequest> allRequests = Data.VerificationRequest.getAllRequests();
+            if (currentCitizen == null) {
+                model.addRow(new Object[]{"No citizen data found", "", "", "", "", ""});
+                return;
+            }
 
-            for (Data.VerificationRequest request : allRequests) {
-                if (request.getStatusId() == 1) { // Pending status
-                    // Check if request is older than 3 days
-                    long requestTime = request.getRequestDatetime().getTime();
-                    long threeDaysAgo = System.currentTimeMillis() - (3 * 24 * 60 * 60 * 1000);
-
-                    if (requestTime < threeDaysAgo) {
-                        Data.Citizen citizen = Data.Citizen.getCitizenById(request.getCitizenId());
-                        Data.User requester = Data.User.getUserById(request.getRequesterId());
-
-                        String citizenName = (citizen != null) ? citizen.getFullName() : "Unknown";
-                        String requesterName = (requester != null) ? requester.getFullName() : "Unknown";
-                        String reason = getReasonName(request.getReasonId());
-                        String status = "URGENT - Overdue";
-
+            Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+            if (appointment != null) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+                
+                model.addRow(new Object[]{
+                    dateFormat.format(appointment.getAppDate()),
+                    appointment.getAppTime(),
+                    appointment.getStatus(),
+                    "ID Pickup",
+                    "PSA Office - Main Branch",
+                    getAppointmentActions(appointment)
+                });
+                
+                // Get additional appointment history
+                List<Appointment> allAppointments = Data.Appointment.getAllAppointments();
+                for (Appointment app : allAppointments) {
+                    if (app.getCitizenId() == currentCitizen.getCitizenId() && 
+                        app.getAppointmentId() != appointment.getAppointmentId()) {
                         model.addRow(new Object[]{
-                            request.getRequestId(),
-                            citizenName,
-                            requesterName,
-                            reason,
-                            status,
-                            request.getRequestDatetime()
+                            dateFormat.format(app.getAppDate()),
+                            app.getAppTime(),
+                            app.getStatus(),
+                            "ID Pickup",
+                            "PSA Office",
+                            "Completed"
                         });
                     }
                 }
+            } else {
+                model.addRow(new Object[]{
+                    "No appointment scheduled",
+                    "",
+                    "",
+                    "ID Pickup",
+                    "PSA Office",
+                    "Schedule"
+                });
             }
 
-            if (model.getRowCount() == 0) {
-                model.addRow(new Object[]{"No urgent requests", "", "", "", "", ""});
-            }
         } catch (Exception e) {
-            System.err.println("Error loading urgent table: " + e.getMessage());
+            System.err.println("Error loading appointment details: " + e.getMessage());
             model.addRow(new Object[]{"Error loading data", "", "", "", "", ""});
+        } finally {
+            model.fireTableDataChanged();
+            MyAppointmentDetailsTable.revalidate();
+            MyAppointmentDetailsTable.repaint();
+            
+            // Ensure header styling is applied
+            customizeTableHeaders();
         }
-    }
-
-    private void loadReadyTable() {
-        DefaultTableModel model = (DefaultTableModel) DetailsTable.getModel();
-        model.setRowCount(0);
-
-        try {
-            // For ready, show approved requests
-            List<Data.VerificationRequest> allRequests = Data.VerificationRequest.getAllRequests();
-
-            for (Data.VerificationRequest request : allRequests) {
-                if (request.getStatusId() == 2) { // Approved status
-                    Data.Citizen citizen = Data.Citizen.getCitizenById(request.getCitizenId());
-                    Data.User requester = Data.User.getUserById(request.getRequesterId());
-
-                    String citizenName = (citizen != null) ? citizen.getFullName() : "Unknown";
-                    String requesterName = (requester != null) ? requester.getFullName() : "Unknown";
-                    String reason = getReasonName(request.getReasonId());
-                    String status = "READY FOR PICKUP";
-
-                    model.addRow(new Object[]{
-                        request.getRequestId(),
-                        citizenName,
-                        requesterName,
-                        reason,
-                        status,
-                        request.getRequestDatetime()
-                    });
-                }
-            }
-
-            if (model.getRowCount() == 0) {
-                model.addRow(new Object[]{"No ready requests", "", "", "", "", ""});
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading ready table: " + e.getMessage());
-            model.addRow(new Object[]{"Error loading data", "", "", "", "", ""});
-        }
-    }
-
-    private String getReasonName(int reasonId) {
-        List<Data.VerificationReason> reasons = Data.VerificationReason.getAllReasons();
-        for (Data.VerificationReason reason : reasons) {
-            if (reason.getReasonId() == reasonId) {
-                return reason.getReasonName();
-            }
-        }
-        return "Unknown";
     }
     
-    private String getStatusName(int statusId) {
-        List<Data.RequestStatus> statuses = Data.RequestStatus.getAllStatus();
-        for (Data.RequestStatus status : statuses) {
-            if (status.getStatusId() == statusId) {
-                return status.getStatusName();
+    private void loadRequiredDocumentsTable() {
+        DefaultTableModel model = (DefaultTableModel) RequiredDocumentsTable.getModel();
+        model.setRowCount(0);
+        currentView = 3;
+
+        try {
+            if (currentCitizen == null) {
+                model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
+                return;
             }
+
+            // Use the new Document class
+            List<Document> documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
+            
+            if (documents.isEmpty()) {
+                // Create default documents if none exist
+                createDefaultDocuments();
+                documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
+            }
+
+            for (Document doc : documents) {
+                String actionText = "View";
+                if ("Pending".equals(doc.getStatus()) && "No".equals(doc.getSubmitted())) {
+                    actionText = "Upload";
+                } else if ("Not Required".equals(doc.getStatus())) {
+                    actionText = "N/A";
+                }
+                
+                model.addRow(new Object[]{
+                    doc.getDocumentName(),
+                    doc.getStatus(),
+                    doc.getSubmitted(),
+                    doc.getRequiredBy(),
+                    actionText
+                });
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error loading required documents: " + e.getMessage());
+            model.addRow(new Object[]{"Error loading data", "", "", "", ""});
+        } finally {
+            model.fireTableDataChanged();
+            RequiredDocumentsTable.revalidate();
+            RequiredDocumentsTable.repaint();
+            
+            // Ensure header styling is applied
+            customizeTableHeaders();
         }
-        return "Unknown";
+    }
+    
+    private void createDefaultDocuments() {
+        try {
+            // Create default documents for the citizen
+            String[][] defaultDocs = {
+                {"Birth Certificate", "Verified", "Yes", "Required"},
+                {"Proof of Address", "Pending", "No", "Required"},
+                {"Government ID", "Not Required", "N/A", "Optional"},
+                {"Application Form", "Submitted", "Yes", "Required"}
+            };
+            
+            for (String[] docData : defaultDocs) {
+                Document doc = new Document();
+                doc.setCitizenId(currentCitizen.getCitizenId());
+                doc.setDocumentName(docData[0]);
+                doc.setStatus(docData[1]);
+                doc.setSubmitted(docData[2]);
+                doc.setRequiredBy(docData[3]);
+                doc.setUploadDate(new java.sql.Date(System.currentTimeMillis()));
+                
+                Data.Document.addDocument(doc);
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating default documents: " + e.getMessage());
+        }
+    }
+
+    
+    private void loadNotificationsTable() {
+        DefaultTableModel model = (DefaultTableModel) MyNotificationsTable.getModel();
+        model.setRowCount(0);
+        currentView = 4;
+
+        try {
+            if (currentCitizen == null) {
+                model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
+                return;
+            }
+
+            // Use the new Notification class
+            List<Notification> notifications = Data.Notification.getNotificationsByCitizenId(currentCitizen.getCitizenId());
+            
+            if (notifications.isEmpty()) {
+                // Create default notifications if none exist
+                createDefaultNotifications();
+                notifications = Data.Notification.getNotificationsByCitizenId(currentCitizen.getCitizenId());
+            }
+
+            for (Notification notification : notifications) {
+                model.addRow(new Object[]{
+                    formatDate(notification.getNotificationDate()),
+                    notification.getNotificationTime(),
+                    notification.getMessage(),
+                    notification.getType(),
+                    notification.getReadStatus()
+                });
+            }
+
+            if (model.getRowCount() == 0) {
+                model.addRow(new Object[]{"No notifications", "", "", "", ""});
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error loading notifications: " + e.getMessage());
+            model.addRow(new Object[]{"Error loading data", "", "", "", ""});
+        } finally {
+            model.fireTableDataChanged();
+            MyNotificationsTable.revalidate();
+            MyNotificationsTable.repaint();
+            
+            // Ensure header styling is applied
+            customizeTableHeaders();
+        }
+    }
+
+    private void createDefaultNotifications() {
+        try {
+            IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+            
+            // Add application submission notification
+            Data.Notification.addNotification(
+                currentCitizen.getCitizenId(),
+                "Your National ID application has been received.",
+                "Application"
+            );
+            
+            if (status != null) {
+                String statusText = status.getStatus();
+                
+                if ("Ready".equals(statusText)) {
+                    Data.Notification.addNotification(
+                        currentCitizen.getCitizenId(),
+                        "Your National ID is ready for pickup! Please schedule an appointment.",
+                        "Status Update"
+                    );
+                }
+                
+                if ("Processing".equals(statusText)) {
+                    Data.Notification.addNotification(
+                        currentCitizen.getCitizenId(),
+                        "Your ID application is now being processed.",
+                        "Status Update"
+                    );
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating default notifications: " + e.getMessage());
+        }
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) return "N/A";
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(date);
+    }
+    
+    private String getAppointmentActions(Appointment appointment) {
+        if ("Scheduled".equals(appointment.getStatus())) {
+            return "Reschedule/Cancel";
+        } else if ("Completed".equals(appointment.getStatus())) {
+            return "Completed";
+        } else {
+            return appointment.getStatus();
+        }
     }
 
     private void setDefaultValues() {
-        if (approvedValueLabel != null) approvedValueLabel.setText("0");
-        if (pendingValueLabel != null) pendingValueLabel.setText("0");
-        if (readyValueLabel != null) readyValueLabel.setText("0");
-        if (urgentCountLabel != null) urgentCountLabel.setText("0");
+        if (MyApplicationStatusValueLabel != null) {
+            MyApplicationStatusValueLabel.setText("No Data");
+            MyApplicationStatusTitleLabel.setText("My Application Status");
+        }
+        if (DaySinceApplicationValueLabel != null) {
+            DaySinceApplicationValueLabel.setText("0");
+            DaySinceApplicationTitleLabel.setText("Days Since Application");
+        }
+        if (MyAppointmentCountLabel != null) {
+            MyAppointmentCountLabel.setText("No");
+            MyAppointmentTitleLabel.setText("Appointment");
+        }
+        if (NotificationsValueLabel != null) {
+            NotificationsValueLabel.setText("0");
+            NotificationsTitleLabel.setText("Notifications");
+        }
     }
 
     // Action methods for buttons
-    private void showPendingRequests() {
-        loadPendingTable();
-        updateTableTitle("Pending Verification Requests");
+    private void showApplicationTimeline() {
+        switchTableVisibility(1);
+        loadApplicationTimelineTable();
     }
 
-    private void showApprovedRequests() {
-        loadApprovedTable();
-        updateTableTitle("Approved Verification Requests");
+    private void showDaysSinceApplication() {
+        switchTableVisibility(1);
+        loadApplicationTimelineTable();
     }
 
-    private void showUrgentRequests() {
-        loadUrgentTable();
-        updateTableTitle("Urgent Verification Requests");
+    private void showAppointmentDetails() {
+        switchTableVisibility(2);
+        loadAppointmentDetailsTable();
+    }
+    
+    private void showDocuments() {
+        switchTableVisibility(3);
+        loadRequiredDocumentsTable();
     }
 
-    private void showReadyRequests() {
-        loadReadyTable();
-        updateTableTitle("Ready for Pickup Requests");
+    private void showNotifications() {
+        switchTableVisibility(4);
+        loadNotificationsTable();
     }
-
-    private void updateTableTitle(String title) {
-        DetailsTable.getTableHeader().setToolTipText(title);
+    
+    private void switchTableVisibility(int viewNumber) {
+        // Hide all tables first
+        ApplicationTimelineTablePanel.setVisible(false);
+        MyAppointmentDetailsTablePanel.setVisible(false);
+        RequiredDocumentsTablePanel.setVisible(false);
+        MyNotificationsTablePanel.setVisible(false);
+        
+        // Show the selected table
+        switch (viewNumber) {
+            case 1:
+                ApplicationTimelineTablePanel.setVisible(true);
+                break;
+            case 2:
+                MyAppointmentDetailsTablePanel.setVisible(true);
+                break;
+            case 3:
+                RequiredDocumentsTablePanel.setVisible(true);
+                break;
+            case 4:
+                MyNotificationsTablePanel.setVisible(true);
+                break;
+        }
     }
 
     // Refresh method that can be called from outside
     public void refreshDashboard() {
+        loadCitizenData();
         loadDashboardData();
-        loadTableData();
+        reloadCurrentView();
+    }
+    
+    private void reloadCurrentView() {
+        switch (currentView) {
+            case 1:
+                loadApplicationTimelineTable();
+                break;
+            case 2:
+                loadAppointmentDetailsTable();
+                break;
+            case 3:
+                loadRequiredDocumentsTable();
+                break;
+            case 4:
+                loadNotificationsTable();
+                break;
+        }
     }
 
     private void filterCurrentTable(String searchTerm) {
-        DefaultTableModel model = (DefaultTableModel) DetailsTable.getModel();
+        DefaultTableModel model = null;
+        
+        switch (currentView) {
+            case 1:
+                model = (DefaultTableModel) ApplicationTimelineTable.getModel();
+                break;
+            case 2:
+                model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
+                break;
+            case 3:
+                model = (DefaultTableModel) RequiredDocumentsTable.getModel();
+                break;
+            case 4:
+                model = (DefaultTableModel) MyNotificationsTable.getModel();
+                break;
+        }
 
         if (model != null) {
-            // Store which type of data we're currently showing
-            String currentView = getCurrentTableView();
+            // Store current data count
+            int originalRows = model.getRowCount();
+            
+            // Reload the data first
+            reloadCurrentView();
+            
+            // Get fresh model
+            switch (currentView) {
+                case 1:
+                    model = (DefaultTableModel) ApplicationTimelineTable.getModel();
+                    break;
+                case 2:
+                    model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
+                    break;
+                case 3:
+                    model = (DefaultTableModel) RequiredDocumentsTable.getModel();
+                    break;
+                case 4:
+                    model = (DefaultTableModel) MyNotificationsTable.getModel();
+                    break;
+            }
 
-            // Reload the appropriate data first
-            reloadCurrentTableView(currentView);
-
-            // Then apply filtering
-            model = (DefaultTableModel) DetailsTable.getModel();
-
-            // Simple client-side filtering
-            for (int i = 0; i < model.getRowCount(); i++) {
+            // Apply filtering
+            for (int i = model.getRowCount() - 1; i >= 0; i--) {
                 boolean match = false;
                 for (int j = 0; j < model.getColumnCount(); j++) {
                     Object value = model.getValueAt(i, j);
@@ -446,293 +769,278 @@ public class Dashboard extends javax.swing.JPanel {
                 }
                 if (!match) {
                     model.removeRow(i);
-                    i--; // Adjust index after removal
                 }
             }
 
             if (model.getRowCount() == 0) {
-                model.addRow(new Object[]{"No matching records found", "", "", "", "", ""});
+                model.addRow(new Object[]{"No matching records found", "", "", "", ""});
             }
         }
     }
 
-    private String getCurrentTableView() {
-        String tooltip = DetailsTable.getTableHeader().getToolTipText();
-        if (tooltip != null) {
-            if (tooltip.contains("Pending")) return "PENDING";
-            if (tooltip.contains("Approved")) return "APPROVED";
-            if (tooltip.contains("Urgent")) return "URGENT";
-            if (tooltip.contains("Ready")) return "READY";
-        }
-        return "PENDING"; // default
-    }
-    
-    private void reloadCurrentTableView(String viewType) {
-        switch (viewType) {
-            case "PENDING":
-                loadPendingTable();
-                break;
-            case "APPROVED":
-                loadApprovedTable();
-                break;
-            case "URGENT":
-                loadUrgentTable();
-                break;
-            case "READY":
-                loadReadyTable();
-                break;
-            default:
-                loadPendingTable();
-        }
-    }
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         jProgressBar1 = new javax.swing.JProgressBar();
         jPanel5 = new javax.swing.JPanel();
-        approvedBoxPanel = new javax.swing.JPanel();
-        approvedValueLabel = new javax.swing.JLabel();
-        approvedTitleLabel = new javax.swing.JLabel();
-        approvedActionBtn = new javax.swing.JButton();
-        readyBoxPanel = new javax.swing.JPanel();
-        readyValueLabel = new javax.swing.JLabel();
-        readyActionBtn = new javax.swing.JButton();
-        readyTitleLabel = new javax.swing.JLabel();
-        pendingBoxPanel = new javax.swing.JPanel();
-        pendingValueLabel = new javax.swing.JLabel();
-        pendingTitleLabel = new javax.swing.JLabel();
-        pendingActionBtn = new javax.swing.JButton();
-        urgentBoxPanel = new javax.swing.JPanel();
-        urgentCountLabel = new javax.swing.JLabel();
-        urgentActionBtn = new javax.swing.JButton();
-        urgentTitleLabel = new javax.swing.JLabel();
+        MyApplicationStatusBoxPanel = new javax.swing.JPanel();
+        MyApplicationStatusValueLabel = new javax.swing.JLabel();
+        MyApplicationStatusTitleLabel = new javax.swing.JLabel();
+        MyApplicationStatusActionBtn = new javax.swing.JButton();
+        DaySinceApplicationBoxPanel = new javax.swing.JPanel();
+        DaySinceApplicationValueLabel = new javax.swing.JLabel();
+        DaySinceApplicationTitleLabel = new javax.swing.JLabel();
+        DaySinceApplicationActionBtn = new javax.swing.JButton();
+        MyAppointmentBoxPanel = new javax.swing.JPanel();
+        MyAppointmentCountLabel = new javax.swing.JLabel();
+        MyAppointmentActionBtn = new javax.swing.JButton();
+        MyAppointmentTitleLabel = new javax.swing.JLabel();
+        NotificationsBoxPanel = new javax.swing.JPanel();
+        NotificationsValueLabel = new javax.swing.JLabel();
+        NotificationsActionBtn = new javax.swing.JButton();
+        NotificationsTitleLabel = new javax.swing.JLabel();
         searchField = new javax.swing.JTextField();
         searchLabel = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        DetailsTable = new javax.swing.JTable();
+        DashboardCitizenTable = new javax.swing.JLayeredPane();
+        ApplicationTimelineTablePanel = new javax.swing.JPanel();
+        ApplicationTimelineTableScrollPane = new javax.swing.JScrollPane();
+        ApplicationTimelineTable = new javax.swing.JTable();
+        MyAppointmentDetailsTablePanel = new javax.swing.JPanel();
+        MyAppointmentDetailsTableScrollPane = new javax.swing.JScrollPane();
+        MyAppointmentDetailsTable = new javax.swing.JTable();
+        RequiredDocumentsTablePanel = new javax.swing.JPanel();
+        RequiredDocumentsTableScrollPane = new javax.swing.JScrollPane();
+        RequiredDocumentsTable = new javax.swing.JTable();
+        MyNotificationsTablePanel = new javax.swing.JPanel();
+        MyNotificationsTableScrollPane = new javax.swing.JScrollPane();
+        MyNotificationsTable = new javax.swing.JTable();
 
         setBackground(new java.awt.Color(250, 250, 250));
         setPreferredSize(new java.awt.Dimension(850, 550));
 
         jPanel5.setBackground(new java.awt.Color(250, 250, 250));
 
-        approvedBoxPanel.setBackground(new java.awt.Color(249, 254, 156));
-        approvedBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
+        MyApplicationStatusBoxPanel.setBackground(new java.awt.Color(254, 161, 156));
+        MyApplicationStatusBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
 
-        approvedValueLabel.setFont(new java.awt.Font("Times New Roman", 1, 36)); // NOI18N
-        approvedValueLabel.setForeground(new java.awt.Color(25, 25, 25));
-        approvedValueLabel.setText("0");
-        approvedValueLabel.setToolTipText("");
-        approvedValueLabel.setPreferredSize(new java.awt.Dimension(100, 43));
+        MyApplicationStatusValueLabel.setFont(new java.awt.Font("Times New Roman", 1, 18)); // NOI18N
+        MyApplicationStatusValueLabel.setForeground(new java.awt.Color(25, 25, 25));
+        MyApplicationStatusValueLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        MyApplicationStatusValueLabel.setText("0");
+        MyApplicationStatusValueLabel.setToolTipText("");
+        MyApplicationStatusValueLabel.setPreferredSize(new java.awt.Dimension(100, 43));
 
-        approvedTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
-        approvedTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
-        approvedTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        approvedTitleLabel.setText("Approved This Week");
-        approvedTitleLabel.setToolTipText("");
-        approvedTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
+        MyApplicationStatusTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
+        MyApplicationStatusTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
+        MyApplicationStatusTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        MyApplicationStatusTitleLabel.setText("My Application Status");
+        MyApplicationStatusTitleLabel.setToolTipText("");
+        MyApplicationStatusTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
 
-        approvedActionBtn.setBackground(new java.awt.Color(41, 128, 185));
-        approvedActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        approvedActionBtn.setForeground(new java.awt.Color(250, 250, 250));
-        approvedActionBtn.setText("More Details");
-        approvedActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
-        approvedActionBtn.addActionListener(new java.awt.event.ActionListener() {
+        MyApplicationStatusActionBtn.setBackground(new java.awt.Color(41, 128, 185));
+        MyApplicationStatusActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        MyApplicationStatusActionBtn.setForeground(new java.awt.Color(250, 250, 250));
+        MyApplicationStatusActionBtn.setText("More Details");
+        MyApplicationStatusActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
+        MyApplicationStatusActionBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                approvedActionBtnActionPerformed(evt);
+                MyApplicationStatusActionBtnActionPerformed(evt);
             }
         });
 
-        javax.swing.GroupLayout approvedBoxPanelLayout = new javax.swing.GroupLayout(approvedBoxPanel);
-        approvedBoxPanel.setLayout(approvedBoxPanelLayout);
-        approvedBoxPanelLayout.setHorizontalGroup(
-            approvedBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, approvedBoxPanelLayout.createSequentialGroup()
-                .addGap(25, 25, 25)
-                .addComponent(approvedValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(25, 25, 25))
-            .addGroup(approvedBoxPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(approvedBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(approvedTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(approvedActionBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
-        );
-        approvedBoxPanelLayout.setVerticalGroup(
-            approvedBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(approvedBoxPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(approvedValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(approvedTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
-                .addComponent(approvedActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-
-        readyBoxPanel.setBackground(new java.awt.Color(156, 200, 254));
-        readyBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
-
-        readyValueLabel.setFont(new java.awt.Font("Times New Roman", 1, 36)); // NOI18N
-        readyValueLabel.setForeground(new java.awt.Color(25, 25, 25));
-        readyValueLabel.setText("0");
-        readyValueLabel.setToolTipText("");
-        readyValueLabel.setPreferredSize(new java.awt.Dimension(100, 43));
-
-        readyActionBtn.setBackground(new java.awt.Color(41, 128, 185));
-        readyActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        readyActionBtn.setForeground(new java.awt.Color(250, 250, 250));
-        readyActionBtn.setText("More Details");
-        readyActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
-        readyActionBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                readyActionBtnActionPerformed(evt);
-            }
-        });
-
-        readyTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
-        readyTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
-        readyTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        readyTitleLabel.setText("Ready for Pickup");
-        readyTitleLabel.setToolTipText("");
-        readyTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
-
-        javax.swing.GroupLayout readyBoxPanelLayout = new javax.swing.GroupLayout(readyBoxPanel);
-        readyBoxPanel.setLayout(readyBoxPanelLayout);
-        readyBoxPanelLayout.setHorizontalGroup(
-            readyBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, readyBoxPanelLayout.createSequentialGroup()
-                .addGap(25, 25, 25)
-                .addComponent(readyValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(25, 25, 25))
-            .addGroup(readyBoxPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(readyBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(readyActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(readyTitleLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
-        );
-        readyBoxPanelLayout.setVerticalGroup(
-            readyBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(readyBoxPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(readyValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
-                .addComponent(readyTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(readyActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-
-        pendingBoxPanel.setBackground(new java.awt.Color(254, 161, 156));
-        pendingBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
-
-        pendingValueLabel.setFont(new java.awt.Font("Times New Roman", 1, 36)); // NOI18N
-        pendingValueLabel.setForeground(new java.awt.Color(25, 25, 25));
-        pendingValueLabel.setText("0");
-        pendingValueLabel.setToolTipText("");
-        pendingValueLabel.setPreferredSize(new java.awt.Dimension(100, 43));
-
-        pendingTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
-        pendingTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
-        pendingTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        pendingTitleLabel.setText("Pending Verifications");
-        pendingTitleLabel.setToolTipText("");
-        pendingTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
-
-        pendingActionBtn.setBackground(new java.awt.Color(41, 128, 185));
-        pendingActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        pendingActionBtn.setForeground(new java.awt.Color(250, 250, 250));
-        pendingActionBtn.setText("More Details");
-        pendingActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
-        pendingActionBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                pendingActionBtnActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout pendingBoxPanelLayout = new javax.swing.GroupLayout(pendingBoxPanel);
-        pendingBoxPanel.setLayout(pendingBoxPanelLayout);
-        pendingBoxPanelLayout.setHorizontalGroup(
-            pendingBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pendingBoxPanelLayout.createSequentialGroup()
-                .addGroup(pendingBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(pendingBoxPanelLayout.createSequentialGroup()
+        javax.swing.GroupLayout MyApplicationStatusBoxPanelLayout = new javax.swing.GroupLayout(MyApplicationStatusBoxPanel);
+        MyApplicationStatusBoxPanel.setLayout(MyApplicationStatusBoxPanelLayout);
+        MyApplicationStatusBoxPanelLayout.setHorizontalGroup(
+            MyApplicationStatusBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyApplicationStatusBoxPanelLayout.createSequentialGroup()
+                .addGroup(MyApplicationStatusBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(MyApplicationStatusBoxPanelLayout.createSequentialGroup()
                         .addGap(25, 25, 25)
-                        .addComponent(pendingValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(pendingBoxPanelLayout.createSequentialGroup()
+                        .addComponent(MyApplicationStatusValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(MyApplicationStatusBoxPanelLayout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(pendingTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(pendingBoxPanelLayout.createSequentialGroup()
+                        .addComponent(MyApplicationStatusTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(MyApplicationStatusBoxPanelLayout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(pendingActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(MyApplicationStatusActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-        pendingBoxPanelLayout.setVerticalGroup(
-            pendingBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pendingBoxPanelLayout.createSequentialGroup()
+        MyApplicationStatusBoxPanelLayout.setVerticalGroup(
+            MyApplicationStatusBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyApplicationStatusBoxPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(pendingValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(MyApplicationStatusValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(pendingTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(MyApplicationStatusTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
-                .addComponent(pendingActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(MyApplicationStatusActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
-        urgentBoxPanel.setBackground(new java.awt.Color(200, 254, 156));
-        urgentBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
+        DaySinceApplicationBoxPanel.setBackground(new java.awt.Color(249, 254, 156));
+        DaySinceApplicationBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
 
-        urgentCountLabel.setFont(new java.awt.Font("Times New Roman", 1, 36)); // NOI18N
-        urgentCountLabel.setForeground(new java.awt.Color(25, 25, 25));
-        urgentCountLabel.setText("0");
-        urgentCountLabel.setToolTipText("");
-        urgentCountLabel.setPreferredSize(new java.awt.Dimension(100, 43));
+        DaySinceApplicationValueLabel.setFont(new java.awt.Font("Times New Roman", 1, 18)); // NOI18N
+        DaySinceApplicationValueLabel.setForeground(new java.awt.Color(25, 25, 25));
+        DaySinceApplicationValueLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        DaySinceApplicationValueLabel.setText("0");
+        DaySinceApplicationValueLabel.setToolTipText("");
+        DaySinceApplicationValueLabel.setPreferredSize(new java.awt.Dimension(100, 43));
 
-        urgentActionBtn.setBackground(new java.awt.Color(41, 128, 185));
-        urgentActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        urgentActionBtn.setForeground(new java.awt.Color(250, 250, 250));
-        urgentActionBtn.setText("More Details");
-        urgentActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
-        urgentActionBtn.addActionListener(new java.awt.event.ActionListener() {
+        DaySinceApplicationTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
+        DaySinceApplicationTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
+        DaySinceApplicationTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        DaySinceApplicationTitleLabel.setText("Days Since Application");
+        DaySinceApplicationTitleLabel.setToolTipText("");
+        DaySinceApplicationTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
+
+        DaySinceApplicationActionBtn.setBackground(new java.awt.Color(41, 128, 185));
+        DaySinceApplicationActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        DaySinceApplicationActionBtn.setForeground(new java.awt.Color(250, 250, 250));
+        DaySinceApplicationActionBtn.setText("More Details");
+        DaySinceApplicationActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
+        DaySinceApplicationActionBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                urgentActionBtnActionPerformed(evt);
+                DaySinceApplicationActionBtnActionPerformed(evt);
             }
         });
 
-        urgentTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
-        urgentTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
-        urgentTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        urgentTitleLabel.setText("Urgent Cases");
-        urgentTitleLabel.setToolTipText("");
-        urgentTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
-
-        javax.swing.GroupLayout urgentBoxPanelLayout = new javax.swing.GroupLayout(urgentBoxPanel);
-        urgentBoxPanel.setLayout(urgentBoxPanelLayout);
-        urgentBoxPanelLayout.setHorizontalGroup(
-            urgentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(urgentBoxPanelLayout.createSequentialGroup()
+        javax.swing.GroupLayout DaySinceApplicationBoxPanelLayout = new javax.swing.GroupLayout(DaySinceApplicationBoxPanel);
+        DaySinceApplicationBoxPanel.setLayout(DaySinceApplicationBoxPanelLayout);
+        DaySinceApplicationBoxPanelLayout.setHorizontalGroup(
+            DaySinceApplicationBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, DaySinceApplicationBoxPanelLayout.createSequentialGroup()
+                .addGap(25, 25, 25)
+                .addComponent(DaySinceApplicationValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(25, 25, 25))
+            .addGroup(DaySinceApplicationBoxPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(urgentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(urgentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, urgentBoxPanelLayout.createSequentialGroup()
-                            .addComponent(urgentCountLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGap(25, 25, 25))
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, urgentBoxPanelLayout.createSequentialGroup()
-                            .addComponent(urgentActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addContainerGap()))
-                    .addComponent(urgentTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(DaySinceApplicationBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(DaySinceApplicationTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(DaySinceApplicationActionBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
-        urgentBoxPanelLayout.setVerticalGroup(
-            urgentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(urgentBoxPanelLayout.createSequentialGroup()
+        DaySinceApplicationBoxPanelLayout.setVerticalGroup(
+            DaySinceApplicationBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(DaySinceApplicationBoxPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(urgentCountLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(DaySinceApplicationValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(urgentTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(DaySinceApplicationTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
-                .addComponent(urgentActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(DaySinceApplicationActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
+        MyAppointmentBoxPanel.setBackground(new java.awt.Color(200, 254, 156));
+        MyAppointmentBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
+
+        MyAppointmentCountLabel.setFont(new java.awt.Font("Times New Roman", 1, 18)); // NOI18N
+        MyAppointmentCountLabel.setForeground(new java.awt.Color(25, 25, 25));
+        MyAppointmentCountLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        MyAppointmentCountLabel.setText("0");
+        MyAppointmentCountLabel.setToolTipText("");
+        MyAppointmentCountLabel.setPreferredSize(new java.awt.Dimension(100, 43));
+
+        MyAppointmentActionBtn.setBackground(new java.awt.Color(41, 128, 185));
+        MyAppointmentActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        MyAppointmentActionBtn.setForeground(new java.awt.Color(250, 250, 250));
+        MyAppointmentActionBtn.setText("More Details");
+        MyAppointmentActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
+        MyAppointmentActionBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                MyAppointmentActionBtnActionPerformed(evt);
+            }
+        });
+
+        MyAppointmentTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
+        MyAppointmentTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
+        MyAppointmentTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        MyAppointmentTitleLabel.setText("My Appointment");
+        MyAppointmentTitleLabel.setToolTipText("");
+        MyAppointmentTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
+
+        javax.swing.GroupLayout MyAppointmentBoxPanelLayout = new javax.swing.GroupLayout(MyAppointmentBoxPanel);
+        MyAppointmentBoxPanel.setLayout(MyAppointmentBoxPanelLayout);
+        MyAppointmentBoxPanelLayout.setHorizontalGroup(
+            MyAppointmentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyAppointmentBoxPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(MyAppointmentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(MyAppointmentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MyAppointmentBoxPanelLayout.createSequentialGroup()
+                            .addComponent(MyAppointmentCountLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(25, 25, 25))
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MyAppointmentBoxPanelLayout.createSequentialGroup()
+                            .addComponent(MyAppointmentActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addContainerGap()))
+                    .addComponent(MyAppointmentTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+        );
+        MyAppointmentBoxPanelLayout.setVerticalGroup(
+            MyAppointmentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyAppointmentBoxPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(MyAppointmentCountLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(MyAppointmentTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
+                .addComponent(MyAppointmentActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+
+        NotificationsBoxPanel.setBackground(new java.awt.Color(156, 200, 254));
+        NotificationsBoxPanel.setPreferredSize(new java.awt.Dimension(150, 150));
+
+        NotificationsValueLabel.setFont(new java.awt.Font("Times New Roman", 1, 18)); // NOI18N
+        NotificationsValueLabel.setForeground(new java.awt.Color(25, 25, 25));
+        NotificationsValueLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        NotificationsValueLabel.setText("0");
+        NotificationsValueLabel.setToolTipText("");
+        NotificationsValueLabel.setPreferredSize(new java.awt.Dimension(100, 43));
+
+        NotificationsActionBtn.setBackground(new java.awt.Color(41, 128, 185));
+        NotificationsActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        NotificationsActionBtn.setForeground(new java.awt.Color(250, 250, 250));
+        NotificationsActionBtn.setText("More Details");
+        NotificationsActionBtn.setPreferredSize(new java.awt.Dimension(140, 22));
+        NotificationsActionBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                NotificationsActionBtnActionPerformed(evt);
+            }
+        });
+
+        NotificationsTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
+        NotificationsTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
+        NotificationsTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        NotificationsTitleLabel.setText("Notifications");
+        NotificationsTitleLabel.setToolTipText("");
+        NotificationsTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
+
+        javax.swing.GroupLayout NotificationsBoxPanelLayout = new javax.swing.GroupLayout(NotificationsBoxPanel);
+        NotificationsBoxPanel.setLayout(NotificationsBoxPanelLayout);
+        NotificationsBoxPanelLayout.setHorizontalGroup(
+            NotificationsBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, NotificationsBoxPanelLayout.createSequentialGroup()
+                .addGap(25, 25, 25)
+                .addComponent(NotificationsValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(25, 25, 25))
+            .addGroup(NotificationsBoxPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(NotificationsBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(NotificationsActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(NotificationsTitleLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
+        );
+        NotificationsBoxPanelLayout.setVerticalGroup(
+            NotificationsBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(NotificationsBoxPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(NotificationsValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
+                .addComponent(NotificationsTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(NotificationsActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -741,25 +1049,25 @@ public class Dashboard extends javax.swing.JPanel {
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
-                .addContainerGap(30, Short.MAX_VALUE)
-                .addComponent(pendingBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
-                .addComponent(approvedBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
-                .addComponent(urgentBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
-                .addComponent(readyBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(30, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(MyApplicationStatusBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(DaySinceApplicationBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(MyAppointmentBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(NotificationsBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(readyBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(approvedBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pendingBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(urgentBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(NotificationsBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(DaySinceApplicationBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(MyApplicationStatusBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(MyAppointmentBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
@@ -778,7 +1086,77 @@ public class Dashboard extends javax.swing.JPanel {
         searchLabel.setToolTipText("");
         searchLabel.setPreferredSize(new java.awt.Dimension(140, 43));
 
-        DetailsTable.setModel(new javax.swing.table.DefaultTableModel(
+        DashboardCitizenTable.setLayout(new javax.swing.OverlayLayout(DashboardCitizenTable));
+
+        ApplicationTimelineTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
+
+        ApplicationTimelineTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "Date", "Status", "Description", "Updated By", "Notes"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        ApplicationTimelineTable.setRowHeight(30);
+        ApplicationTimelineTable.setRowMargin(1);
+        ApplicationTimelineTable.setShowGrid(true);
+        ApplicationTimelineTable.getTableHeader().setResizingAllowed(false);
+        ApplicationTimelineTable.getTableHeader().setReorderingAllowed(false);
+        ApplicationTimelineTableScrollPane.setViewportView(ApplicationTimelineTable);
+        if (ApplicationTimelineTable.getColumnModel().getColumnCount() > 0) {
+            ApplicationTimelineTable.getColumnModel().getColumn(0).setResizable(false);
+            ApplicationTimelineTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+            ApplicationTimelineTable.getColumnModel().getColumn(1).setResizable(false);
+            ApplicationTimelineTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+            ApplicationTimelineTable.getColumnModel().getColumn(2).setResizable(false);
+            ApplicationTimelineTable.getColumnModel().getColumn(2).setPreferredWidth(200);
+            ApplicationTimelineTable.getColumnModel().getColumn(3).setResizable(false);
+            ApplicationTimelineTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+            ApplicationTimelineTable.getColumnModel().getColumn(4).setResizable(false);
+            ApplicationTimelineTable.getColumnModel().getColumn(4).setPreferredWidth(150);
+        }
+
+        javax.swing.GroupLayout ApplicationTimelineTablePanelLayout = new javax.swing.GroupLayout(ApplicationTimelineTablePanel);
+        ApplicationTimelineTablePanel.setLayout(ApplicationTimelineTablePanelLayout);
+        ApplicationTimelineTablePanelLayout.setHorizontalGroup(
+            ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ApplicationTimelineTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        ApplicationTimelineTablePanelLayout.setVerticalGroup(
+            ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ApplicationTimelineTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 138, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        DashboardCitizenTable.add(ApplicationTimelineTablePanel);
+
+        MyAppointmentDetailsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
+
+        MyAppointmentDetailsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null, null},
                 {null, null, null, null, null, null},
@@ -786,11 +1164,11 @@ public class Dashboard extends javax.swing.JPanel {
                 {null, null, null, null, null, null}
             },
             new String [] {
-                "Request ID", "Citizen Name", "Requester", "Reason", "Status", "Request Date"
+                "Date", "Time", "Status", "Purpose", "Location", "Actions"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.Integer.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
                 false, false, false, false, false, false
@@ -804,9 +1182,177 @@ public class Dashboard extends javax.swing.JPanel {
                 return canEdit [columnIndex];
             }
         });
-        DetailsTable.getTableHeader().setResizingAllowed(false);
-        DetailsTable.getTableHeader().setReorderingAllowed(false);
-        jScrollPane1.setViewportView(DetailsTable);
+        MyAppointmentDetailsTable.setRowHeight(30);
+        MyAppointmentDetailsTable.setRowMargin(1);
+        MyAppointmentDetailsTable.setShowGrid(true);
+        MyAppointmentDetailsTable.getTableHeader().setResizingAllowed(false);
+        MyAppointmentDetailsTable.getTableHeader().setReorderingAllowed(false);
+        MyAppointmentDetailsTableScrollPane.setViewportView(MyAppointmentDetailsTable);
+        if (MyAppointmentDetailsTable.getColumnModel().getColumnCount() > 0) {
+            MyAppointmentDetailsTable.getColumnModel().getColumn(0).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(1).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(2).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(3).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(4).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(4).setPreferredWidth(150);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(5).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        }
+
+        javax.swing.GroupLayout MyAppointmentDetailsTablePanelLayout = new javax.swing.GroupLayout(MyAppointmentDetailsTablePanel);
+        MyAppointmentDetailsTablePanel.setLayout(MyAppointmentDetailsTablePanelLayout);
+        MyAppointmentDetailsTablePanelLayout.setHorizontalGroup(
+            MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyAppointmentDetailsTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        MyAppointmentDetailsTablePanelLayout.setVerticalGroup(
+            MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyAppointmentDetailsTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 138, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        DashboardCitizenTable.add(MyAppointmentDetailsTablePanel);
+
+        RequiredDocumentsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
+
+        RequiredDocumentsTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "Document", "Status", "Submitted", "Required By", "Upload"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        RequiredDocumentsTable.setRowHeight(30);
+        RequiredDocumentsTable.setRowMargin(1);
+        RequiredDocumentsTable.setShowGrid(true);
+        RequiredDocumentsTable.getTableHeader().setResizingAllowed(false);
+        RequiredDocumentsTable.getTableHeader().setReorderingAllowed(false);
+        RequiredDocumentsTableScrollPane.setViewportView(RequiredDocumentsTable);
+        if (RequiredDocumentsTable.getColumnModel().getColumnCount() > 0) {
+            RequiredDocumentsTable.getColumnModel().getColumn(0).setResizable(false);
+            RequiredDocumentsTable.getColumnModel().getColumn(0).setPreferredWidth(150);
+            RequiredDocumentsTable.getColumnModel().getColumn(1).setResizable(false);
+            RequiredDocumentsTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+            RequiredDocumentsTable.getColumnModel().getColumn(2).setResizable(false);
+            RequiredDocumentsTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+            RequiredDocumentsTable.getColumnModel().getColumn(3).setResizable(false);
+            RequiredDocumentsTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+            RequiredDocumentsTable.getColumnModel().getColumn(4).setResizable(false);
+            RequiredDocumentsTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        }
+
+        javax.swing.GroupLayout RequiredDocumentsTablePanelLayout = new javax.swing.GroupLayout(RequiredDocumentsTablePanel);
+        RequiredDocumentsTablePanel.setLayout(RequiredDocumentsTablePanelLayout);
+        RequiredDocumentsTablePanelLayout.setHorizontalGroup(
+            RequiredDocumentsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(RequiredDocumentsTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        RequiredDocumentsTablePanelLayout.setVerticalGroup(
+            RequiredDocumentsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(RequiredDocumentsTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 138, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        DashboardCitizenTable.add(RequiredDocumentsTablePanel);
+
+        MyNotificationsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
+
+        MyNotificationsTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
+            new String [] {
+                "Date", "Time", "Message", "Type", "Read Status"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        MyNotificationsTable.setRowHeight(30);
+        MyNotificationsTable.setRowMargin(1);
+        MyNotificationsTable.setShowGrid(true);
+        MyNotificationsTable.getTableHeader().setResizingAllowed(false);
+        MyNotificationsTable.getTableHeader().setReorderingAllowed(false);
+        MyNotificationsTableScrollPane.setViewportView(MyNotificationsTable);
+        if (MyNotificationsTable.getColumnModel().getColumnCount() > 0) {
+            MyNotificationsTable.getColumnModel().getColumn(0).setResizable(false);
+            MyNotificationsTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+            MyNotificationsTable.getColumnModel().getColumn(1).setResizable(false);
+            MyNotificationsTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+            MyNotificationsTable.getColumnModel().getColumn(2).setResizable(false);
+            MyNotificationsTable.getColumnModel().getColumn(2).setPreferredWidth(250);
+            MyNotificationsTable.getColumnModel().getColumn(3).setResizable(false);
+            MyNotificationsTable.getColumnModel().getColumn(3).setPreferredWidth(80);
+            MyNotificationsTable.getColumnModel().getColumn(4).setResizable(false);
+            MyNotificationsTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        }
+
+        javax.swing.GroupLayout MyNotificationsTablePanelLayout = new javax.swing.GroupLayout(MyNotificationsTablePanel);
+        MyNotificationsTablePanel.setLayout(MyNotificationsTablePanelLayout);
+        MyNotificationsTablePanelLayout.setHorizontalGroup(
+            MyNotificationsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyNotificationsTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        MyNotificationsTablePanelLayout.setVerticalGroup(
+            MyNotificationsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MyNotificationsTablePanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 138, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        DashboardCitizenTable.add(MyNotificationsTablePanel);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -816,82 +1362,91 @@ public class Dashboard extends javax.swing.JPanel {
                 .addGap(50, 50, 50)
                 .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(50, 50, 50))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1)
+                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.DEFAULT_SIZE, 838, Short.MAX_VALUE)
                 .addContainerGap())
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(searchLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
                 .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addGap(11, 11, 11))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(50, 50, 50)
                 .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(44, 44, 44)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 154, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(searchLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 254, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void pendingActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pendingActionBtnActionPerformed
-        showPendingRequests();
-    }//GEN-LAST:event_pendingActionBtnActionPerformed
+    private void MyApplicationStatusActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MyApplicationStatusActionBtnActionPerformed
+        showApplicationTimeline();
+    }//GEN-LAST:event_MyApplicationStatusActionBtnActionPerformed
 
-    private void approvedActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_approvedActionBtnActionPerformed
-        showApprovedRequests();
-    }//GEN-LAST:event_approvedActionBtnActionPerformed
+    private void DaySinceApplicationActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DaySinceApplicationActionBtnActionPerformed
+        showDaysSinceApplication();
+    }//GEN-LAST:event_DaySinceApplicationActionBtnActionPerformed
 
-    private void urgentActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_urgentActionBtnActionPerformed
-        showUrgentRequests();
-    }//GEN-LAST:event_urgentActionBtnActionPerformed
+    private void MyAppointmentActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MyAppointmentActionBtnActionPerformed
+        showAppointmentDetails();
+    }//GEN-LAST:event_MyAppointmentActionBtnActionPerformed
 
-    private void readyActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_readyActionBtnActionPerformed
-        showReadyRequests();
-    }//GEN-LAST:event_readyActionBtnActionPerformed
+    private void NotificationsActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NotificationsActionBtnActionPerformed
+        showNotifications();
+    }//GEN-LAST:event_NotificationsActionBtnActionPerformed
 
     private void searchFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchFieldActionPerformed
         String searchTerm = searchField.getText().trim();
         if (!searchTerm.isEmpty()) {
             filterCurrentTable(searchTerm);
         } else {
-            // Reload current view without filter
-            String currentView = getCurrentTableView();
-            reloadCurrentTableView(currentView);
+            reloadCurrentView();
         }
     }//GEN-LAST:event_searchFieldActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTable DetailsTable;
-    private javax.swing.JButton approvedActionBtn;
-    private javax.swing.JPanel approvedBoxPanel;
-    private javax.swing.JLabel approvedTitleLabel;
-    private javax.swing.JLabel approvedValueLabel;
+    private javax.swing.JTable ApplicationTimelineTable;
+    private javax.swing.JPanel ApplicationTimelineTablePanel;
+    private javax.swing.JScrollPane ApplicationTimelineTableScrollPane;
+    private javax.swing.JLayeredPane DashboardCitizenTable;
+    private javax.swing.JButton DaySinceApplicationActionBtn;
+    private javax.swing.JPanel DaySinceApplicationBoxPanel;
+    private javax.swing.JLabel DaySinceApplicationTitleLabel;
+    private javax.swing.JLabel DaySinceApplicationValueLabel;
+    private javax.swing.JButton MyApplicationStatusActionBtn;
+    private javax.swing.JPanel MyApplicationStatusBoxPanel;
+    private javax.swing.JLabel MyApplicationStatusTitleLabel;
+    private javax.swing.JLabel MyApplicationStatusValueLabel;
+    private javax.swing.JButton MyAppointmentActionBtn;
+    private javax.swing.JPanel MyAppointmentBoxPanel;
+    private javax.swing.JLabel MyAppointmentCountLabel;
+    private javax.swing.JTable MyAppointmentDetailsTable;
+    private javax.swing.JPanel MyAppointmentDetailsTablePanel;
+    private javax.swing.JScrollPane MyAppointmentDetailsTableScrollPane;
+    private javax.swing.JLabel MyAppointmentTitleLabel;
+    private javax.swing.JTable MyNotificationsTable;
+    private javax.swing.JPanel MyNotificationsTablePanel;
+    private javax.swing.JScrollPane MyNotificationsTableScrollPane;
+    private javax.swing.JButton NotificationsActionBtn;
+    private javax.swing.JPanel NotificationsBoxPanel;
+    private javax.swing.JLabel NotificationsTitleLabel;
+    private javax.swing.JLabel NotificationsValueLabel;
+    private javax.swing.JTable RequiredDocumentsTable;
+    private javax.swing.JPanel RequiredDocumentsTablePanel;
+    private javax.swing.JScrollPane RequiredDocumentsTableScrollPane;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JProgressBar jProgressBar1;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JButton pendingActionBtn;
-    private javax.swing.JPanel pendingBoxPanel;
-    private javax.swing.JLabel pendingTitleLabel;
-    private javax.swing.JLabel pendingValueLabel;
-    private javax.swing.JButton readyActionBtn;
-    private javax.swing.JPanel readyBoxPanel;
-    private javax.swing.JLabel readyTitleLabel;
-    private javax.swing.JLabel readyValueLabel;
     private javax.swing.JTextField searchField;
     private javax.swing.JLabel searchLabel;
-    private javax.swing.JButton urgentActionBtn;
-    private javax.swing.JPanel urgentBoxPanel;
-    private javax.swing.JLabel urgentCountLabel;
-    private javax.swing.JLabel urgentTitleLabel;
     // End of variables declaration//GEN-END:variables
 }

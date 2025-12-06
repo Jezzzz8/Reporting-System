@@ -14,7 +14,8 @@ import sys.effect.RippleEffect;
 import sys.swing.shadow.ShadowRenderer;
 
 public class MenuItem extends JButton {
-
+    private float alpha = 1f;
+    
     public float getAnimate() {
         return animate;
     }
@@ -55,6 +56,15 @@ public class MenuItem extends JButton {
         this.length = length;
     }
     
+    public boolean isSelected() {
+        return selected;
+    }
+    
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+        repaint();
+    }
+    
     private RippleEffect rippleEffect;
     private BufferedImage shadow;
     private int shadowWidth;
@@ -65,6 +75,7 @@ public class MenuItem extends JButton {
     //  Submenu
     private int subMenuIndex;
     private int length;
+    private boolean selected = false;
 
     public MenuItem(String name, int index, boolean subMenuAble) {
         super(name);
@@ -102,44 +113,68 @@ public class MenuItem extends JButton {
 
     @Override
     protected void paintComponent(Graphics grphcs) {
-        super.paintComponent(grphcs);
         Graphics2D g2 = (Graphics2D) grphcs.create();
+        g2.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, alpha));
+        super.paintComponent(g2);
+
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        if (length != 0) {
-            g2.setColor(new Color(43, 98, 141));
-            if (subMenuIndex == 1) {
-                //  First Index
-                g2.drawImage(shadow, -shadowSize, -20, null);
-                g2.drawLine(18, 0, 18, getHeight());
-                g2.drawLine(18, getHeight() / 2, 26, getHeight() / 2);
-            } else if (subMenuIndex == length - 1) {
-                //  Last Index
-                g2.drawImage(shadow, -shadowSize, getHeight() - 6, null);
-                g2.drawLine(18, 0, 18, getHeight() / 2);
-                g2.drawLine(18, getHeight() / 2, 26, getHeight() / 2);
-            } else {
-                g2.drawLine(18, 0, 18, getHeight());
-                g2.drawLine(18, getHeight() / 2, 26, getHeight() / 2);
+
+        // Only draw submenu indicators if we have text (not collapsed)
+        if (getText() != null && !getText().trim().isEmpty()) {
+            if (length != 0) {
+                g2.setColor(new Color(43, 98, 141));
+                if (subMenuIndex == 1) {
+                    //  First Index
+                    g2.drawImage(shadow, -shadowSize, -20, null);
+                    g2.drawLine(18, 0, 18, getHeight());
+                    g2.drawLine(18, getHeight() / 2, 26, getHeight() / 2);
+                } else if (subMenuIndex == length - 1) {
+                    //  Last Index
+                    g2.drawImage(shadow, -shadowSize, getHeight() - 6, null);
+                    g2.drawLine(18, 0, 18, getHeight() / 2);
+                    g2.drawLine(18, getHeight() / 2, 26, getHeight() / 2);
+                } else {
+                    g2.drawLine(18, 0, 18, getHeight());
+                    g2.drawLine(18, getHeight() / 2, 26, getHeight() / 2);
+                }
+            } else if (subMenuAble) {
+                g2.setColor(getForeground());
+                int arrowWidth = 8;
+                int arrowHeight = 4;
+                Path2D p = new Path2D.Double();
+                p.moveTo(0, arrowHeight * animate);
+                p.lineTo(arrowWidth / 2, (1f - animate) * arrowHeight);
+                p.lineTo(arrowWidth, arrowHeight * animate);
+                g2.translate(getWidth() - arrowWidth - 15, (getHeight() - arrowHeight) / 2);
+                g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+                g2.draw(p);
             }
-        } else if (subMenuAble) {
-            g2.setColor(getForeground());
-            int arrowWidth = 8;
-            int arrowHeight = 4;
-            Path2D p = new Path2D.Double();
-            p.moveTo(0, arrowHeight * animate);
-            p.lineTo(arrowWidth / 2, (1f - animate) * arrowHeight);
-            p.lineTo(arrowWidth, arrowHeight * animate);
-            g2.translate(getWidth() - arrowWidth - 15, (getHeight() - arrowHeight) / 2);
-            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-            g2.draw(p);
         }
+
         g2.dispose();
         rippleEffect.reder(grphcs, new Rectangle2D.Double(0, 0, getWidth(), getHeight()));
     }
-
+    
+    @Override
+    public void setText(String text) {
+        super.setText(text);
+        // Adjust horizontal alignment based on whether we have text
+        if (text == null || text.trim().isEmpty()) {
+            setHorizontalAlignment(SwingConstants.CENTER);
+        } else {
+            setHorizontalAlignment(SwingConstants.LEFT);
+        }
+    }
+    
     @Override
     public void setBounds(int i, int i1, int i2, int i3) {
         super.setBounds(i, i1, i2, i3);
         createShadowImage();
     }
+    
+    public void setAlpha(float alpha) {
+        this.alpha = alpha;
+        repaint();
+    }
+
 }

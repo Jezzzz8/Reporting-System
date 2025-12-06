@@ -18,6 +18,17 @@ public class MenuAnimation {
                 component.revalidate();
                 item.repaint();
             }
+            
+            @Override
+            public void end() {
+                if (!show) {
+                    // When hiding animation completes, make the component invisible
+                    component.setVisible(false);
+                    // Ensure arrow is fully reset to down position
+                    item.setAnimate(0f);
+                    item.repaint();
+                }
+            }
         });
         animator.setResolution(0);
         animator.setAcceleration(.5f);
