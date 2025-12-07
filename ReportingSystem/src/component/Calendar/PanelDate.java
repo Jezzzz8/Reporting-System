@@ -1,5 +1,6 @@
 package component.Calendar;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.util.Calendar;
 import java.util.Date;
@@ -8,15 +9,29 @@ public class PanelDate extends javax.swing.JLayeredPane {
 
     private int month;
     private int year;
+    private CalendarCustom parentCalendar;
 
     public PanelDate(int month, int year) {
         initComponents();
         this.month = month;
         this.year = year;
-        init();
+
+        // Set parent for all cells
+        for (Component com : getComponents()) {
+            if (com instanceof Cell) {
+                Cell cell = (Cell) com;
+                cell.setParentPanel(this);
+            }
+        }
+
+        init(); 
+    }
+    
+    public void setParentCalendar(CalendarCustom parent) {
+        this.parentCalendar = parent;
     }
 
-    private void init() {
+    public void init() {
         sun.asTitle();
         mon.asTitle();
         tue.asTitle();
@@ -25,26 +40,83 @@ public class PanelDate extends javax.swing.JLayeredPane {
         fri.asTitle();
         sat.asTitle();
         setDate();
+
+        // Set parent for all cells (in case some were added after construction)
+        for (Component com : getComponents()) {
+            if (com instanceof Cell) {
+                Cell cell = (Cell) com;
+                cell.setParentPanel(this);
+            }
+        }
+    }
+
+    public CalendarCustom getParentCalendar() {
+        return parentCalendar;
     }
 
     private void setDate() {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.YEAR, year);
-        calendar.set(Calendar.MONTH, month - 1);  //  month jan as 0 so start from 0
+        calendar.set(Calendar.MONTH, month - 1);
         calendar.set(Calendar.DATE, 1);
-        int startDay = calendar.get(Calendar.DAY_OF_WEEK) - 1;  //  get day of week -1 to index
+        int startDay = calendar.get(Calendar.DAY_OF_WEEK) - 1;
         calendar.add(Calendar.DATE, -startDay);
         ToDay toDay = getToDay();
+
+        // Get today's date for comparison
+        Calendar today = Calendar.getInstance();
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.set(Calendar.MILLISECOND, 0);
+
         for (Component com : getComponents()) {
             Cell cell = (Cell) com;
             if (!cell.isTitle()) {
                 cell.setText(calendar.get(Calendar.DATE) + "");
-                cell.setDate(calendar.getTime());
+                Date cellDate = calendar.getTime();
+                cell.setDate(cellDate);
                 cell.currentMonth(calendar.get(Calendar.MONTH) == month - 1);
+
+                // Check if date is in the past
+                Calendar cellCalendar = Calendar.getInstance();
+                cellCalendar.setTime(cellDate);
+                cellCalendar.set(Calendar.HOUR_OF_DAY, 0);
+                cellCalendar.set(Calendar.MINUTE, 0);
+                cellCalendar.set(Calendar.SECOND, 0);
+                cellCalendar.set(Calendar.MILLISECOND, 0);
+
+                boolean isPastDate = cellCalendar.before(today);
+
+                // Check day properties
+                int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+                    cell.setWeekend(true);
+                    cell.setAvailable(false);
+                } else if (isPastDate) {
+                    // Past dates should not be available
+                    cell.setAvailable(false);
+                    // You can add visual indication for past dates
+                    cell.setForeground(new Color(200, 200, 200)); // Gray out past dates
+                    cell.setToolTipText("Past date - Not available");
+                } else {
+                    // Check with parent calendar if date is available
+                    if (parentCalendar != null) {
+                        boolean isAvailable = parentCalendar.isAvailableDate(cellDate);
+                        cell.setAvailable(isAvailable);
+
+                        // Also check if it's a holiday
+                        boolean isHoliday = parentCalendar.isHolidayDate(cellDate);
+                        cell.setHoliday(isHoliday);
+                    }
+                }
+
+                // Check if today
                 if (toDay.isToDay(new ToDay(calendar.get(Calendar.DATE), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR)))) {
                     cell.setAsToDay();
                 }
-                calendar.add(Calendar.DATE, 1); //  up 1 day
+
+                calendar.add(Calendar.DATE, 1);
             }
         }
     }

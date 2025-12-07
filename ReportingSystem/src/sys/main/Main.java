@@ -2,9 +2,9 @@ package sys.main;
 
 import component.Dashboard;
 import component.DefaultForm;
-import component.Scheduling;
 import backend.objects.Data;
 import backend.objects.Data.User;
+import component.Scheduling;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -220,30 +220,65 @@ public class Main extends javax.swing.JFrame {
     
     private void showForm(Component com) {
         System.out.println("showForm() called with component: " + com.getClass().getSimpleName());
-        
+
         // Remove all components from body
         body.removeAll();
-        
+
         // Set preferred size
         com.setPreferredSize(new Dimension(body.getWidth(), body.getHeight()));
-        
+
         // Add component to body
         body.add(com, BorderLayout.CENTER);
-        
+
+        // Force layout update first
+        body.revalidate();
+        body.repaint();
+
+        // If it's a Scheduling component, force initialization AFTER it's visible
+        if (com instanceof Scheduling) {
+            System.out.println("Scheduling component detected - forcing initialization");
+            Scheduling scheduling = (Scheduling) com;
+
+            // Use SwingUtilities.invokeLater to ensure component is fully visible
+            javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    // Wait a bit to ensure everything is rendered
+                    try {
+                        Thread.sleep(100); // Small delay for rendering
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    scheduling.refreshCalendar(); // Force calendar refresh
+
+                    // Also force repaint
+                    scheduling.revalidate();
+                    scheduling.repaint();
+                    body.revalidate();
+                    body.repaint();
+                    jPanel1.revalidate();
+                    jPanel1.repaint();
+
+                    System.out.println("Scheduling calendar initialized and repainted");
+                }
+            });
+        }
+
         // Debug info
         System.out.println("Body child count: " + body.getComponentCount());
         System.out.println("Component size: " + com.getWidth() + "x" + com.getHeight());
         System.out.println("Component visible: " + com.isVisible());
         System.out.println("Body size: " + body.getWidth() + "x" + body.getHeight());
-        
+
         // Force layout update
         body.revalidate();
         body.repaint();
-        
+
         // Also update the main panel
         jPanel1.revalidate();
         jPanel1.repaint();
-        
+
         System.out.println("Form should be visible now");
     }
     

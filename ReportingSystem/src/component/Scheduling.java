@@ -1,13 +1,431 @@
 package component;
 
 import backend.objects.Data.*;
+import component.Calendar.CalendarCustom.CalendarCustomListener;
+
+import java.awt.Color;
+import java.awt.GridLayout;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
 
 public class Scheduling extends javax.swing.JPanel {
 
+    private User currentUser;
+    private Citizen citizen;
+    private Date selectedDate;
+    private String selectedTime;
+    private int currentStep = 1;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy");
+    private SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE");
+
     public Scheduling(User user) {
+        this.currentUser = user;
         initComponents();
+        initCitizenData();
+        initCalendar();
+        initTimeSlots();
+        updateUIForStep(currentStep);
+
+        // Add tab change listener to ensure calendar is visible
+        SchedulingTabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {
+            @Override
+            public void stateChanged(javax.swing.event.ChangeEvent e) {
+                if (SchedulingTabbedPane.getSelectedIndex() == 0) { // Date selection tab
+                    System.out.println("Date tab selected - refreshing calendar");
+                    refreshCalendar();
+                }
+            }
+        });
+
+        // Add component listener to handle when component becomes visible
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                System.out.println("Scheduling component shown");
+                refreshCalendar();
+            }
+        });
     }
     
+    public void refreshCalendar() {
+        if (calendarCustom != null) {
+            System.out.println("Refreshing calendar...");
+
+            // Force reinitialization
+            calendarCustom.revalidate();
+            calendarCustom.repaint();
+
+            // Force the parent panel to update
+            SelectDatePanel.revalidate();
+            SelectDatePanel.repaint();
+
+            // If there's a selected date, make sure it's highlighted
+            if (selectedDate != null) {
+                calendarCustom.setSelectedDate(selectedDate);
+            }
+
+            System.out.println("Calendar refreshed");
+        }
+    }
+
+    private void initCitizenData() {
+        // Get citizen data for the current user
+        this.citizen = Citizen.getCitizenByUserId(currentUser.getUserId());
+        if (citizen != null) {
+            updateSummaryPanel();
+        } else {
+            System.err.println("ERROR: No citizen found for user ID: " + currentUser.getUserId());
+        }
+    }
+    
+    private void initCalendar() {
+        System.out.println("Initializing calendar...");
+
+        // Make sure calendar is visible and properly sized
+        calendarCustom.setVisible(true);
+        calendarCustom.setSize(SelectDatePanel.getSize());
+
+        // Initialize with a listener
+        calendarCustom.setListener(new CalendarCustomListener() {
+            @Override
+            public void dateSelected(Date date) {
+                System.out.println("Date selected: " + date);
+                selectedDate = date;
+                updateSummaryPanel();
+                updateProgress();
+                ContinueButton.setEnabled(isStepComplete(currentStep));
+            }
+
+            @Override
+            public void monthChanged(int month, int year) {
+                System.out.println("Month changed to: " + month + "/" + year);
+                // Force repaint to ensure calendar updates
+                calendarCustom.repaint();
+                SelectDatePanel.repaint();
+            }
+        });
+
+        // Force initial repaint
+        calendarCustom.repaint();
+        SelectDatePanel.repaint();
+
+        System.out.println("Calendar initialized");
+    }
+    
+    public void forceCalendarRefresh() {
+        if (calendarCustom != null) {
+            // Force the calendar to reinitialize
+            calendarCustom.revalidate();
+            calendarCustom.repaint();
+
+            // Update the selected date if there is one
+            if (selectedDate != null) {
+                calendarCustom.setSelectedDate(selectedDate);
+            }
+
+            // Force the parent containers to update
+            SelectDatePanel.revalidate();
+            SelectDatePanel.repaint();
+            revalidate();
+            repaint();
+
+            System.out.println("Calendar forcefully refreshed");
+        }
+    }
+    
+    private void updateUIForStep(int step) {
+        System.out.println("Updating UI for step: " + step);
+
+        // Set the tab index
+        SchedulingTabbedPane.setSelectedIndex(step - 1);
+
+        // Update progress labels color
+        SelectDateLabel.setForeground(step >= 1 ? Color.BLUE : Color.GRAY);
+        SelectTimeLabel.setForeground(step >= 2 ? Color.BLUE : Color.GRAY);
+        SelectDetailsLabel.setForeground(step >= 3 ? Color.BLUE : Color.GRAY);
+
+        // Update progress bar - FIXED VALUES
+        switch (step) {
+            case 1:
+                jProgressBar1.setValue(25);
+                break;
+            case 2:
+                jProgressBar1.setValue(50);
+                break;
+            case 3:
+                jProgressBar1.setValue(75);
+                break;
+        }
+
+        // Update button states
+        PreviousButton.setVisible(step > 1);
+        PreviousButton.setEnabled(step > 1);
+        ContinueButton.setEnabled(isStepComplete(step));
+
+        if (step == 3) {
+            ContinueButton.setText("Confirm");
+            updateConfirmDetailsPanel();
+        } else {
+            ContinueButton.setText("Continue");
+        }
+
+        System.out.println("Continue button enabled: " + ContinueButton.isEnabled());
+        System.out.println("Step " + step + " complete: " + isStepComplete(step));
+    }
+    
+    private boolean isStepComplete(int step) {
+        boolean complete = false;
+        switch (step) {
+            case 1:
+                complete = selectedDate != null;
+                break;
+            case 2:
+                complete = selectedTime != null;
+                break;
+            case 3:
+                complete = selectedDate != null && selectedTime != null;
+                break;
+            default:
+                complete = false;
+        }
+        System.out.println("Step " + step + " complete check: " + complete);
+        return complete;
+    }
+    
+    private void updateSummaryPanel() {
+        if (citizen != null) {
+            // Update citizen info labels
+            lblName.setText(citizen.getFullName());
+            lblNationalId.setText(citizen.getNationalId());
+            lblPhone.setText(citizen.getPhone());
+            
+            if (selectedDate != null) {
+                lblSelectedDate.setText(dateFormat.format(selectedDate));
+                lblSelectedDay.setText(dayFormat.format(selectedDate));
+            } else {
+                lblSelectedDate.setText("Not selected");
+                lblSelectedDay.setText("");
+            }
+            
+            if (selectedTime != null) {
+                lblSelectedTime.setText(selectedTime);
+            } else {
+                lblSelectedTime.setText("Not selected");
+            }
+        }
+    }
+    
+    private void updateProgress() {
+        // Remove the automatic calculation since we're setting fixed values
+        // This method is called when date/time is selected, but we don't want it to change progress bar
+        // Only updateUIForStep() should change the progress bar
+    }
+    
+    private void updateConfirmDetailsPanel() {
+        ConfirmDetailsPanel.removeAll();
+        ConfirmDetailsPanel.setLayout(new java.awt.BorderLayout());
+        
+        JButton confirmButton = new JButton("Confirm Appointment");
+        confirmButton.setBackground(new Color(97, 49, 237));
+        confirmButton.setForeground(Color.WHITE);
+        confirmButton.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        confirmButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        confirmButton.addActionListener(e -> {
+            boolean success = saveAppointment();
+            if (success) {
+                // Reset form
+                selectedDate = null;
+                selectedTime = null;
+                currentStep = 1;
+                updateUIForStep(currentStep);
+                updateSummaryPanel();
+                resetTimeSlots();
+            }
+        });
+        
+        ConfirmDetailsPanel.add(confirmButton, java.awt.BorderLayout.CENTER);
+        ConfirmDetailsPanel.revalidate();
+        ConfirmDetailsPanel.repaint();
+    }
+    
+    private void resetTimeSlots() {
+        // Reset all time slot buttons
+        if (timeSlotsPanel != null) {
+            for (java.awt.Component comp : timeSlotsPanel.getComponents()) {
+                if (comp instanceof JButton) {
+                    JButton btn = (JButton) comp;
+                    btn.setBackground(new Color(240, 240, 240));
+                    btn.setForeground(Color.BLACK);
+                }
+            }
+        }
+
+        // Also reset the calendar selection
+        if (calendarCustom != null) {
+            calendarCustom.setSelectedDate(null);
+            forceCalendarRefresh();
+        }
+    }
+
+    private boolean saveAppointment() {
+        if (citizen == null || selectedDate == null || selectedTime == null) {
+            JOptionPane.showMessageDialog(this, "Please complete all appointment details.", 
+                "Incomplete Information", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        // Additional validation: Check if date is in the past
+        Calendar today = Calendar.getInstance();
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.set(Calendar.MILLISECOND, 0);
+
+        Calendar appointmentDate = Calendar.getInstance();
+        appointmentDate.setTime(selectedDate);
+        appointmentDate.set(Calendar.HOUR_OF_DAY, 0);
+        appointmentDate.set(Calendar.MINUTE, 0);
+        appointmentDate.set(Calendar.SECOND, 0);
+        appointmentDate.set(Calendar.MILLISECOND, 0);
+
+        if (appointmentDate.before(today)) {
+            JOptionPane.showMessageDialog(this, 
+                "Cannot schedule appointment for a past date.\nPlease select a future date.", 
+                "Invalid Date", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // Check if date is a weekend
+        int dayOfWeek = appointmentDate.get(Calendar.DAY_OF_WEEK);
+        if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+            JOptionPane.showMessageDialog(this, 
+                "Cannot schedule appointment on weekends.\nPlease select a weekday.", 
+                "Invalid Date", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        Appointment appointment = new Appointment();
+        appointment.setCitizenId(citizen.getCitizenId());
+        appointment.setAppDate(new java.sql.Date(selectedDate.getTime()));
+        appointment.setAppTime(selectedTime);
+        appointment.setStatus("Scheduled");
+        appointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
+
+        boolean success = Appointment.addAppointment(appointment);
+
+        if (success) {
+            // Set progress bar to 100%
+            jProgressBar1.setValue(100);
+
+            // Log activity
+            ActivityLog.logActivity(currentUser.getUserId(), 
+                "Scheduled appointment for " + dateFormat.format(selectedDate) + " at " + selectedTime);
+
+            // Send notification to citizen
+            if (citizen.getUserId() != null) {
+                String message = "Your appointment has been scheduled for " + 
+                    dateFormat.format(selectedDate) + " at " + selectedTime;
+                Notification.addNotification(citizen.getCitizenId(), message, "Appointment");
+            }
+
+            JOptionPane.showMessageDialog(this, 
+                "Appointment scheduled successfully!\n\n" +
+                "Date: " + dateFormat.format(selectedDate) + "\n" +
+                "Time: " + selectedTime + "\n" +
+                "Status: Scheduled\n\n" +
+                "Please arrive 15 minutes before your appointment time.",
+                "Appointment Confirmed", JOptionPane.INFORMATION_MESSAGE);
+
+            return true;
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to schedule appointment. Please try again.", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+    
+    private void initTimeSlots() {
+        // Remove existing components and set layout
+        SelectTimePanel.removeAll();
+        SelectTimePanel.setLayout(new java.awt.BorderLayout());
+
+        // Create main panel
+        javax.swing.JPanel mainPanel = new javax.swing.JPanel();
+        mainPanel.setLayout(new java.awt.BorderLayout());
+        mainPanel.setBackground(new java.awt.Color(255, 255, 255));
+
+        // Add title
+        javax.swing.JLabel titleLabel = new javax.swing.JLabel("Select Time Slot", javax.swing.SwingConstants.CENTER);
+        titleLabel.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 16));
+        titleLabel.setForeground(new java.awt.Color(97, 49, 237));
+        titleLabel.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 0, 10, 0));
+        mainPanel.add(titleLabel, java.awt.BorderLayout.NORTH);
+
+        // Create time slots panel
+        timeSlotsPanel = new javax.swing.JPanel();
+        timeSlotsPanel.setLayout(new GridLayout(0, 2, 10, 10));
+        timeSlotsPanel.setBackground(new java.awt.Color(255, 255, 255));
+
+        // Available time slots
+        String[] timeSlots = {
+            "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM",
+            "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+            "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
+            "3:00 PM", "3:30 PM", "4:00 PM"
+        };
+
+        for (String time : timeSlots) {
+            JButton timeButton = new JButton(time);
+            timeButton.setPreferredSize(new java.awt.Dimension(120, 40));
+            timeButton.setBackground(new Color(240, 240, 240));
+            timeButton.setForeground(Color.BLACK);
+            timeButton.setFocusPainted(false);
+            timeButton.addActionListener(e -> {
+                JButton button = (JButton) e.getSource();
+                selectedTime = button.getText();
+                System.out.println("Time selected: " + selectedTime);
+                updateSummaryPanel();
+                updateProgress();
+                ContinueButton.setEnabled(isStepComplete(currentStep));
+
+                // Highlight selected button
+                for (java.awt.Component comp : timeSlotsPanel.getComponents()) {
+                    if (comp instanceof JButton) {
+                        JButton btn = (JButton) comp;
+                        if (btn.getText().equals(selectedTime)) {
+                            btn.setBackground(new Color(97, 49, 237));
+                            btn.setForeground(Color.WHITE);
+                        } else {
+                            btn.setBackground(new Color(240, 240, 240));
+                            btn.setForeground(Color.BLACK);
+                        }
+                    }
+                }
+            });
+            timeSlotsPanel.add(timeButton);
+        }
+
+        // Create scroll pane
+        javax.swing.JScrollPane scrollPane = new javax.swing.JScrollPane(timeSlotsPanel);
+        scrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 50, 20, 50));
+        scrollPane.setHorizontalScrollBarPolicy(javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getViewport().setBackground(new java.awt.Color(255, 255, 255));
+
+        mainPanel.add(scrollPane, java.awt.BorderLayout.CENTER);
+
+        // Add to SelectTimePanel
+        SelectTimePanel.add(mainPanel);
+
+        // Revalidate
+        SelectTimePanel.revalidate();
+        SelectTimePanel.repaint();
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -20,23 +438,35 @@ public class Scheduling extends javax.swing.JPanel {
         SummaryConfirmationPanel = new javax.swing.JPanel();
         PreviousButton = new javax.swing.JButton();
         ContinueButton = new javax.swing.JButton();
+        lblName = new javax.swing.JLabel();
+        lblNationalId = new javax.swing.JLabel();
+        lblPhone = new javax.swing.JLabel();
+        lblSelectedDate = new javax.swing.JLabel();
+        lblSelectedDay = new javax.swing.JLabel();
+        lblSelectedTime = new javax.swing.JLabel();
+        timeSlotsPanel = new javax.swing.JPanel();
+        JLabel = new javax.swing.JLabel();
+        JLabel1 = new javax.swing.JLabel();
+        JLabel2 = new javax.swing.JLabel();
+        JLabel3 = new javax.swing.JLabel();
+        JLabel4 = new javax.swing.JLabel();
+        JLabel5 = new javax.swing.JLabel();
         SchedulingTabbedPane = new component.NoTabJTabbedPane();
         SelectDatePanel = new javax.swing.JPanel();
         jLayeredPane1 = new javax.swing.JLayeredPane();
         EarliestAvailableButton = new javax.swing.JButton();
         ThisWeekButton = new javax.swing.JButton();
         NextWeekButton = new javax.swing.JButton();
-        calendarCustom2 = new component.Calendar.CalendarCustom();
+        calendarCustom = new component.Calendar.CalendarCustom();
         ConfirmDetailsPanel = new javax.swing.JPanel();
         SelectTimePanel = new javax.swing.JPanel();
-        jLabel4 = new javax.swing.JLabel();
 
         setBackground(new java.awt.Color(250, 250, 250));
         setPreferredSize(new java.awt.Dimension(850, 550));
 
         ProgressHeaderPanel.setPreferredSize(new java.awt.Dimension(850, 50));
 
-        jProgressBar1.setValue(50);
+        jProgressBar1.setValue(25);
 
         SelectDateLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         SelectDateLabel.setText("1. Select Date");
@@ -107,28 +537,116 @@ public class Scheduling extends javax.swing.JPanel {
             }
         });
 
+        lblName.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        lblNationalId.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        lblPhone.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        lblSelectedDate.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        lblSelectedDay.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        lblSelectedTime.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        timeSlotsPanel.setPreferredSize(new java.awt.Dimension(200, 50));
+
+        javax.swing.GroupLayout timeSlotsPanelLayout = new javax.swing.GroupLayout(timeSlotsPanel);
+        timeSlotsPanel.setLayout(timeSlotsPanelLayout);
+        timeSlotsPanelLayout.setHorizontalGroup(
+            timeSlotsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        timeSlotsPanelLayout.setVerticalGroup(
+            timeSlotsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 50, Short.MAX_VALUE)
+        );
+
+        JLabel.setText("Name");
+        JLabel.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        JLabel1.setText("Phone");
+        JLabel1.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        JLabel2.setText("National ID");
+        JLabel2.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        JLabel3.setText("Selected Time");
+        JLabel3.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        JLabel4.setText("Selected Date");
+        JLabel4.setPreferredSize(new java.awt.Dimension(100, 40));
+
+        JLabel5.setText("Selected Day");
+        JLabel5.setPreferredSize(new java.awt.Dimension(100, 40));
+
         javax.swing.GroupLayout SummaryConfirmationPanelLayout = new javax.swing.GroupLayout(SummaryConfirmationPanel);
         SummaryConfirmationPanel.setLayout(SummaryConfirmationPanelLayout);
         SummaryConfirmationPanelLayout.setHorizontalGroup(
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                .addGap(25, 25, 25)
-                .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 105, Short.MAX_VALUE)
-                .addComponent(ContinueButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(25, 25, 25))
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                        .addGap(25, 25, 25)
+                        .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(ContinueButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                        .addGap(21, 21, 21)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(timeSlotsPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 211, Short.MAX_VALUE)
+                            .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(JLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(JLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(JLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(JLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(JLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(lblNationalId, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))))
+                .addGap(23, 23, 23))
         );
         SummaryConfirmationPanelLayout.setVerticalGroup(
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(12, 12, 12)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblNationalId, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(JLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(JLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(JLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(JLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(JLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(timeSlotsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 15, Short.MAX_VALUE)
                 .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addComponent(ContinueButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(25, 25, 25))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(25, 25, 25))))
+                    .addComponent(ContinueButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(PreviousButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(25, 25, 25))
         );
 
         SchedulingTabbedPane.setBorder(null);
@@ -173,29 +691,29 @@ public class Scheduling extends javax.swing.JPanel {
         });
         jLayeredPane1.add(NextWeekButton);
 
-        calendarCustom2.setPreferredSize(new java.awt.Dimension(450, 350));
+        calendarCustom.setPreferredSize(new java.awt.Dimension(450, 350));
 
         javax.swing.GroupLayout SelectDatePanelLayout = new javax.swing.GroupLayout(SelectDatePanel);
         SelectDatePanel.setLayout(SelectDatePanelLayout);
         SelectDatePanelLayout.setHorizontalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(SelectDatePanelLayout.createSequentialGroup()
-                .addGap(72, 72, 72)
-                .addComponent(calendarCustom2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                .addGap(72, 72, 72))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
                 .addGap(145, 145, 145)
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(145, 145, 145))
+            .addGroup(SelectDatePanelLayout.createSequentialGroup()
+                .addGap(70, 70, 70)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(70, 70, 70))
         );
         SelectDatePanelLayout.setVerticalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SelectDatePanelLayout.createSequentialGroup()
                 .addGap(5, 5, 5)
-                .addComponent(calendarCustom2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(5, 5, 5)
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addGap(9, 9, 9))
         );
 
         SchedulingTabbedPane.addTab("tab1", SelectDatePanel);
@@ -206,34 +724,26 @@ public class Scheduling extends javax.swing.JPanel {
         ConfirmDetailsPanel.setLayout(ConfirmDetailsPanelLayout);
         ConfirmDetailsPanelLayout.setHorizontalGroup(
             ConfirmDetailsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 590, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
         ConfirmDetailsPanelLayout.setVerticalGroup(
             ConfirmDetailsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 489, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
 
         SchedulingTabbedPane.addTab("tab3", ConfirmDetailsPanel);
 
         SelectTimePanel.setBackground(new java.awt.Color(255, 255, 255));
 
-        jLabel4.setText("jLabel4");
-
         javax.swing.GroupLayout SelectTimePanelLayout = new javax.swing.GroupLayout(SelectTimePanel);
         SelectTimePanel.setLayout(SelectTimePanelLayout);
         SelectTimePanelLayout.setHorizontalGroup(
             SelectTimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(SelectTimePanelLayout.createSequentialGroup()
-                .addGap(160, 160, 160)
-                .addComponent(jLabel4)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGap(0, 0, Short.MAX_VALUE)
         );
         SelectTimePanelLayout.setVerticalGroup(
             SelectTimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(SelectTimePanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel4)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGap(0, 0, Short.MAX_VALUE)
         );
 
         SchedulingTabbedPane.addTab("tab2", SelectTimePanel);
@@ -256,36 +766,76 @@ public class Scheduling extends javax.swing.JPanel {
                 .addComponent(ProgressHeaderPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+                    .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void PreviousButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PreviousButtonActionPerformed
-        // TODO add your handling code here:
+        if (currentStep > 1) {
+            currentStep--;
+            updateUIForStep(currentStep);
+        }
     }//GEN-LAST:event_PreviousButtonActionPerformed
 
     private void EarliestAvailableButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EarliestAvailableButtonActionPerformed
-        // TODO add your handling code here:
+        calendarCustom.goToEarliestAvailable();
     }//GEN-LAST:event_EarliestAvailableButtonActionPerformed
 
     private void NextWeekButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NextWeekButtonActionPerformed
-        // TODO add your handling code here:
+        calendarCustom.goToNextWeek();
     }//GEN-LAST:event_NextWeekButtonActionPerformed
 
     private void ThisWeekButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ThisWeekButtonActionPerformed
-        // TODO add your handling code here:
+        calendarCustom.goToThisWeek();
     }//GEN-LAST:event_ThisWeekButtonActionPerformed
 
     private void ContinueButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ContinueButtonActionPerformed
-        // TODO add your handling code here:
+        if (currentStep < 3) {
+            if (isStepComplete(currentStep)) {
+                currentStep++;
+                updateUIForStep(currentStep); // This will update progress bar to 50 or 75
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Please complete the current step before continuing.", 
+                    "Incomplete Step", JOptionPane.WARNING_MESSAGE);
+            }
+        } else {
+            // Final confirmation step - progress will be set to 100 in saveAppointment()
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "Confirm appointment details:\n\n" +
+                "Date: " + dateFormat.format(selectedDate) + "\n" +
+                "Time: " + selectedTime + "\n" +
+                "Citizen: " + citizen.getFullName() + "\n\n" +
+                "Are you sure you want to schedule this appointment?",
+                "Confirm Appointment", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                boolean success = saveAppointment(); // This sets progress to 100 if successful
+                if (success) {
+                    // Reset form for new appointment
+                    selectedDate = null;
+                    selectedTime = null;
+                    currentStep = 1;
+                    updateUIForStep(currentStep); // This will reset progress to 25
+                    updateSummaryPanel();
+                    resetTimeSlots();
+                }
+            }
+        }
     }//GEN-LAST:event_ContinueButtonActionPerformed
-
-
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel ConfirmDetailsPanel;
     private javax.swing.JButton ContinueButton;
     private javax.swing.JButton EarliestAvailableButton;
+    private javax.swing.JLabel JLabel;
+    private javax.swing.JLabel JLabel1;
+    private javax.swing.JLabel JLabel2;
+    private javax.swing.JLabel JLabel3;
+    private javax.swing.JLabel JLabel4;
+    private javax.swing.JLabel JLabel5;
     private javax.swing.JButton NextWeekButton;
     private javax.swing.JButton PreviousButton;
     private javax.swing.JPanel ProgressHeaderPanel;
@@ -297,9 +847,15 @@ public class Scheduling extends javax.swing.JPanel {
     private javax.swing.JPanel SelectTimePanel;
     private javax.swing.JPanel SummaryConfirmationPanel;
     private javax.swing.JButton ThisWeekButton;
-    private component.Calendar.CalendarCustom calendarCustom2;
-    private javax.swing.JLabel jLabel4;
+    private component.Calendar.CalendarCustom calendarCustom;
     private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JProgressBar jProgressBar1;
+    private javax.swing.JLabel lblName;
+    private javax.swing.JLabel lblNationalId;
+    private javax.swing.JLabel lblPhone;
+    private javax.swing.JLabel lblSelectedDate;
+    private javax.swing.JLabel lblSelectedDay;
+    private javax.swing.JLabel lblSelectedTime;
+    private javax.swing.JPanel timeSlotsPanel;
     // End of variables declaration//GEN-END:variables
 }
