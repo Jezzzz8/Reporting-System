@@ -39,13 +39,14 @@ public class Menu extends JComponent {
     private MenuToggleButton leftToggleButton;
     private MenuToggleButton rightToggleButton;
     private JPanel togglePanel;
-    private AlphaPanel menuItemsPanel; // Changed to AlphaPanel type
-    private boolean isCollapsed = true; // Start in collapsed mode
+    private AlphaPanel menuItemsPanel;
+    private boolean isCollapsed = true;
     private Animator scrollAnimator;
     private int targetWidth = 200;
     private int collapsedWidth = 42;
     private float scrollAnimate = 0f;
     private boolean animating = false;
+    private Timer repaintTimer;
     
     private String[][] menuItems = new String[][]{
         {"Dashboard"},
@@ -86,34 +87,57 @@ public class Menu extends JComponent {
     public Menu() {
         init();
         initScrollAnimation();
+        initRepaintTimer();
+    }
+    
+    private void initRepaintTimer() {
+        // Use a timer to batch repaint requests during animation
+        repaintTimer = new Timer(16, new ActionListener() { // ~60fps
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (animating) {
+                    updateMenuWidth();
+                }
+            }
+        });
+        repaintTimer.setRepeats(true);
     }
     
     private void initScrollAnimation() {
         scrollAnimator = new Animator(300, new TimingTargetAdapter() {
             @Override
             public void timingEvent(float fraction) {
-                animating = true;
                 scrollAnimate = fraction;
-                updateMenuWidth();
-                if (toggleListener != null) {
-                    toggleListener.onMenuToggle(isCollapsed);
-                }
+                // Don't update UI here, let the timer handle it
             }
             
             @Override
             public void begin() {
                 animating = true;
+                repaintTimer.start();
+                updateToggleButtons();
+                
+                // If collapsing, close all submenus
+                if (isCollapsed) {
+                    collapseAllSubmenus();
+                }
             }
             
             @Override
             public void end() {
                 animating = false;
+                repaintTimer.stop();
                 scrollAnimate = isCollapsed ? 0f : 1f;
-                updateMenuWidth();
+                updateMenuWidthFinal();
                 updateMenuItemsVisibility();
                 
                 // Force final state after animation
                 setPreferredSize(new Dimension(isCollapsed ? collapsedWidth : targetWidth, getHeight()));
+                if (toggleListener != null) {
+                    toggleListener.onMenuToggle(isCollapsed);
+                    toggleListener.onMenuWidthChanged(isCollapsed ? collapsedWidth : targetWidth);
+                }
+                
                 revalidate();
                 if (getParent() != null) {
                     getParent().revalidate();
@@ -121,9 +145,38 @@ public class Menu extends JComponent {
                 }
             }
         });
-        scrollAnimator.setResolution(5);
+        scrollAnimator.setResolution(0); // Let the timer control updates
         scrollAnimator.setAcceleration(0.5f);
         scrollAnimator.setDeceleration(0.5f);
+    }
+    
+    private void collapseAllSubmenus() {
+        if (menuItemsPanel != null) {
+            // Reset all menu items' selected state and close their submenus
+            for (Component comp : menuItemsPanel.getComponents()) {
+                if (comp instanceof MenuItem) {
+                    MenuItem menuItem = (MenuItem) comp;
+                    if (menuItem.isSelected()) {
+                        menuItem.setSelected(false);
+                        menuItem.setAnimate(0f);
+                    }
+                } else if (comp instanceof JPanel) {
+                    // This is a submenu panel - hide it immediately
+                    comp.setVisible(false);
+                }
+            }
+            
+            // Remove all submenu panels
+            Component[] components = menuItemsPanel.getComponents();
+            for (int i = components.length - 1; i >= 0; i--) {
+                if (components[i] instanceof JPanel && !(components[i] instanceof AlphaPanel)) {
+                    menuItemsPanel.remove(components[i]);
+                }
+            }
+            
+            menuItemsPanel.revalidate();
+            menuItemsPanel.repaint();
+        }
     }
     
     private void updateMenuWidth() {
@@ -137,11 +190,6 @@ public class Menu extends JComponent {
         }
         
         setPreferredSize(new Dimension(currentWidth, getHeight()));
-        
-        // Also notify listener of current width for body adjustment
-        if (toggleListener != null) {
-            toggleListener.onMenuWidthChanged(currentWidth);
-        }
         
         // Smoothly show/hide menu items during animation
         if (menuItemsPanel != null) {
@@ -157,10 +205,33 @@ public class Menu extends JComponent {
             }
         }
         
+        // Batch notify listener
+        if (toggleListener != null) {
+            toggleListener.onMenuWidthChanged(currentWidth);
+        }
+        
+        // Batch revalidation
         revalidate();
+        repaint();
         if (getParent() != null) {
             getParent().revalidate();
-            getParent().repaint();
+        }
+    }
+    
+    private void updateMenuWidthFinal() {
+        int currentWidth = isCollapsed ? collapsedWidth : targetWidth;
+        setPreferredSize(new Dimension(currentWidth, getHeight()));
+        
+        if (menuItemsPanel != null) {
+            float alphaValue = isCollapsed ? 0f : 1f;
+            menuItemsPanel.setVisible(!isCollapsed);
+            menuItemsPanel.setAlpha(alphaValue);
+            
+            for (Component comp : menuItemsPanel.getComponents()) {
+                if (comp instanceof MenuItem) {
+                    ((MenuItem) comp).setAlpha(alphaValue);
+                }
+            }
         }
     }
     
@@ -181,11 +252,10 @@ public class Menu extends JComponent {
     
     public void toggleMenu() {
         if (animating) {
-            return; // Don't toggle if animation is already running
+            return;
         }
         
         isCollapsed = !isCollapsed;
-        updateToggleButtons();
         scrollAnimator.start();
     }
     
@@ -203,18 +273,10 @@ public class Menu extends JComponent {
             rightToggleButton.setToggled(true);
             rightToggleButton.setShowXOnRight(true);
         }
+        leftToggleButton.repaint();
+        rightToggleButton.repaint();
     }
     
-    private void updateMenuLayout() {
-        if (isCollapsed) {
-            setPreferredSize(new Dimension(collapsedWidth, getHeight()));
-        } else {
-            setPreferredSize(new Dimension(targetWidth, getHeight()));
-        }
-        revalidate();
-        repaint();
-    }
-
     private void init() {
         layout = new MigLayout("wrap 1, fillx, gapy 0, inset 2", "fill");
         setLayout(layout);
@@ -224,7 +286,7 @@ public class Menu extends JComponent {
         togglePanel = new JPanel(new MigLayout("inset 2, gap 0, fill", "[left][grow][right]", ""));
         togglePanel.setOpaque(false);
         togglePanel.setName("togglePanel");
-        togglePanel.setPreferredSize(new Dimension(targetWidth, 40)); // Fixed height
+        togglePanel.setPreferredSize(new Dimension(targetWidth, 40));
         
         // Left toggle button (hamburger, visible when collapsed)
         leftToggleButton = new MenuToggleButton();
@@ -247,19 +309,19 @@ public class Menu extends JComponent {
         });
         rightToggleButton.setShowXOnRight(true);
         rightToggleButton.setToggled(true);
-        rightToggleButton.setVisible(false); // Hidden initially
+        rightToggleButton.setVisible(false);
         
-        // Add buttons to toggle panel - use fixed sizes
+        // Add buttons to toggle panel
         togglePanel.add(leftToggleButton, "left, w 32!, h 32!");
-        togglePanel.add(new javax.swing.JLabel(), "grow"); // Spacer
+        togglePanel.add(new javax.swing.JLabel(), "grow");
         togglePanel.add(rightToggleButton, "right, w 32!, h 32!");
         
         add(togglePanel, "span, h 40!, wrap");
         
-        // Add separator with less wrap space
+        // Add separator
         add(new javax.swing.JSeparator(), "span, growx, wrap 2");
         
-        // Create a panel to hold all menu items (for easy hide/show)
+        // Create a panel to hold all menu items
         menuItemsPanel = new AlphaPanel(new MigLayout("wrap 1, fillx, gapy 0, inset 0", "fill"));
         menuItemsPanel.setName("menuItemsPanel");
         
@@ -271,11 +333,10 @@ public class Menu extends JComponent {
         // Add the menu items panel to the main layout
         add(menuItemsPanel, "span, grow, push, wrap");
         
-        // Set initial collapsed state (hide menu items)
+        // Set initial collapsed state
         setPreferredSize(new Dimension(collapsedWidth, getHeight()));
-        menuItemsPanel.setVisible(false); // Start with menu items hidden
-        menuItemsPanel.setAlpha(0f); // Start with 0 alpha
-        updateMenuLayout();
+        menuItemsPanel.setVisible(false);
+        menuItemsPanel.setAlpha(0f);
     }
 
     private Icon getIcon(int index) {
@@ -288,7 +349,6 @@ public class Menu extends JComponent {
                 return new ImageIcon(url);
             }
         }
-        // Fallback to numeric icons if named icons don't exist
         URL url = getClass().getResource("/sys/menu/" + index + ".png");
         if (url != null) {
             return new ImageIcon(url);
@@ -307,7 +367,6 @@ public class Menu extends JComponent {
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                // In collapsed mode, clicking any menu item expands the menu
                 if (isCollapsed) {
                     toggleMenu();
                     return;
@@ -318,10 +377,8 @@ public class Menu extends JComponent {
                         item.setSelected(true);
                         addSubMenu(item, index, length, menuItemsPanel.getComponentZOrder(item));
                     } else {
-                        // Hide menu
                         hideMenu(item, index);
                         item.setSelected(false);
-                        // Reset arrow animation when closing submenu
                         item.setAnimate(0f);
                     }
                 } else {
@@ -332,17 +389,13 @@ public class Menu extends JComponent {
             }
         });
         menuItemsPanel.add(item);
-        revalidate();
-        repaint();
     }
 
     private void addSubMenu(MenuItem item, int index, int length, int indexZorder) {
-        // Don't show submenu if menu is collapsed
         if (isCollapsed) {
             return;
         }
         
-        // First, remove any existing submenu for this index
         hideMenu(item, index);
         
         JPanel panel = new JPanel(new MigLayout("wrap 1, fillx, inset 0, gapy 0", "fill"));
@@ -362,10 +415,7 @@ public class Menu extends JComponent {
             panel.add(subItem);
         }
         
-        // Add the submenu panel to menuItemsPanel with the correct index
         menuItemsPanel.add(panel, "h 0!", indexZorder + 1);
-        revalidate();
-        repaint();
         MenuAnimation.showMenu(panel, item, ((MigLayout)menuItemsPanel.getLayout()), true);
     }
 
@@ -374,7 +424,6 @@ public class Menu extends JComponent {
             if (com instanceof JPanel && com.getName() != null && com.getName().equals(index + "")) {
                 com.setName(null);
                 MenuAnimation.showMenu(com, item, ((MigLayout)menuItemsPanel.getLayout()), false);
-                // Schedule removal of the panel after animation completes
                 new Timer(350, new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -392,14 +441,13 @@ public class Menu extends JComponent {
     @Override
     protected void paintComponent(Graphics grphcs) {
         Graphics2D g2 = (Graphics2D) grphcs.create();
-        g2.setColor(new Color(142, 217, 255)); // PSA blue color
+        g2.setColor(new Color(142, 217, 255));
         g2.fill(new Rectangle2D.Double(0, 0, getWidth(), getHeight()));
         super.paintComponent(grphcs);
     }
     
     @Override
     public Dimension getPreferredSize() {
-        // Return the actual current size when collapsed/expanded
         if (animating) {
             return super.getPreferredSize();
         }
