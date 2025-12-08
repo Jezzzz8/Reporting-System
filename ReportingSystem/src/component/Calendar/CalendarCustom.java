@@ -3,10 +3,12 @@ package component.Calendar;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.awt.event.MouseEvent;
+import java.util.List;
 import component.Calendar.swing.PanelSlide;
 import java.awt.Component;
 import java.text.SimpleDateFormat;
+import backend.objects.Data;
+import java.awt.Color;
 
 public class CalendarCustom extends javax.swing.JPanel {
 
@@ -38,11 +40,48 @@ public class CalendarCustom extends javax.swing.JPanel {
         availableDates = new HashSet<>();
         holidayDates = new HashSet<>();
         initHolidays();
+        loadBookedDates();
         updateAvailableDates();
     }
     
+    private void loadBookedDates() {
+        bookedDates.clear();
+        try {
+            List<Data.Appointment> appointments = Data.Appointment.getAllAppointments();
+            
+            for (Data.Appointment appointment : appointments) {
+                java.util.Date appDate = new java.util.Date(appointment.getAppDate().getTime());
+                bookedDates.add(appDate);
+            }
+            
+            System.out.println("Total booked dates loaded: " + bookedDates.size());
+        } catch (Exception e) {
+            System.err.println("Error loading booked dates: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    public void reloadBookedDates() {
+        loadBookedDates();
+        repaint();
+    }
+    
     public boolean isHolidayDate(Date date) {
-        return holidayDates.contains(date);
+        for (Date holiday : holidayDates) {
+            if (isSameDay(holiday, date)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public boolean isBookedDate(Date date) {
+        for (Date booked : bookedDates) {
+            if (isSameDay(booked, date)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     public void setListener(CalendarCustomListener listener) {
@@ -55,7 +94,11 @@ public class CalendarCustom extends javax.swing.JPanel {
     
     public void setSelectedDate(Date date) {
         this.selectedDate = date;
-        highlightSelectedDate(); // This should highlight the cell
+        System.out.println("Selected date set globally to: " + date);
+        
+        // Update all PanelDate instances to show the selection
+        highlightSelectedDate();
+        
         if (listener != null) {
             listener.dateSelected(date);
         }
@@ -86,11 +129,11 @@ public class CalendarCustom extends javax.swing.JPanel {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
         
-        // Generate available dates for next 30 days (excluding weekends and holidays)
-        for (int i = 1; i <= 30; i++) {
+        for (int i = 1; i <= 60; i++) {
             cal.add(Calendar.DATE, 1);
-            if (isAvailableDate(cal.getTime())) {
-                availableDates.add(cal.getTime());
+            Date testDate = cal.getTime();
+            if (isAvailableDate(testDate)) {
+                availableDates.add(testDate);
             }
         }
         repaint();
@@ -100,7 +143,6 @@ public class CalendarCustom extends javax.swing.JPanel {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
 
-        // Check if date is in the past
         Calendar today = Calendar.getInstance();
         today.set(Calendar.HOUR_OF_DAY, 0);
         today.set(Calendar.MINUTE, 0);
@@ -113,27 +155,20 @@ public class CalendarCustom extends javax.swing.JPanel {
         cal.set(Calendar.MILLISECOND, 0);
 
         if (cal.before(today)) {
-            return false; // Past dates are not available
+            return false;
         }
 
-        // Check if weekend
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
             return false;
         }
 
-        // Check if holiday (using same-day comparison)
-        for (Date holiday : holidayDates) {
-            if (isSameDay(holiday, date)) {
-                return false;
-            }
+        if (isHolidayDate(date)) {
+            return false;
         }
 
-        // Check if already booked
-        for (Date booked : bookedDates) {
-            if (isSameDay(booked, date)) {
-                return false;
-            }
+        if (isBookedDate(date)) {
+            return false;
         }
 
         return true;
@@ -162,7 +197,6 @@ public class CalendarCustom extends javax.swing.JPanel {
         Calendar cal = Calendar.getInstance();
         int currentYear = cal.get(Calendar.YEAR);
         
-        // Add major holidays (example - adjust as needed)
         addHoliday(currentYear, 1, 1);   // New Year
         addHoliday(currentYear, 4, 9);   // Araw ng Kagitingan
         addHoliday(currentYear, 5, 1);   // Labor Day
@@ -171,6 +205,8 @@ public class CalendarCustom extends javax.swing.JPanel {
         addHoliday(currentYear, 11, 30); // Bonifacio Day
         addHoliday(currentYear, 12, 25); // Christmas
         addHoliday(currentYear, 12, 30); // Rizal Day
+        
+        System.out.println("Holidays initialized for year: " + currentYear);
     }
     
     private void addHoliday(int year, int month, int day) {
@@ -179,36 +215,17 @@ public class CalendarCustom extends javax.swing.JPanel {
         holidayDates.add(cal.getTime());
     }
     
-    private void handleDateClick(MouseEvent e) {
-        // Get the clicked component
-        java.awt.Component comp = getComponentAt(e.getPoint());
-        if (comp instanceof Cell) {
-            Cell cell = (Cell) comp;
-            if (!cell.isTitle() && cell.getDate() != null) {
-                Date clickedDate = cell.getDate();
-                
-                // Check if date is available
-                if (isAvailableDate(clickedDate)) {
-                    setSelectedDate(clickedDate);
-                    
-                    // Highlight the cell
-                    highlightSelectedDate();
-                }
-            }
-        }
-    }
-    
     private void highlightSelectedDate() {
         System.out.println("Highlighting selected date: " + selectedDate);
 
-        // Get the current PanelDate from PanelSlide
+        // Get ALL PanelDate components from PanelSlide
         Component[] components = panelSlide1.getComponents();
         for (Component panel : components) {
             if (panel instanceof PanelDate) {
                 PanelDate panelDate = (PanelDate) panel;
-                System.out.println("Found PanelDate - highlighting cells");
+                System.out.println("Updating PanelDate cells");
 
-                // Highlight cells in this PanelDate
+                // Update all cells in this PanelDate
                 for (Component comp : panelDate.getComponents()) {
                     if (comp instanceof Cell) {
                         Cell cell = (Cell) comp;
@@ -216,35 +233,100 @@ public class CalendarCustom extends javax.swing.JPanel {
                             boolean shouldSelect = selectedDate != null && 
                                 isSameDay(selectedDate, cell.getDate());
 
-                            System.out.println("Cell date: " + cell.getDate() + 
-                                              ", shouldSelect: " + shouldSelect);
+                            if (shouldSelect) {
+                                System.out.println("Selecting cell with date: " + cell.getDate());
+                            }
 
                             cell.setSelected(shouldSelect);
 
-                            // Also set available status based on date
-                            if (!cell.isTitle() && cell.getDate() != null) {
-                                cell.setAvailable(isAvailableDate(cell.getDate()));
+                            // Update ALL statuses for ALL cells (current month and preview)
+                            Date cellDate = cell.getDate();
+
+                            // Get today's date
+                            Calendar today = Calendar.getInstance();
+                            today.set(Calendar.HOUR_OF_DAY, 0);
+                            today.set(Calendar.MINUTE, 0);
+                            today.set(Calendar.SECOND, 0);
+                            today.set(Calendar.MILLISECOND, 0);
+
+                            // Check if date is in the past
+                            Calendar cellCal = Calendar.getInstance();
+                            cellCal.setTime(cellDate);
+                            cellCal.set(Calendar.HOUR_OF_DAY, 0);
+                            cellCal.set(Calendar.MINUTE, 0);
+                            cellCal.set(Calendar.SECOND, 0);
+                            cellCal.set(Calendar.MILLISECOND, 0);
+
+                            boolean isPastDate = cellCal.before(today);
+
+                            // Check day of week
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(cellDate);
+                            int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+                            boolean isWeekend = (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY);
+
+                            // Check if holiday
+                            boolean isHoliday = isHolidayDate(cellDate);
+
+                            // Check if booked
+                            boolean isBooked = isBookedDate(cellDate);
+
+                            // Check if available
+                            boolean isAvailable = isAvailableDate(cellDate);
+
+                            // Check if today
+                            Calendar todayCal = Calendar.getInstance();
+                            todayCal.setTime(new Date());
+                            boolean isToday = isSameDay(cellDate, todayCal.getTime());
+
+                            // Set all properties
+                            cell.setWeekend(isWeekend);
+                            cell.setHoliday(isHoliday);
+                            cell.setBooked(isBooked);
+                            cell.setAvailable(isAvailable);
+
+                            // Set today status
+                            if (isToday) {
+                                cell.setAsToDay();
+                            } else {
+                                cell.resetToday();
                             }
 
-                            // Force repaint of the cell
+                            // Set foreground based on month and status
+                            Calendar cellMonthCal = Calendar.getInstance();
+                            cellMonthCal.setTime(cellDate);
+                            boolean isCurrentMonthCell = (cellMonthCal.get(Calendar.MONTH) + 1) == month && 
+                                                         cellMonthCal.get(Calendar.YEAR) == year;
+
+                            if (isCurrentMonthCell) {
+                                if (isHoliday || isBooked || isWeekend || isPastDate) {
+                                    cell.setForeground(new Color(200, 200, 200)); // Gray out unavailable dates
+                                } else if (isAvailable && !isToday) {
+                                    cell.setForeground(new Color(0, 150, 0)); // Green for available dates
+                                } else if (!isToday) {
+                                    cell.setForeground(new Color(68, 68, 68)); // Default for current month
+                                }
+                            } else {
+                                // Preview cells (next/previous month)
+                                cell.setForeground(new Color(169, 169, 169)); // Gray for preview
+                            }
+
                             cell.repaint();
                         }
                     }
                 }
 
-                // Force repaint of the panel
                 panelDate.repaint();
             }
         }
 
-        // Force repaint of the entire calendar
         panelSlide1.repaint();
         repaint();
 
         System.out.println("Highlighting complete");
     }
-
-    private boolean isSameDay(Date date1, Date date2) {
+    
+    public boolean isSameDay(Date date1, Date date2) {
         if (date1 == null || date2 == null) return false;
 
         Calendar cal1 = Calendar.getInstance();
@@ -258,10 +340,21 @@ public class CalendarCustom extends javax.swing.JPanel {
     }
 
     public void goToDate(Date date) {
+        if (date == null) return;
+
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         int newMonth = cal.get(Calendar.MONTH) + 1;
         int newYear = cal.get(Calendar.YEAR);
+
+        // Check if we're already in the target month and year
+        if (newMonth == month && newYear == year) {
+            System.out.println("Already in target month: " + month + "/" + year);
+
+            // Just update the selected date without creating new panel
+            setSelectedDate(date);
+            return;
+        }
 
         // Determine animation direction
         PanelSlide.AnimateType animateType = PanelSlide.AnimateType.TO_LEFT;
@@ -278,10 +371,8 @@ public class CalendarCustom extends javax.swing.JPanel {
 
         showMonthYear();
 
-        // Set selected date and highlight it
-        if (date != null) {
-            setSelectedDate(date);
-        }
+        // Set selected date and highlight it - IMPORTANT: This will highlight in the new month
+        setSelectedDate(date);
 
         // Notify listener if exists
         if (listener != null) {
@@ -296,23 +387,12 @@ public class CalendarCustom extends javax.swing.JPanel {
         // Initialize the panel date to set dates
         panelDate.init();
 
-        // If there's a selected date in this month, highlight it
-        if (selectedDate != null) {
-            Calendar selectedCal = Calendar.getInstance();
-            selectedCal.setTime(selectedDate);
-
-            // Check if selected date is in the current month
-            if (selectedCal.get(Calendar.YEAR) == year && 
-                (selectedCal.get(Calendar.MONTH) + 1) == month) {
-
-                // Force highlight update
-                highlightSelectedDate();
-            }
-        }
+        // Initialize all cells with their status
+        initializePanelDateCells(panelDate);
 
         return panelDate;
     }
-
+    
     public void goToEarliestAvailable() {
         if (!availableDates.isEmpty()) {
             Date earliest = null;
@@ -344,7 +424,7 @@ public class CalendarCustom extends javax.swing.JPanel {
             }
         }
     }
-    
+
     public void goToThisWeek() {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
@@ -479,7 +559,12 @@ public class CalendarCustom extends javax.swing.JPanel {
             month--;
         }
 
+        // Pre-initialize the new panel before showing it
         PanelDate panelDate = createPanelDate();
+
+        // Force initialization of all cells BEFORE showing the panel
+        initializePanelDateCells(panelDate);
+
         panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_RIGHT);
 
         showMonthYear();
@@ -498,7 +583,12 @@ public class CalendarCustom extends javax.swing.JPanel {
             month++;
         }
 
+        // Pre-initialize the new panel before showing it
         PanelDate panelDate = createPanelDate();
+
+        // Force initialization of all cells BEFORE showing the panel
+        initializePanelDateCells(panelDate);
+
         panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_LEFT);
 
         showMonthYear();
@@ -509,9 +599,9 @@ public class CalendarCustom extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_cmdNextActionPerformed
 
-private void thisMonth() {
+    private void thisMonth() {
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(new Date());   //  today
+        calendar.setTime(new Date());
         month = calendar.get(Calendar.MONTH) + 1;
         year = calendar.get(Calendar.YEAR);
     }
@@ -525,6 +615,117 @@ private void thisMonth() {
         lbMonthYear.setText(df.format(calendar.getTime()));
     }
     
+    private void initializePanelDateCells(PanelDate panelDate) {
+        if (panelDate == null) return;
+
+        // Get all cells from the panel
+        for (Component comp : panelDate.getComponents()) {
+            if (comp instanceof Cell) {
+                Cell cell = (Cell) comp;
+                if (!cell.isTitle() && cell.getDate() != null) {
+                    Date cellDate = cell.getDate();
+
+                    // Initialize cell properties
+                    Calendar cellCal = Calendar.getInstance();
+                    cellCal.setTime(cellDate);
+
+                    // Check if date is in the past
+                    Calendar today = Calendar.getInstance();
+                    today.set(Calendar.HOUR_OF_DAY, 0);
+                    today.set(Calendar.MINUTE, 0);
+                    today.set(Calendar.SECOND, 0);
+                    today.set(Calendar.MILLISECOND, 0);
+
+                    cellCal.set(Calendar.HOUR_OF_DAY, 0);
+                    cellCal.set(Calendar.MINUTE, 0);
+                    cellCal.set(Calendar.SECOND, 0);
+                    cellCal.set(Calendar.MILLISECOND, 0);
+
+                    boolean isPastDate = cellCal.before(today);
+
+                    // Check day of week
+                    int dayOfWeek = cellCal.get(Calendar.DAY_OF_WEEK);
+                    boolean isWeekend = (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY);
+
+                    // Check if holiday
+                    boolean isHoliday = isHolidayDate(cellDate);
+
+                    // Check if booked
+                    boolean isBooked = isBookedDate(cellDate);
+
+                    // Check if available
+                    boolean isAvailable = isAvailableDate(cellDate);
+
+                    // Check if today
+                    boolean isToday = isSameDay(cellDate, new Date());
+
+                    // Set all properties
+                    cell.setWeekend(isWeekend);
+                    cell.setHoliday(isHoliday);
+                    cell.setBooked(isBooked);
+                    cell.setAvailable(isAvailable);
+
+                    // Set today status
+                    if (isToday) {
+                        cell.setAsToDay();
+                    } else {
+                        // Use reflection to call resetToday if it exists
+                        try {
+                            java.lang.reflect.Method resetTodayMethod = cell.getClass().getMethod("resetToday");
+                            resetTodayMethod.invoke(cell);
+                        } catch (Exception e) {
+                            // Method doesn't exist, just set foreground
+                            cell.setForeground(java.awt.Color.BLACK);
+                        }
+                    }
+
+                    // Check if this cell should be selected
+                    if (selectedDate != null) {
+                        boolean shouldSelect = isSameDay(selectedDate, cellDate);
+                        cell.setSelected(shouldSelect);
+                    }
+
+                    // Set foreground
+                    boolean isCurrentMonthCell = (cellCal.get(Calendar.MONTH) + 1) == month && 
+                                                 cellCal.get(Calendar.YEAR) == year;
+
+                    if (isCurrentMonthCell) {
+                        if (isHoliday || isBooked || isWeekend || isPastDate) {
+                            cell.setForeground(new java.awt.Color(200, 200, 200));
+                        } else if (isAvailable && !isToday) {
+                            cell.setForeground(new java.awt.Color(0, 150, 0));
+                        } else if (!isToday) {
+                            cell.setForeground(new java.awt.Color(68, 68, 68));
+                        }
+                    } else {
+                        cell.setForeground(new java.awt.Color(169, 169, 169));
+                    }
+
+                    // Set tooltip
+                    if (isPastDate) {
+                        cell.setTooltipText("Past date - Not available");
+                    } else if (isHoliday) {
+                        cell.setTooltipText("Public Holiday - PSA Closed");
+                    } else if (isWeekend) {
+                        cell.setTooltipText("Weekend - PSA Closed");
+                    } else if (isBooked) {
+                        cell.setTooltipText("Fully Booked");
+                    } else if (!isAvailable && !isPastDate) {
+                        cell.setTooltipText("Not Available");
+                    } else if (isAvailable) {
+                        cell.setTooltipText("Available - Click to select");
+                    }
+
+                    // Force repaint
+                    cell.repaint();
+                }
+            }
+        }
+
+        // Force the panel to repaint
+        panelDate.repaint();
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cmdBack;
     private javax.swing.JButton cmdNext;

@@ -7,10 +7,10 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Date;
+import java.util.Calendar;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.ToolTipManager;
-import java.util.Calendar;
 
 public class Cell extends JButton {
 
@@ -21,8 +21,9 @@ public class Cell extends JButton {
     private boolean isAvailable;
     private boolean isBooked;
     private boolean isHoliday;
+    private boolean isWeekend;
     private String tooltipText;
-    private PanelDate parentPanel; // Add this field
+    private PanelDate parentPanel;
 
     public Cell() {
         setContentAreaFilled(false);
@@ -39,12 +40,10 @@ public class Cell extends JButton {
         });
     }
     
-    // Add this setter method
     public void setParentPanel(PanelDate parent) {
         this.parentPanel = parent;
     }
     
-    // Add this getter method (optional but useful)
     public PanelDate getParentPanel() {
         return parentPanel;
     }
@@ -69,7 +68,6 @@ public class Cell extends JButton {
 
             if (clickedDate.before(today)) {
                 System.out.println("Cannot select past date: " + date);
-                // You could show a tooltip or change appearance for past dates
                 return;
             }
 
@@ -121,30 +119,23 @@ public class Cell extends JButton {
     
     public void setBooked(boolean booked) {
         this.isBooked = booked;
-        if (booked) {
-            tooltipText = "Fully Booked";
-        }
         repaint();
     }
     
     public void setHoliday(boolean holiday) {
         this.isHoliday = holiday;
-        if (holiday) {
-            tooltipText = "Public Holiday - PSA Closed";
-        }
         repaint();
     }
     
     public void setWeekend(boolean weekend) {
-        if (weekend) {
-            tooltipText = "Weekend - PSA Closed";
-        }
+        this.isWeekend = weekend;
+        repaint();
     }
 
     public void currentMonth(boolean act) {
         if (act) {
-            if (isHoliday || isBooked) {
-                setForeground(new Color(200, 200, 200));
+            if (isHoliday || isBooked || isWeekend) {
+                setForeground(new Color(200, 200, 200)); // Gray out unavailable dates
             } else if (isAvailable) {
                 setForeground(new Color(0, 150, 0)); // Green for available dates
             } else {
@@ -155,6 +146,11 @@ public class Cell extends JButton {
         }
     }
 
+    public void resetToday() {
+        isToDay = false;
+        setForeground(Color.BLACK); // Default foreground
+    }
+    
     public void setAsToDay() {
         isToDay = true;
         setForeground(Color.WHITE);
@@ -164,50 +160,53 @@ public class Cell extends JButton {
     public String getToolTipText() {
         return tooltipText;
     }
+    
+    public void setTooltipText(String text) {
+        this.tooltipText = text;
+    }
 
     @Override
     protected void paintComponent(Graphics grphcs) {
         Graphics2D g2 = (Graphics2D) grphcs;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
+        int x = getWidth() / 2 - 17;
+        int y = getHeight() / 2 - 17;
+        int width = 35;
+        int height = 35;
+        int arc = 100;
+        
+        // Draw background based on cell state
+        if (isSelected) {
+            // Fill with Green (200,254,156) if selected
+            g2.setColor(new Color(200, 254, 156));
+            g2.fillRoundRect(x, y, width, height, arc, arc);
+        } else if (isToDay) {
+            // Fill with Blue (156,200,254) if today
+            g2.setColor(new Color(156, 200, 254));
+            g2.fillRoundRect(x, y, width, height, arc, arc);
+        } else if (isBooked) {
+            // Fill with Yellow (249,254,156) if booked
+            g2.setColor(new Color(249, 254, 156));
+            g2.fillRoundRect(x, y, width, height, arc, arc);
+        } else if (isHoliday) {
+            // Fill with Red (254,161,156) for holidays
+            g2.setColor(new Color(254, 161, 156));
+            g2.fillRoundRect(x, y, width, height, arc, arc);
+        } else if (isWeekend) {
+            // Fill with light gray for weekends
+            g2.setColor(new Color(240, 240, 240));
+            g2.fillRoundRect(x, y, width, height, arc, arc);
+        } else if (isAvailable) {
+            // Draw Green (200,254,156) border for available dates
+            g2.setColor(new Color(200, 254, 156));
+            g2.drawRoundRect(x, y, width, height, arc, arc);
+        }
+        
+        // Draw title separator line
         if (title) {
             grphcs.setColor(new Color(213, 213, 213));
             grphcs.drawLine(0, getHeight() - 1, getWidth(), getHeight() - 1);
-        }
-        
-        if (isSelected) {
-            g2.setColor(new Color(200,254,156)); // Selected date with transparency
-            int x = getWidth() / 2 - 17;
-            int y = getHeight() / 2 - 17;
-            g2.fillRoundRect(x, y, 35, 35, 100, 100);
-        } else if (isToDay) {
-            g2.setColor(new Color(156,200,254));
-            int x = getWidth() / 2 - 17;
-            int y = getHeight() / 2 - 17;
-            g2.fillRoundRect(x, y, 35, 35, 100, 100);
-        } else if (isHoliday) {
-            // Draw gray background for holidays
-            g2.setColor(new Color(240, 240, 240));
-            int x = getWidth() / 2 - 17;
-            int y = getHeight() / 2 - 17;
-            g2.fillRoundRect(x, y, 35, 35, 100, 100);
-            
-            // Draw diagonal line through holiday dates
-            g2.setColor(new Color(254,161,156));
-            g2.drawLine(5, 5, getWidth() - 5, getHeight() - 5);
-            g2.drawLine(5, getHeight() - 5, getWidth() - 5, 5);
-        } else if (isBooked) {
-            // Draw red background for booked dates
-            g2.setColor(new Color(249,254,156));
-            int x = getWidth() / 2 - 17;
-            int y = getHeight() / 2 - 17;
-            g2.fillRoundRect(x, y, 35, 35, 100, 100);
-        } else if (isAvailable) {
-            // Draw green border for available dates
-            g2.setColor(new Color(0, 200, 0, 100));
-            int x = getWidth() / 2 - 17;
-            int y = getHeight() / 2 - 17;
-            g2.drawRoundRect(x, y, 35, 35, 100, 100);
         }
         
         super.paintComponent(grphcs);

@@ -76,51 +76,82 @@ public class PanelDate extends javax.swing.JLayeredPane {
                 cell.setText(calendar.get(Calendar.DATE) + "");
                 Date cellDate = calendar.getTime();
                 cell.setDate(cellDate);
-                cell.currentMonth(calendar.get(Calendar.MONTH) == month - 1);
 
-                // Check if date is in the past
-                Calendar cellCalendar = Calendar.getInstance();
-                cellCalendar.setTime(cellDate);
-                cellCalendar.set(Calendar.HOUR_OF_DAY, 0);
-                cellCalendar.set(Calendar.MINUTE, 0);
-                cellCalendar.set(Calendar.SECOND, 0);
-                cellCalendar.set(Calendar.MILLISECOND, 0);
+                // Check if this cell belongs to the current month
+                Calendar cellCal = Calendar.getInstance();
+                cellCal.setTime(cellDate);
+                boolean isCurrentMonth = (cellCal.get(Calendar.MONTH) + 1) == month && 
+                                         cellCal.get(Calendar.YEAR) == year;
 
-                boolean isPastDate = cellCalendar.before(today);
+                cell.currentMonth(isCurrentMonth);
 
-                // Check day properties
-                int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
-                    cell.setWeekend(true);
-                    cell.setAvailable(false);
-                } else if (isPastDate) {
-                    // Past dates should not be available
-                    cell.setAvailable(false);
-                    // You can add visual indication for past dates
-                    cell.setForeground(new Color(200, 200, 200)); // Gray out past dates
-                    cell.setToolTipText("Past date - Not available");
-                } else {
-                    // Check with parent calendar if date is available
-                    if (parentCalendar != null) {
-                        boolean isAvailable = parentCalendar.isAvailableDate(cellDate);
-                        cell.setAvailable(isAvailable);
+                if (parentCalendar != null) {
+                    // Check if date is in the past
+                    Calendar cellCalendar = Calendar.getInstance();
+                    cellCalendar.setTime(cellDate);
+                    cellCalendar.set(Calendar.HOUR_OF_DAY, 0);
+                    cellCalendar.set(Calendar.MINUTE, 0);
+                    cellCalendar.set(Calendar.SECOND, 0);
+                    cellCalendar.set(Calendar.MILLISECOND, 0);
 
-                        // Also check if it's a holiday
-                        boolean isHoliday = parentCalendar.isHolidayDate(cellDate);
-                        cell.setHoliday(isHoliday);
+                    boolean isPastDate = cellCalendar.before(today);
+
+                    // Check day of week
+                    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+                    boolean isWeekend = (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY);
+
+                    // Check if holiday
+                    boolean isHoliday = parentCalendar.isHolidayDate(cellDate);
+
+                    // Check if booked
+                    boolean isBooked = parentCalendar.isBookedDate(cellDate);
+
+                    // Check if available (only for future dates that aren't weekend, holiday, or booked)
+                    boolean isAvailable = !isPastDate && !isWeekend && !isHoliday && !isBooked;
+
+                    // ALWAYS set all cell properties, regardless of whether it's current month or preview
+                    cell.setWeekend(isWeekend);
+                    cell.setHoliday(isHoliday);
+                    cell.setBooked(isBooked);
+                    cell.setAvailable(isAvailable);
+
+                    // Check if this cell should be selected
+                    if (parentCalendar.getSelectedDate() != null) {
+                        boolean shouldSelect = parentCalendar.isSameDay(parentCalendar.getSelectedDate(), cellDate);
+                        cell.setSelected(shouldSelect);
+                    }
+
+                    // Set visual appearance for past dates
+                    if (isPastDate) {
+                        cell.setForeground(new Color(200, 200, 200));
+                        cell.setTooltipText("Past date - Not available");
+                    } else if (isHoliday) {
+                        cell.setTooltipText("Public Holiday - PSA Closed");
+                    } else if (isWeekend) {
+                        cell.setTooltipText("Weekend - PSA Closed");
+                    } else if (isBooked) {
+                        cell.setTooltipText("Fully Booked");
+                    } else if (!isAvailable && !isPastDate) {
+                        cell.setTooltipText("Not Available");
+                    } else if (isAvailable) {
+                        cell.setTooltipText("Available - Click to select");
                     }
                 }
 
-                // Check if today
+                // Check if today - ALWAYS check regardless of month
                 if (toDay.isToDay(new ToDay(calendar.get(Calendar.DATE), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR)))) {
                     cell.setAsToDay();
+                } else {
+                    // Reset today status if it's not today
+                    // We need to track this in the Cell class
+                    cell.setForeground(Color.BLACK); // Reset foreground if not today
                 }
 
                 calendar.add(Calendar.DATE, 1);
             }
         }
     }
-
+    
     private ToDay getToDay() {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
