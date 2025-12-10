@@ -51,7 +51,7 @@ public class Menu extends JComponent {
     private String[][] menuItems = new String[][]{
         {"Dashboard"},
         {"My Profile"},
-        {"ID Status", "Current Status", "Renewal History", "Complaints/Issues"},
+        {"ID Status"},
         {"Appointments", "Schedule New", "Upcoming", "Cancel/Reschedule"},
         {"Documents", "Upload Documents", "View Documents", "Document History"},
         {"Help & Support", "FAQs", "Contact Us"}

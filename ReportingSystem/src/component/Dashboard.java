@@ -8,11 +8,8 @@ import backend.objects.Data.Appointment;
 import backend.objects.Data.Document;
 import backend.objects.Data.Notification;
 import sys.effect.RippleEffect;
-import sys.swing.shadow.ShadowRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.text.SimpleDateFormat;
@@ -23,6 +20,7 @@ import javax.swing.JTable;
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import org.jdesktop.animation.timing.Animator;
 import org.jdesktop.animation.timing.TimingTargetAdapter;
 
@@ -44,11 +42,11 @@ public class Dashboard extends javax.swing.JPanel {
     public Dashboard(User user) {
         this.currentUser = user;
         initComponents();
+        
         showApplicationTimelineView();
         initGlowAnimation();
         applyButtonEffects();
         applyBoxEffects();
-        customizeTableHeaders();
         testDatabaseConnection();
         enhanceDashboard();
         loadCitizenData();
@@ -56,7 +54,6 @@ public class Dashboard extends javax.swing.JPanel {
         loadApplicationTimelineTable();
         setupSearchFunctionality();
         setupButtonColumn();
-        applyTableEffects();
         setupButtonBorders();
     }
 
@@ -217,61 +214,7 @@ public class Dashboard extends javax.swing.JPanel {
                 super.paintComponent(g);
             }
         };
-    }
-
-    private void applyTableEffects() {
-        // Apply effects to tables
-        applyTableHoverEffect(ApplicationTimelineTable);
-        applyTableHoverEffect(MyAppointmentDetailsTable);
-        applyTableHoverEffect(RequiredDocumentsTable);
-        applyTableHoverEffect(MyNotificationsTable);
-        
-        // Add alternating row colors
-        setAlternatingRowColors(ApplicationTimelineTable);
-        setAlternatingRowColors(MyAppointmentDetailsTable);
-        setAlternatingRowColors(RequiredDocumentsTable);
-        setAlternatingRowColors(MyNotificationsTable);
-    }
-    
-    private void applyTableHoverEffect(JTable table) {
-        table.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(java.awt.event.MouseEvent evt) {
-                int row = table.rowAtPoint(evt.getPoint());
-                int col = table.columnAtPoint(evt.getPoint());
-                
-                if (row >= 0 && col >= 0) {
-                    table.setSelectionBackground(new Color(225, 240, 255));
-                    table.setSelectionForeground(Color.BLACK);
-                }
-            }
-        });
-    }
-    
-    private void setAlternatingRowColors(JTable table) {
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, 
-                        isSelected, hasFocus, row, column);
-                
-                if (!isSelected) {
-                    if (row % 2 == 0) {
-                        c.setBackground(new Color(250, 250, 250));
-                    } else {
-                        c.setBackground(new Color(142, 217, 255));
-                    }
-                }
-                
-                // Center align all cells
-                ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
-                
-                return c;
-            }
-        });
-    }
-    
+    }    
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -295,97 +238,6 @@ public class Dashboard extends javax.swing.JPanel {
         g2.dispose();
         super.paintComponent(g);
     }
-    
-    private void customizeTableHeaders() {
-        // Create a custom header renderer with the desired color
-        TableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setBackground(new Color(142, 217, 255)); // Set header background color
-                setForeground(Color.BLACK); // Set header text color
-                setFont(new Font("Times New Roman", Font.BOLD, 12)); // Set header font
-                setHorizontalAlignment(CENTER); // Center align header text
-                return this;
-            }
-        };
-        
-        // Apply the custom header renderer to all tables
-        if (ApplicationTimelineTable != null) {
-            JTableHeader header = ApplicationTimelineTable.getTableHeader();
-            header.setDefaultRenderer(headerRenderer);
-            header.setReorderingAllowed(false);
-        }
-        
-        if (MyAppointmentDetailsTable != null) {
-            JTableHeader header = MyAppointmentDetailsTable.getTableHeader();
-            header.setDefaultRenderer(headerRenderer);
-            header.setReorderingAllowed(false);
-        }
-        
-        if (RequiredDocumentsTable != null) {
-            JTableHeader header = RequiredDocumentsTable.getTableHeader();
-            header.setDefaultRenderer(headerRenderer);
-            header.setReorderingAllowed(false);
-        }
-        
-        if (MyNotificationsTable != null) {
-            JTableHeader header = MyNotificationsTable.getTableHeader();
-            header.setDefaultRenderer(headerRenderer);
-            header.setReorderingAllowed(false);
-        }
-    }
-    
-    // Alternative method with more customization options
-    private void customizeTableHeadersEnhanced() {
-        // Custom renderer with the specified color
-        TableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
-                // Set the specific color (142, 217, 255)
-                Color headerColor = new Color(142, 217, 255);
-                setBackground(headerColor);
-                
-                // Customize other header properties
-                setForeground(Color.BLACK); // Black text
-                setFont(new Font("Times New Roman", Font.BOLD, 12));
-                setHorizontalAlignment(CENTER);
-                
-                // Add a border if desired
-                setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 0, 0, 0, Color.WHITE),
-                    BorderFactory.createEmptyBorder(0, 0, 0, 0)
-                ));
-                
-                return this;
-            }
-        };
-        
-        // Apply to all tables
-        applyHeaderRenderer(ApplicationTimelineTable, headerRenderer);
-        applyHeaderRenderer(MyAppointmentDetailsTable, headerRenderer);
-        applyHeaderRenderer(RequiredDocumentsTable, headerRenderer);
-        applyHeaderRenderer(MyNotificationsTable, headerRenderer);
-    }
-    
-    private void applyHeaderRenderer(javax.swing.JTable table, TableCellRenderer renderer) {
-        if (table != null) {
-            JTableHeader header = table.getTableHeader();
-            header.setDefaultRenderer(renderer);
-            
-            // Additional header settings
-            header.setReorderingAllowed(false);
-            header.setResizingAllowed(true);
-            
-            // Set header height
-            header.setPreferredSize(new Dimension(header.getWidth(), 35));
-        }
-    }
-    
     
     private void loadCitizenData() {
         // Get citizen data for current user
@@ -564,21 +416,6 @@ public class Dashboard extends javax.swing.JPanel {
             }
         });
     }
-    
-    private void initEnhancedComponents() {
-        // Customize panel with rounded corners
-        setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0)
-        ));
-        
-        // Make panel transparent for custom painting
-        setOpaque(false);
-        
-        // Add shadow effect to the entire dashboard
-        ShadowRenderer shadow = new ShadowRenderer(5, 0.5f, Color.GRAY);
-        // Note: You'll need to implement custom painting for the shadow effect
-    }
 
     private void loadDashboardData() {
         try {
@@ -626,7 +463,7 @@ public class Dashboard extends javax.swing.JPanel {
     }
     
     private void loadApplicationTimelineTable() {
-        DefaultTableModel model = (DefaultTableModel) ApplicationTimelineTable.getModel();
+        DefaultTableModel model = (DefaultTableModel) ApplicationTimelineTable.getModel(); // Changed from RequiredDocumentsTable
         model.setRowCount(0);
         currentView = 1;
 
@@ -635,72 +472,107 @@ public class Dashboard extends javax.swing.JPanel {
                 model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
                 return;
             }
-            
-            // Row 1: Application Submitted
-            model.addRow(new Object[]{
-                formatDate(currentCitizen.getApplicationDate()),
-                "Application Submitted",
-                "Your National ID application has been submitted",
-                "System",
-                "Awaiting processing"
-            });
 
-            // Get status history
-            IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
-            if (status != null) {
-                model.addRow(new Object[]{
-                    formatDate(status.getUpdateDate()),
-                    status.getStatus(),
-                    "Application status updated",
-                    "PSA Staff",
-                    status.getNotes()
+            // Get all activity logs for this citizen
+            List<Data.ActivityLog> activityLogs = Data.ActivityLog.getActivityLogsByCitizenId(currentCitizen.getCitizenId());
+
+            // Get all status updates
+            List<Data.IDStatus> statuses = Data.IDStatus.getAllStatus();
+
+            // Create a list to store all timeline entries
+            List<Object[]> timelineEntries = new ArrayList<>();
+
+            // Add application submission
+            if (currentCitizen.getApplicationDate() != null) {
+                timelineEntries.add(new Object[]{
+                    formatDate(currentCitizen.getApplicationDate()),
+                    "Application Submitted",
+                    "Your National ID application has been submitted",
+                    "System",
+                    "Awaiting processing"
                 });
             }
 
-            // Get appointment if exists
-            Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
-            if (appointment != null) {
-                model.addRow(new Object[]{
-                    formatDate(appointment.getCreatedDate()),
-                    "Appointment Scheduled",
-                    "Appointment scheduled for ID pickup",
-                    "You",
-                    "Time: " + appointment.getAppTime()
-                });
-            }
-
-            // Get additional status history if available
-            List<IDStatus> allStatus = Data.IDStatus.getAllStatus();
-            for (IDStatus stat : allStatus) {
-                if (stat.getCitizenId() == currentCitizen.getCitizenId()) {
-                    // Skip if already added
-                    if (status != null && stat.getStatusId() == status.getStatusId()) {
-                        continue;
-                    }
-                    model.addRow(new Object[]{
-                        formatDate(stat.getUpdateDate()),
-                        stat.getStatus(),
-                        "Previous status update",
+            // Add status updates for this citizen
+            for (Data.IDStatus status : statuses) {
+                if (status.getCitizenId() == currentCitizen.getCitizenId()) {
+                    timelineEntries.add(new Object[]{
+                        formatDate(status.getUpdateDate()),
+                        status.getStatus(),
+                        "Status updated",
                         "PSA Staff",
-                        stat.getNotes()
+                        status.getNotes()
                     });
                 }
             }
 
+            // Add appointment information
+            Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+            if (appointment != null) {
+                timelineEntries.add(new Object[]{
+                    formatDate(appointment.getCreatedDate()),
+                    "Appointment " + appointment.getStatus(),
+                    "Appointment scheduled for ID pickup",
+                    appointment.getStatus().equals("Scheduled") ? "You" : "System",
+                    "Time: " + appointment.getAppTime() + " | Date: " + formatDate(appointment.getAppDate())
+                });
+            }
+
+            // Add activity logs
+            for (Data.ActivityLog log : activityLogs) {
+                timelineEntries.add(new Object[]{
+                    formatDate(log.getActionDate()),
+                    "Activity",
+                    log.getAction(),
+                    "System",
+                    "Time: " + log.getActionTime()
+                });
+            }
+
+            // Add document submission events
+            List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
+            for (Data.Document doc : documents) {
+                if ("Yes".equals(doc.getSubmitted()) || "Verified".equals(doc.getStatus())) {
+                    timelineEntries.add(new Object[]{
+                        formatDate(doc.getUploadDate()),
+                        "Document Submitted",
+                        doc.getDocumentName() + " uploaded",
+                        "You",
+                        "Status: " + doc.getStatus()
+                    });
+                }
+            }
+
+            // Sort timeline by date (most recent first)
+            timelineEntries.sort((a, b) -> {
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    Date dateA = sdf.parse(a[0].toString());
+                    Date dateB = sdf.parse(b[0].toString());
+                    return dateB.compareTo(dateA); // Descending order
+                } catch (Exception e) {
+                    return 0;
+                }
+            });
+
+            // Add to table model
+            for (Object[] entry : timelineEntries) {
+                model.addRow(entry);
+            }
+
+            // If no data, add a message
             if (model.getRowCount() == 0) {
-                model.addRow(new Object[]{"No timeline data available", "", "", "", ""});
+                model.addRow(new Object[]{"No timeline data available", "", "Submit your application to see updates", "", ""});
             }
 
         } catch (Exception e) {
             System.err.println("Error loading application timeline: " + e.getMessage());
-            model.addRow(new Object[]{"Error loading data", "", "", "", ""});
+            e.printStackTrace();
+            model.addRow(new Object[]{"Error loading data", "Check database connection", e.getMessage(), "", ""});
         } finally {
             model.fireTableDataChanged();
             ApplicationTimelineTable.revalidate();
             ApplicationTimelineTable.repaint();
-            
-            // Ensure header styling is applied
-            customizeTableHeaders();
         }
     }
     
@@ -748,9 +620,6 @@ public class Dashboard extends javax.swing.JPanel {
             model.fireTableDataChanged();
             RequiredDocumentsTable.revalidate();
             RequiredDocumentsTable.repaint();
-            
-            // Ensure header styling is applied
-            customizeTableHeaders();
         }
     }
     
@@ -822,9 +691,6 @@ public class Dashboard extends javax.swing.JPanel {
             model.fireTableDataChanged();
             MyNotificationsTable.revalidate();
             MyNotificationsTable.repaint();
-            
-            // Ensure header styling is applied
-            customizeTableHeaders();
         }
     }
 
@@ -915,20 +781,24 @@ public class Dashboard extends javax.swing.JPanel {
         MyAppointmentDetailsTablePanel.setVisible(false);
         RequiredDocumentsTablePanel.setVisible(false);
         MyNotificationsTablePanel.setVisible(false);
-        
+
         // Show the selected table
         switch (viewNumber) {
             case 1:
                 ApplicationTimelineTablePanel.setVisible(true);
+                loadApplicationTimelineTable(); // Load data when showing
                 break;
             case 2:
                 MyAppointmentDetailsTablePanel.setVisible(true);
+                loadAppointmentDetailsTable(); // Load data when showing
                 break;
             case 3:
                 RequiredDocumentsTablePanel.setVisible(true);
+                loadRequiredDocumentsTable(); // Load data when showing
                 break;
             case 4:
                 MyNotificationsTablePanel.setVisible(true);
+                loadNotificationsTable(); // Load data when showing
                 break;
         }
     }
@@ -962,7 +832,7 @@ public class Dashboard extends javax.swing.JPanel {
         
         switch (currentView) {
             case 1:
-                model = (DefaultTableModel) ApplicationTimelineTable.getModel();
+                model = (DefaultTableModel) RequiredDocumentsTable.getModel();
                 break;
             case 2:
                 model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
@@ -985,7 +855,7 @@ public class Dashboard extends javax.swing.JPanel {
             // Get fresh model
             switch (currentView) {
                 case 1:
-                    model = (DefaultTableModel) ApplicationTimelineTable.getModel();
+                    model = (DefaultTableModel) RequiredDocumentsTable.getModel();
                     break;
                 case 2:
                     model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
@@ -1084,9 +954,6 @@ public class Dashboard extends javax.swing.JPanel {
 
             MyAppointmentDetailsTable.revalidate();
             MyAppointmentDetailsTable.repaint();
-
-            // Ensure header styling is applied
-            customizeTableHeaders();
         }
     }
 
@@ -1520,18 +1387,18 @@ public class Dashboard extends javax.swing.JPanel {
         searchField = new javax.swing.JTextField();
         searchLabel = new javax.swing.JLabel();
         DashboardCitizenTable = new javax.swing.JLayeredPane();
-        MyAppointmentDetailsTablePanel = new javax.swing.JPanel();
-        MyAppointmentDetailsTableScrollPane = new javax.swing.JScrollPane();
-        MyAppointmentDetailsTable = new javax.swing.JTable();
         ApplicationTimelineTablePanel = new javax.swing.JPanel();
         ApplicationTimelineTableScrollPane = new javax.swing.JScrollPane();
-        ApplicationTimelineTable = new javax.swing.JTable();
+        ApplicationTimelineTable = new component.Table.CustomTable();
         RequiredDocumentsTablePanel = new javax.swing.JPanel();
         RequiredDocumentsTableScrollPane = new javax.swing.JScrollPane();
-        RequiredDocumentsTable = new javax.swing.JTable();
+        RequiredDocumentsTable = new component.Table.CustomTable();
+        MyAppointmentDetailsTablePanel = new javax.swing.JPanel();
+        MyAppointmentDetailsTableScrollPane = new javax.swing.JScrollPane();
+        MyAppointmentDetailsTable = new component.Table.CustomTable();
         MyNotificationsTablePanel = new javax.swing.JPanel();
         MyNotificationsTableScrollPane = new javax.swing.JScrollPane();
-        MyNotificationsTable = new javax.swing.JTable();
+        MyNotificationsTable = new component.Table.CustomTable();
 
         setBackground(new java.awt.Color(255, 255, 255));
         setPreferredSize(new java.awt.Dimension(850, 550));
@@ -1775,15 +1642,15 @@ public class Dashboard extends javax.swing.JPanel {
         BoxPanelLayout.setHorizontalGroup(
             BoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(BoxPanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap(15, Short.MAX_VALUE)
                 .addComponent(MyApplicationStatusBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 15, Short.MAX_VALUE)
                 .addComponent(DaySinceApplicationBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 15, Short.MAX_VALUE)
                 .addComponent(MyAppointmentBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 15, Short.MAX_VALUE)
                 .addComponent(NotificationsBoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(17, Short.MAX_VALUE))
         );
         BoxPanelLayout.setVerticalGroup(
             BoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1813,78 +1680,10 @@ public class Dashboard extends javax.swing.JPanel {
 
         DashboardCitizenTable.setLayout(new javax.swing.OverlayLayout(DashboardCitizenTable));
 
-        MyAppointmentDetailsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
-
-        MyAppointmentDetailsTable.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        MyAppointmentDetailsTable.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null}
-            },
-            new String [] {
-                "Date", "Time", "Status", "Purpose", "Location", "Action"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
-            };
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, true
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        MyAppointmentDetailsTable.setRowHeight(30);
-        MyAppointmentDetailsTable.setRowMargin(1);
-        MyAppointmentDetailsTable.setShowGrid(true);
-        MyAppointmentDetailsTable.getTableHeader().setResizingAllowed(false);
-        MyAppointmentDetailsTable.getTableHeader().setReorderingAllowed(false);
-        MyAppointmentDetailsTableScrollPane.setViewportView(MyAppointmentDetailsTable);
-        if (MyAppointmentDetailsTable.getColumnModel().getColumnCount() > 0) {
-            MyAppointmentDetailsTable.getColumnModel().getColumn(0).setResizable(false);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(0).setPreferredWidth(80);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(1).setResizable(false);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(1).setPreferredWidth(80);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(2).setResizable(false);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(2).setPreferredWidth(80);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(3).setResizable(false);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(4).setResizable(false);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(4).setPreferredWidth(150);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(5).setResizable(false);
-            MyAppointmentDetailsTable.getColumnModel().getColumn(5).setPreferredWidth(100);
-        }
-
-        javax.swing.GroupLayout MyAppointmentDetailsTablePanelLayout = new javax.swing.GroupLayout(MyAppointmentDetailsTablePanel);
-        MyAppointmentDetailsTablePanel.setLayout(MyAppointmentDetailsTablePanelLayout);
-        MyAppointmentDetailsTablePanelLayout.setHorizontalGroup(
-            MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(MyAppointmentDetailsTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 918, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
-        );
-        MyAppointmentDetailsTablePanelLayout.setVerticalGroup(
-            MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(MyAppointmentDetailsTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
-        );
-
-        DashboardCitizenTable.add(MyAppointmentDetailsTablePanel);
-
         ApplicationTimelineTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
 
-        ApplicationTimelineTable.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        ApplicationTimelineTableScrollPane.setPreferredSize(new java.awt.Dimension(402, 150));
+
         ApplicationTimelineTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null},
@@ -1911,11 +1710,6 @@ public class Dashboard extends javax.swing.JPanel {
                 return canEdit [columnIndex];
             }
         });
-        ApplicationTimelineTable.setRowHeight(30);
-        ApplicationTimelineTable.setRowMargin(1);
-        ApplicationTimelineTable.setShowGrid(true);
-        ApplicationTimelineTable.getTableHeader().setResizingAllowed(false);
-        ApplicationTimelineTable.getTableHeader().setReorderingAllowed(false);
         ApplicationTimelineTableScrollPane.setViewportView(ApplicationTimelineTable);
         if (ApplicationTimelineTable.getColumnModel().getColumnCount() > 0) {
             ApplicationTimelineTable.getColumnModel().getColumn(0).setResizable(false);
@@ -1934,24 +1728,19 @@ public class Dashboard extends javax.swing.JPanel {
         ApplicationTimelineTablePanel.setLayout(ApplicationTimelineTablePanelLayout);
         ApplicationTimelineTablePanelLayout.setHorizontalGroup(
             ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(ApplicationTimelineTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 918, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
         );
         ApplicationTimelineTablePanelLayout.setVerticalGroup(
             ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(ApplicationTimelineTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         DashboardCitizenTable.add(ApplicationTimelineTablePanel);
 
         RequiredDocumentsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
 
-        RequiredDocumentsTable.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        RequiredDocumentsTableScrollPane.setPreferredSize(new java.awt.Dimension(912, 150));
+
         RequiredDocumentsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null},
@@ -1978,11 +1767,6 @@ public class Dashboard extends javax.swing.JPanel {
                 return canEdit [columnIndex];
             }
         });
-        RequiredDocumentsTable.setRowHeight(30);
-        RequiredDocumentsTable.setRowMargin(1);
-        RequiredDocumentsTable.setShowGrid(true);
-        RequiredDocumentsTable.getTableHeader().setResizingAllowed(false);
-        RequiredDocumentsTable.getTableHeader().setReorderingAllowed(false);
         RequiredDocumentsTableScrollPane.setViewportView(RequiredDocumentsTable);
         if (RequiredDocumentsTable.getColumnModel().getColumnCount() > 0) {
             RequiredDocumentsTable.getColumnModel().getColumn(0).setResizable(false);
@@ -2001,24 +1785,73 @@ public class Dashboard extends javax.swing.JPanel {
         RequiredDocumentsTablePanel.setLayout(RequiredDocumentsTablePanelLayout);
         RequiredDocumentsTablePanelLayout.setHorizontalGroup(
             RequiredDocumentsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(RequiredDocumentsTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 918, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
         );
         RequiredDocumentsTablePanelLayout.setVerticalGroup(
             RequiredDocumentsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(RequiredDocumentsTablePanelLayout.createSequentialGroup()
                 .addGap(0, 0, 0)
-                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
+                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
 
         DashboardCitizenTable.add(RequiredDocumentsTablePanel);
 
+        MyAppointmentDetailsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
+
+        MyAppointmentDetailsTableScrollPane.setPreferredSize(new java.awt.Dimension(402, 150));
+
+        MyAppointmentDetailsTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null}
+            },
+            new String [] {
+                "Date", "Time", "Status", "Purpose", "Location", "Action"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+        });
+        MyAppointmentDetailsTableScrollPane.setViewportView(MyAppointmentDetailsTable);
+        if (MyAppointmentDetailsTable.getColumnModel().getColumnCount() > 0) {
+            MyAppointmentDetailsTable.getColumnModel().getColumn(0).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(1).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(2).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(3).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(3).setPreferredWidth(100);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(4).setResizable(false);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(4).setPreferredWidth(150);
+            MyAppointmentDetailsTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        }
+
+        javax.swing.GroupLayout MyAppointmentDetailsTablePanelLayout = new javax.swing.GroupLayout(MyAppointmentDetailsTablePanel);
+        MyAppointmentDetailsTablePanel.setLayout(MyAppointmentDetailsTablePanelLayout);
+        MyAppointmentDetailsTablePanelLayout.setHorizontalGroup(
+            MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
+        );
+        MyAppointmentDetailsTablePanelLayout.setVerticalGroup(
+            MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 197, Short.MAX_VALUE)
+        );
+
+        DashboardCitizenTable.add(MyAppointmentDetailsTablePanel);
+
         MyNotificationsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
 
-        MyNotificationsTable.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        MyNotificationsTableScrollPane.setPreferredSize(new java.awt.Dimension(918, 150));
+
         MyNotificationsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null},
@@ -2045,11 +1878,6 @@ public class Dashboard extends javax.swing.JPanel {
                 return canEdit [columnIndex];
             }
         });
-        MyNotificationsTable.setRowHeight(30);
-        MyNotificationsTable.setRowMargin(1);
-        MyNotificationsTable.setShowGrid(true);
-        MyNotificationsTable.getTableHeader().setResizingAllowed(false);
-        MyNotificationsTable.getTableHeader().setReorderingAllowed(false);
         MyNotificationsTableScrollPane.setViewportView(MyNotificationsTable);
         if (MyNotificationsTable.getColumnModel().getColumnCount() > 0) {
             MyNotificationsTable.getColumnModel().getColumn(0).setResizable(false);
@@ -2061,23 +1889,19 @@ public class Dashboard extends javax.swing.JPanel {
             MyNotificationsTable.getColumnModel().getColumn(3).setResizable(false);
             MyNotificationsTable.getColumnModel().getColumn(3).setPreferredWidth(80);
             MyNotificationsTable.getColumnModel().getColumn(4).setResizable(false);
-            MyNotificationsTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+            MyNotificationsTable.getColumnModel().getColumn(4).setPreferredWidth(50);
         }
 
         javax.swing.GroupLayout MyNotificationsTablePanelLayout = new javax.swing.GroupLayout(MyNotificationsTablePanel);
         MyNotificationsTablePanel.setLayout(MyNotificationsTablePanelLayout);
         MyNotificationsTablePanelLayout.setHorizontalGroup(
             MyNotificationsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(MyNotificationsTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 918, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
         );
         MyNotificationsTablePanelLayout.setVerticalGroup(
             MyNotificationsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(MyNotificationsTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
+                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
 
@@ -2092,27 +1916,27 @@ public class Dashboard extends javax.swing.JPanel {
                 .addComponent(BoxPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(50, 50, 50))
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(DashboardCitizenTable)
-                .addContainerGap())
-            .addGroup(layout.createSequentialGroup()
                 .addGap(14, 14, 14)
                 .addComponent(searchLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(727, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(DashboardCitizenTable)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(50, 50, 50)
                 .addComponent(BoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 146, Short.MAX_VALUE)
+                .addGap(146, 146, 146)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(searchLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(searchField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.DEFAULT_SIZE, 197, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -2144,7 +1968,7 @@ public class Dashboard extends javax.swing.JPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTable ApplicationTimelineTable;
+    private component.Table.CustomTable ApplicationTimelineTable;
     private javax.swing.JPanel ApplicationTimelineTablePanel;
     private javax.swing.JScrollPane ApplicationTimelineTableScrollPane;
     private javax.swing.JPanel BoxPanel;
@@ -2160,18 +1984,18 @@ public class Dashboard extends javax.swing.JPanel {
     private javax.swing.JButton MyAppointmentActionBtn;
     private javax.swing.JPanel MyAppointmentBoxPanel;
     private javax.swing.JLabel MyAppointmentCountLabel;
-    private javax.swing.JTable MyAppointmentDetailsTable;
+    private component.Table.CustomTable MyAppointmentDetailsTable;
     private javax.swing.JPanel MyAppointmentDetailsTablePanel;
     private javax.swing.JScrollPane MyAppointmentDetailsTableScrollPane;
     private javax.swing.JLabel MyAppointmentTitleLabel;
-    private javax.swing.JTable MyNotificationsTable;
+    private component.Table.CustomTable MyNotificationsTable;
     private javax.swing.JPanel MyNotificationsTablePanel;
     private javax.swing.JScrollPane MyNotificationsTableScrollPane;
     private javax.swing.JButton NotificationsActionBtn;
     private javax.swing.JPanel NotificationsBoxPanel;
     private javax.swing.JLabel NotificationsTitleLabel;
     private javax.swing.JLabel NotificationsValueLabel;
-    private javax.swing.JTable RequiredDocumentsTable;
+    private component.Table.CustomTable RequiredDocumentsTable;
     private javax.swing.JPanel RequiredDocumentsTablePanel;
     private javax.swing.JScrollPane RequiredDocumentsTableScrollPane;
     private javax.swing.JTextField searchField;

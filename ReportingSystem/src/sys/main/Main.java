@@ -2,6 +2,7 @@ package sys.main;
 
 import component.Dashboard;
 import component.DefaultForm;
+import component.IDStatus;
 import backend.objects.Data;
 import backend.objects.Data.User;
 import component.Scheduling;
@@ -113,7 +114,7 @@ public class Main extends javax.swing.JFrame {
                         break;
                         
                     case 2: // ID Status
-                        showIDStatusMenu(subIndex);
+                        showIDStatus();
                         break;
                         
                     case 3: // Appointments
@@ -130,20 +131,6 @@ public class Main extends javax.swing.JFrame {
                 }
             }
         });
-    }
-    
-    private void showIDStatusMenu(int subIndex) {
-        switch (subIndex) {
-            case 1: // Current Status
-                showForm(new DefaultForm("Current ID Status - Coming Soon"));
-                break;
-            case 2: // Renewal History
-                showForm(new DefaultForm("Renewal History - Coming Soon"));
-                break;
-            case 3: // Complaints/Issues
-                showForm(new DefaultForm("Complaints/Issues - Coming Soon"));
-                break;
-        }
     }
     
     private void showAppointmentsMenu(int subIndex) {
@@ -209,6 +196,26 @@ public class Main extends javax.swing.JFrame {
                 
                 // Show the dashboard
                 showForm(dashboard);
+                
+            } catch (Exception e) {
+                System.err.println("Error creating dashboard: " + e.getMessage());
+                e.printStackTrace();
+                showError("Failed to load dashboard: " + e.getMessage());
+            }
+        });
+    }
+    
+    private void showIDStatus() {
+        System.out.println("showIDStatus() called");
+        
+        SwingUtilities.invokeLater(() -> {
+            try {
+                System.out.println("Creating ID Status for user: " + currentUser.getFullName());
+                IDStatus idstatus = new IDStatus(currentUser);
+                System.out.println("ID Status created successfully");
+                
+                // Show the id status
+                showForm(idstatus);
                 
             } catch (Exception e) {
                 System.err.println("Error creating dashboard: " + e.getMessage());

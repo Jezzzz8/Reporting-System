@@ -998,6 +998,8 @@ public class Data {
             return logs;
         }
         
+        
+        
         public static List<ActivityLog> getActivityLogsByUser(int userId) {
             List<ActivityLog> logs = new ArrayList<>();
             String query = "SELECT * FROM activity_log WHERE user_id = ? ORDER BY action_date DESC, action_time DESC";
@@ -1100,6 +1102,32 @@ public class Data {
                 System.err.println("Error getting total activity logs: " + e.getMessage());
             }
             return 0;
+        }
+        
+        public static List<ActivityLog> getActivityLogsByCitizenId(int citizenId) {
+            List<ActivityLog> logs = new ArrayList<>();
+            String query = "SELECT * FROM activity_log WHERE user_id IN (SELECT user_id FROM citizens WHERE citizen_id = ?) ORDER BY action_date DESC, action_time DESC";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setInt(1, citizenId);
+                ResultSet rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    ActivityLog log = new ActivityLog(
+                        rs.getInt("log_id"),
+                        rs.getInt("user_id"),
+                        rs.getString("action"),
+                        rs.getDate("action_date"),
+                        rs.getString("action_time")
+                    );
+                    logs.add(log);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting activity logs by citizen ID: " + e.getMessage());
+            }
+            return logs;
         }
     }
     

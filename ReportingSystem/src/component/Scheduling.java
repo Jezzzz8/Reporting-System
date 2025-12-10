@@ -157,23 +157,7 @@ public class Scheduling extends javax.swing.JPanel {
         // Set the tab index
         SchedulingTabbedPane.setSelectedIndex(step - 1);
 
-        // Update progress labels color
-        SelectDateLabel.setForeground(step >= 1 ? Color.BLUE : Color.GRAY);
-        SelectTimeLabel.setForeground(step >= 2 ? Color.BLUE : Color.GRAY);
-        SelectDetailsLabel.setForeground(step >= 3 ? Color.BLUE : Color.GRAY);
-
-        // Update progress bar - FIXED VALUES
-        switch (step) {
-            case 1:
-                jProgressBar1.setValue(25);
-                break;
-            case 2:
-                jProgressBar1.setValue(50);
-                break;
-            case 3:
-                jProgressBar1.setValue(75);
-                break;
-        }
+        customProgressBar.setCurrentStep(step);
 
         // Update button states
         PreviousButton.setVisible(step > 1);
@@ -277,12 +261,13 @@ public class Scheduling extends javax.swing.JPanel {
                 }
             }
         }
-
+        
         // Also reset the calendar selection
         if (calendarCustom != null) {
             calendarCustom.setSelectedDate(null);
             forceCalendarRefresh();
         }
+        customProgressBar.setCurrentStep(1);
     }
 
     private boolean saveAppointment() {
@@ -348,13 +333,11 @@ public class Scheduling extends javax.swing.JPanel {
         boolean success = Appointment.addAppointment(appointment);
 
         if (success) {
-            // Set progress bar to 100%
-            jProgressBar1.setValue(100);
 
             // Log activity
             ActivityLog.logActivity(currentUser.getUserId(), 
                 "Scheduled appointment for " + dateFormat.format(selectedDate) + " at " + selectedTime);
-
+            
             // Send notification to citizen
             if (citizen.getUserId() != null) {
                 String message = "Your appointment has been scheduled for " + 
@@ -468,10 +451,7 @@ public class Scheduling extends javax.swing.JPanel {
     private void initComponents() {
 
         ProgressHeaderPanel = new javax.swing.JPanel();
-        jProgressBar1 = new javax.swing.JProgressBar();
-        SelectDateLabel = new javax.swing.JLabel();
-        SelectTimeLabel = new javax.swing.JLabel();
-        SelectDetailsLabel = new javax.swing.JLabel();
+        customProgressBar = new component.Progress.CustomStepProgressBar();
         SummaryConfirmationPanel = new javax.swing.JPanel();
         PreviousButton = new javax.swing.JButton();
         ContinueButton = new javax.swing.JButton();
@@ -507,51 +487,20 @@ public class Scheduling extends javax.swing.JPanel {
         setBackground(new java.awt.Color(250, 250, 250));
         setPreferredSize(new java.awt.Dimension(850, 550));
 
-        ProgressHeaderPanel.setPreferredSize(new java.awt.Dimension(850, 50));
-
-        jProgressBar1.setValue(25);
-
-        SelectDateLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        SelectDateLabel.setText("1. Select Date");
-        SelectDateLabel.setPreferredSize(new java.awt.Dimension(100, 16));
-
-        SelectTimeLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        SelectTimeLabel.setText("2. Select Time");
-        SelectTimeLabel.setPreferredSize(new java.awt.Dimension(100, 16));
-
-        SelectDetailsLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        SelectDetailsLabel.setText("3. Confirm Details");
-        SelectDetailsLabel.setPreferredSize(new java.awt.Dimension(100, 16));
+        ProgressHeaderPanel.setBackground(new java.awt.Color(255, 255, 255));
+        ProgressHeaderPanel.setPreferredSize(new java.awt.Dimension(850, 60));
 
         javax.swing.GroupLayout ProgressHeaderPanelLayout = new javax.swing.GroupLayout(ProgressHeaderPanel);
         ProgressHeaderPanel.setLayout(ProgressHeaderPanelLayout);
         ProgressHeaderPanelLayout.setHorizontalGroup(
             ProgressHeaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(ProgressHeaderPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(ProgressHeaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(ProgressHeaderPanelLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(SelectDateLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(SelectTimeLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(SelectDetailsLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
+            .addComponent(customProgressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ProgressHeaderPanelLayout.setVerticalGroup(
             ProgressHeaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, ProgressHeaderPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(ProgressHeaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(SelectDateLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(SelectTimeLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(SelectDetailsLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(8, 8, 8)
-                .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0))
+                .addGap(0, 0, 0)
+                .addComponent(customProgressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         SummaryConfirmationPanel.setBackground(new java.awt.Color(255, 255, 255));
@@ -638,23 +587,23 @@ public class Scheduling extends javax.swing.JPanel {
                     .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
                         .addGap(21, 21, 21)
                         .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(timeSlotsPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 205, Short.MAX_VALUE)
+                            .addComponent(timeSlotsPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 189, Short.MAX_VALUE)
                             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
                                 .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(JLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
-                                    .addComponent(JLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
-                                    .addComponent(JLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
-                                    .addComponent(JLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
-                                    .addComponent(JLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
-                                    .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE))
+                                    .addComponent(JLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
+                                    .addComponent(JLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
+                                    .addComponent(JLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
+                                    .addComponent(JLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
+                                    .addComponent(JLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
+                                    .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
-                                    .addComponent(lblNationalId, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
-                                    .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
-                                    .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
-                                    .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE)
-                                    .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, 79, Short.MAX_VALUE))))))
+                                    .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
+                                    .addComponent(lblNationalId, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
+                                    .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
+                                    .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
+                                    .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
+                                    .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE))))))
                 .addGap(23, 23, 23))
         );
         SummaryConfirmationPanelLayout.setVerticalGroup(
@@ -798,14 +747,14 @@ public class Scheduling extends javax.swing.JPanel {
                         .addGap(0, 0, 0)
                         .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(SelectDatePanelLayout.createSequentialGroup()
-                        .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE)
                         .addGap(2, 2, 2)))
                 .addGap(95, 95, 95))
         );
         SelectDatePanelLayout.setVerticalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SelectDatePanelLayout.createSequentialGroup()
-                .addGap(38, 38, 38)
+                .addGap(104, 104, 104)
                 .addGroup(SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -814,7 +763,7 @@ public class Scheduling extends javax.swing.JPanel {
                     .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(5, 5, 5)
-                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE)
                 .addGap(4, 4, 4)
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(6, 6, 6))
@@ -843,11 +792,11 @@ public class Scheduling extends javax.swing.JPanel {
         ConfirmDetailsPanel.setLayout(ConfirmDetailsPanelLayout);
         ConfirmDetailsPanelLayout.setHorizontalGroup(
             ConfirmDetailsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 612, Short.MAX_VALUE)
         );
         ConfirmDetailsPanelLayout.setVerticalGroup(
             ConfirmDetailsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 485, Short.MAX_VALUE)
         );
 
         SchedulingTabbedPane.addTab("tab3", ConfirmDetailsPanel);
@@ -858,18 +807,18 @@ public class Scheduling extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(ProgressHeaderPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 601, Short.MAX_VALUE)
+                .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
                 .addGap(0, 0, 0)
-                .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 249, Short.MAX_VALUE))
+                .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 233, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(ProgressHeaderPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(0, 0, 0)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)))
+                    .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -942,14 +891,12 @@ public class Scheduling extends javax.swing.JPanel {
     private javax.swing.JButton PreviousButton;
     private javax.swing.JPanel ProgressHeaderPanel;
     private component.NoTabJTabbedPane SchedulingTabbedPane;
-    private javax.swing.JLabel SelectDateLabel;
     private javax.swing.JPanel SelectDatePanel;
-    private javax.swing.JLabel SelectDetailsLabel;
-    private javax.swing.JLabel SelectTimeLabel;
     private javax.swing.JPanel SelectTimePanel;
     private javax.swing.JPanel SummaryConfirmationPanel;
     private javax.swing.JButton ThisWeekButton;
     private component.Calendar.CalendarCustom calendarCustom;
+    private component.Progress.CustomStepProgressBar customProgressBar;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -957,7 +904,6 @@ public class Scheduling extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLayeredPane jLayeredPane1;
-    private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JLabel lblName;
     private javax.swing.JLabel lblNationalId;
     private javax.swing.JLabel lblPhone;
