@@ -25,6 +25,7 @@ public class Scheduling extends javax.swing.JPanel {
     public Scheduling(User user) {
         this.currentUser = user;
         initComponents();
+        configureProgressBar();
         initCitizenData();
         initCalendar();
         initTimeSlots();
@@ -49,6 +50,22 @@ public class Scheduling extends javax.swing.JPanel {
                 refreshCalendar();
             }
         });
+    }
+    
+    private void configureProgressBar() {
+        // Set progress bar to 3 steps
+        customProgressBar.setTotalSteps(3);
+        
+        // Set step labels for scheduling process
+        String[] schedulingLabels = {
+            "Select Date",
+            "Select Time",
+            "Confirm Schedule"
+        };
+        customProgressBar.setStepLabels(schedulingLabels);
+        
+        // Set current step to 1 (Select Date)
+        customProgressBar.setCurrentStep(1);
     }
     
     public void refreshCalendar() {
@@ -154,10 +171,11 @@ public class Scheduling extends javax.swing.JPanel {
     private void updateUIForStep(int step) {
         System.out.println("Updating UI for step: " + step);
 
+        // Update progress bar
+        customProgressBar.setCurrentStep(step);
+
         // Set the tab index
         SchedulingTabbedPane.setSelectedIndex(step - 1);
-
-        customProgressBar.setCurrentStep(step);
 
         // Update button states
         PreviousButton.setVisible(step > 1);
@@ -499,8 +517,9 @@ public class Scheduling extends javax.swing.JPanel {
         ProgressHeaderPanelLayout.setVerticalGroup(
             ProgressHeaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, ProgressHeaderPanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(customProgressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(customProgressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(20, 20, 20))
         );
 
         SummaryConfirmationPanel.setBackground(new java.awt.Color(255, 255, 255));

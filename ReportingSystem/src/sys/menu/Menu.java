@@ -54,7 +54,8 @@ public class Menu extends JComponent {
         {"ID Status"},
         {"Appointments", "Schedule New", "Upcoming", "Cancel/Reschedule"},
         {"Documents", "Upload Documents", "View Documents", "Document History"},
-        {"Help & Support", "FAQs", "Contact Us"}
+        {"Help & Support", "FAQs", "Contact Us"},
+        {"Logout"}
     };
 
     // Custom panel with alpha support
@@ -341,7 +342,7 @@ public class Menu extends JComponent {
 
     private Icon getIcon(int index) {
         String[] iconNames = {
-            "dashboard", "profile", "status", "appointment", "documents", "help"
+            "dashboard", "profile", "status", "appointment", "documents", "help", "logout"
         };
         if (index < iconNames.length) {
             URL url = getClass().getResource("/sys/menu/" + iconNames[index] + ".png");

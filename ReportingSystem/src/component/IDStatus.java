@@ -523,7 +523,6 @@ public class IDStatus extends javax.swing.JPanel {
         loadCitizenData();
     }
     
-    // Also add a public getter for debugging
     public void debugInfo() {
         System.out.println("=== IDStatus Debug Info ===");
         System.out.println("User: " + (user != null ? user.getUsername() : "null"));

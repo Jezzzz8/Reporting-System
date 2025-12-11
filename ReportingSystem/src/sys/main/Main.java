@@ -21,6 +21,7 @@ import javax.swing.border.Border;
 public class Main extends javax.swing.JFrame {
 
     private User currentUser;
+    private Landing loginFrame;
     
     public Main() {
         setUndecorated(true);
@@ -33,7 +34,7 @@ public class Main extends javax.swing.JFrame {
         System.out.println("Body size: " + body.getWidth() + "x" + body.getHeight());
         
         // First show login dialog
-        showLogin();
+        showLoginForm();
     }
     
     public class BorderlessButton extends JButton {
@@ -52,50 +53,50 @@ public class Main extends javax.swing.JFrame {
         }
     }
     
-    private void showLogin() {
-        // For testing, use hardcoded credentials
-        String username = "maria";
-        String password = "password123";
+    private void showLoginForm() {
+        // Create and show the Landing frame
+        loginFrame = new Landing();
+        loginFrame.setVisible(true);
         
-        System.out.println("Attempting login with: " + username);
-        
-        // Authenticate user
-        currentUser = Data.User.authenticate(username, password);
-        
-        if (currentUser == null) {
-            // Try alternative credentials
-            username = JOptionPane.showInputDialog(this, "Enter Username:", "National ID System Login", JOptionPane.PLAIN_MESSAGE);
-            if (username == null || username.trim().isEmpty()) {
-                System.exit(0);
+        // Add window listener to handle when Landing frame closes
+        loginFrame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                System.out.println("Login window closed");
+                
+                // Check if login was successful
+                if (loginFrame.isLoginSuccessful()) {
+                    currentUser = loginFrame.getLoggedInUser();
+                    if (currentUser != null) {
+                        // Check if user is citizen
+                        if (!currentUser.getRole().equals("citizen")) {
+                            JOptionPane.showMessageDialog(Main.this, 
+                                "Access denied. Citizen portal only.", 
+                                "Access Denied", JOptionPane.ERROR_MESSAGE);
+                            System.exit(0);
+                        }
+                        
+                        System.out.println("Login successful for: " + currentUser.getFullName());
+                        System.out.println("Role: " + currentUser.getRole());
+                        
+                        // Show main application
+                        setVisible(true);
+                        
+                        // Show citizen dashboard
+                        showDashboard();
+                        
+                        // Setup menu events
+                        setupMenu();
+                    }
+                } else {
+                    // Landing was cancelled or failed
+                    System.exit(0);
+                }
             }
-            
-            password = JOptionPane.showInputDialog(this, "Enter Password:", "National ID System Login", JOptionPane.PLAIN_MESSAGE);
-            if (password == null) {
-                System.exit(0);
-            }
-            
-            currentUser = Data.User.authenticate(username, password);
-            
-            if (currentUser == null) {
-                JOptionPane.showMessageDialog(this, "Invalid username or password!", "Login Failed", JOptionPane.ERROR_MESSAGE);
-                System.exit(0);
-            }
-        }
+        });
         
-        // Check if user is citizen
-        if (!currentUser.getRole().equals("citizen")) {
-            JOptionPane.showMessageDialog(this, "Access denied. Citizen portal only.", "Access Denied", JOptionPane.ERROR_MESSAGE);
-            System.exit(0);
-        }
-        
-        System.out.println("Login successful for: " + currentUser.getFullName());
-        System.out.println("Role: " + currentUser.getRole());
-        
-        // Show citizen dashboard
-        showDashboard();
-        
-        // Setup menu events
-        setupMenu();
+        // Hide the main window while login is showing
+        setVisible(false);
     }
     
     private void setupMenu() {
@@ -128,6 +129,10 @@ public class Main extends javax.swing.JFrame {
                     case 5: // Help & Support
                         showHelpSupportMenu(subIndex);
                         break;
+                    case 6: // Logout
+                        logout();
+                        break;
+
                 }
             }
         });
@@ -309,8 +314,8 @@ public class Main extends javax.swing.JFrame {
         
         if (confirm == JOptionPane.YES_OPTION) {
             currentUser = null;
-            dispose();
-            new Main().setVisible(true);
+            setVisible(false);
+            showLoginForm();
         }
     }
     
@@ -417,7 +422,7 @@ public class Main extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Main().setVisible(true);
+                Main main = new Main();
             }
         });
     }
