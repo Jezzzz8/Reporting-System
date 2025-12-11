@@ -32,49 +32,51 @@ public class Registration extends javax.swing.JPanel {
         FirstnameText.setUnfocusedBorderColor(grayBorder);
         FirstnameText.setPlaceholderColor(placeholderGray);
         FirstnameText.setNormalHeight(40);
-        FirstnameText.setExpandedHeight(46);
+        FirstnameText.setExpandedHeight(50);
 
         // Style middle name field
         MiddleNameTextOptional.setFocusedBorderColor(focusedBlue);
         MiddleNameTextOptional.setUnfocusedBorderColor(grayBorder);
         MiddleNameTextOptional.setPlaceholderColor(placeholderGray);
         MiddleNameTextOptional.setNormalHeight(40);
-        MiddleNameTextOptional.setExpandedHeight(46);
+        MiddleNameTextOptional.setExpandedHeight(50);
 
         // Style last name field
         LastnameText.setFocusedBorderColor(focusedBlue);
         LastnameText.setUnfocusedBorderColor(grayBorder);
         LastnameText.setPlaceholderColor(placeholderGray);
         LastnameText.setNormalHeight(40);
-        LastnameText.setExpandedHeight(46);
+        LastnameText.setExpandedHeight(50);
 
         // Style email field
         EmailText.setFocusedBorderColor(focusedBlue);
         EmailText.setUnfocusedBorderColor(grayBorder);
         EmailText.setPlaceholderColor(placeholderGray);
         EmailText.setNormalHeight(40);
-        EmailText.setExpandedHeight(46);
+        EmailText.setExpandedHeight(50);
 
         // Style transaction reference field
         TransactionReferenceNumberText.setFocusedBorderColor(focusedBlue);
         TransactionReferenceNumberText.setUnfocusedBorderColor(grayBorder);
         TransactionReferenceNumberText.setPlaceholderColor(placeholderGray);
         TransactionReferenceNumberText.setNormalHeight(40);
-        TransactionReferenceNumberText.setExpandedHeight(46);
+        TransactionReferenceNumberText.setExpandedHeight(50);
 
         // Style password field
         PasswordText.setFocusedBorderColor(focusedBlue);
         PasswordText.setUnfocusedBorderColor(grayBorder);
         PasswordText.setPlaceholderColor(placeholderGray);
         PasswordText.setNormalHeight(40);
-        PasswordText.setExpandedHeight(46);
+        PasswordText.setExpandedHeight(50);
+        PasswordText.disablePasswordVisibilityToggle();
         
         // Style confirm password field - ADD THIS
         ConfirmPasswordText.setFocusedBorderColor(focusedBlue);
         ConfirmPasswordText.setUnfocusedBorderColor(grayBorder);
         ConfirmPasswordText.setPlaceholderColor(placeholderGray);
         ConfirmPasswordText.setNormalHeight(40);
-        ConfirmPasswordText.setExpandedHeight(46);
+        ConfirmPasswordText.setExpandedHeight(50);
+        ConfirmPasswordText.disablePasswordVisibilityToggle();
 
         // Set fonts for consistency
         Font textFieldFont = new Font("Segoe UI", Font.PLAIN, 14);
@@ -234,9 +236,9 @@ public class Registration extends javax.swing.JPanel {
                 .addComponent(ConfirmPasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(TermsAndConditionCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -353,9 +355,7 @@ public class Registration extends javax.swing.JPanel {
     }//GEN-LAST:event_CreateAccountButtonActionPerformed
 
     private void SigninButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SigninButtonActionPerformed
-        JOptionPane.showMessageDialog(this,
-                "Redirecting to login page...",
-                "Sign In", JOptionPane.INFORMATION_MESSAGE);
+        clearForm();
     }//GEN-LAST:event_SigninButtonActionPerformed
     
     private boolean isValidEmail(String email) {
@@ -429,9 +429,19 @@ public class Registration extends javax.swing.JPanel {
         return PasswordText;
     }
 
-    public CustomPasswordField getConfirmPasswordText() { // Add this
+    public CustomPasswordField getConfirmPasswordText() {
         return ConfirmPasswordText;
     }
+    
+    public CustomCheckBox getTermsAndConditionCheckBox() {
+        return TermsAndConditionCheckBox;
+    }
+    
+    public javax.swing.JButton getSigninButton() {
+        return SigninButton;
+    }
+
+
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

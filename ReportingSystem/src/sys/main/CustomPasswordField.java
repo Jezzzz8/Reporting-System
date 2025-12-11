@@ -19,9 +19,10 @@ public class CustomPasswordField extends JPanel implements FocusListener {
     private Timer heightTimer;
     private float borderThickness = 1.0f;
     private float currentHeight = 40.0f; // Starting height
-    private float maxHeight = 46.0f;     // Expanded height when focused
+    private float maxHeight = 50.0f;     // Expanded height when focused
     private float minHeight = 40.0f;     // Normal height when not focused
     private boolean isFocused = false;
+    private boolean showToggleButton = true; // Flag to control toggle button visibility
     
     public CustomPasswordField() {
         initComponents();
@@ -115,7 +116,9 @@ public class CustomPasswordField extends JPanel implements FocusListener {
         fieldPanel.setBackground(new Color(249, 241, 240));
         fieldPanel.setBorder(null);
         fieldPanel.add(passwordField, BorderLayout.CENTER);
-        fieldPanel.add(toggleButton, BorderLayout.EAST);
+        if (showToggleButton) {
+            fieldPanel.add(toggleButton, BorderLayout.EAST);
+        }
         
         // Add fieldPanel
         add(fieldPanel, BorderLayout.CENTER);
@@ -346,5 +349,119 @@ public class CustomPasswordField extends JPanel implements FocusListener {
         // Ensure background is painted
         g.setColor(getBackground());
         g.fillRect(0, 0, getWidth(), getHeight());
+    }
+    
+    // ========== NEW METHODS FOR TOGGLE BUTTON VISIBILITY CONTROL ==========
+    
+    /**
+     * Show the toggle button (default state)
+     */
+    public void showToggleButton() {
+        this.showToggleButton = true;
+        updateToggleButtonVisibility();
+    }
+    
+    /**
+     * Hide the toggle button
+     */
+    public void hideToggleButton() {
+        this.showToggleButton = false;
+        updateToggleButtonVisibility();
+    }
+    
+    /**
+     * Set the visibility of the toggle button
+     * @param visible true to show the toggle button, false to hide it
+     */
+    public void setToggleButtonVisible(boolean visible) {
+        this.showToggleButton = visible;
+        updateToggleButtonVisibility();
+    }
+    
+    /**
+     * Check if toggle button is currently visible
+     * @return true if toggle button is visible, false otherwise
+     */
+    public boolean isToggleButtonVisible() {
+        return this.showToggleButton;
+    }
+    
+    /**
+     * Completely remove the toggle button from the layout
+     * This is different from hiding as it removes the component
+     */
+    public void removeToggleButton() {
+        this.showToggleButton = false;
+        // Find and remove the toggle button from the layout
+        Container fieldPanel = passwordField.getParent();
+        if (fieldPanel instanceof JPanel) {
+            ((JPanel) fieldPanel).remove(toggleButton);
+            fieldPanel.revalidate();
+            fieldPanel.repaint();
+        }
+    }
+    
+    /**
+     * Add back the toggle button if it was removed
+     */
+    public void addToggleButton() {
+        this.showToggleButton = true;
+        // Find the field panel and add toggle button back
+        Container fieldPanel = passwordField.getParent();
+        if (fieldPanel instanceof JPanel) {
+            ((JPanel) fieldPanel).add(toggleButton, BorderLayout.EAST);
+            fieldPanel.revalidate();
+            fieldPanel.repaint();
+        }
+    }
+    
+    /**
+     * Internal method to update toggle button visibility
+     */
+    private void updateToggleButtonVisibility() {
+        Container fieldPanel = passwordField.getParent();
+        if (fieldPanel instanceof JPanel) {
+            // Remove existing toggle button if present
+            for (Component comp : fieldPanel.getComponents()) {
+                if (comp == toggleButton) {
+                    fieldPanel.remove(comp);
+                    break;
+                }
+            }
+            
+            // Add toggle button back if it should be visible
+            if (showToggleButton) {
+                fieldPanel.add(toggleButton, BorderLayout.EAST);
+            }
+            
+            // Refresh the layout
+            fieldPanel.revalidate();
+            fieldPanel.repaint();
+            revalidate();
+            repaint();
+        }
+    }
+    
+    /**
+     * Convenience method to disable password visibility toggle
+     * This hides the toggle button and ensures password is always hidden
+     */
+    public void disablePasswordVisibilityToggle() {
+        setToggleButtonVisible(false);
+        passwordField.setEchoChar('•'); // Ensure password is hidden
+    }
+    
+    /**
+     * Convenience method to enable password visibility toggle
+     * This shows the toggle button and allows password to be shown/hidden
+     */
+    public void enablePasswordVisibilityToggle() {
+        setToggleButtonVisible(true);
+        // Reset echo char based on current toggle state
+        if (toggleButton.isSelected()) {
+            passwordField.setEchoChar((char) 0);
+        } else {
+            passwordField.setEchoChar('•');
+        }
     }
 }

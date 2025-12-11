@@ -269,8 +269,8 @@ public class Main extends javax.swing.JFrame {
                     scheduling.repaint();
                     body.revalidate();
                     body.repaint();
-                    jPanel1.revalidate();
-                    jPanel1.repaint();
+                    main.revalidate();
+                    main.repaint();
 
                     System.out.println("Scheduling calendar initialized and repainted");
                 }
@@ -288,8 +288,8 @@ public class Main extends javax.swing.JFrame {
         body.repaint();
 
         // Also update the main panel
-        jPanel1.revalidate();
-        jPanel1.repaint();
+        main.revalidate();
+        main.repaint();
 
         System.out.println("Form should be visible now");
     }
@@ -329,51 +329,48 @@ public class Main extends javax.swing.JFrame {
 
         shadowRenderer = new sys.swing.shadow.ShadowRenderer();
         menuAnimation = new sys.menu.MenuAnimation();
-        jPanel1 = new javax.swing.JPanel();
+        main = new javax.swing.JPanel();
         body = new javax.swing.JPanel();
-        footer2 = new component.Footer();
+        footer = new component.Footer();
         menu = new sys.menu.Menu();
-        header1 = new component.Header();
+        header = new component.Header();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
-        setPreferredSize(new java.awt.Dimension(1100, 600));
 
-        jPanel1.setBackground(new java.awt.Color(245, 245, 245));
-        jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(163, 163, 163)));
-        jPanel1.setPreferredSize(new java.awt.Dimension(1100, 600));
+        main.setBackground(new java.awt.Color(245, 245, 245));
+        main.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(163, 163, 163)));
+        main.setPreferredSize(new java.awt.Dimension(1100, 600));
 
         body.setBackground(new java.awt.Color(245, 245, 245));
         body.setLayout(new java.awt.BorderLayout());
 
-        footer2.setPreferredSize(new java.awt.Dimension(500, 25));
+        footer.setPreferredSize(new java.awt.Dimension(500, 25));
 
         menu.setPreferredSize(new java.awt.Dimension(42, 500));
 
-        header1.setPreferredSize(new java.awt.Dimension(540, 60));
+        header.setPreferredSize(new java.awt.Dimension(540, 60));
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        javax.swing.GroupLayout mainLayout = new javax.swing.GroupLayout(main);
+        main.setLayout(mainLayout);
+        mainLayout.setHorizontalGroup(
+            mainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(mainLayout.createSequentialGroup()
                 .addComponent(menu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
                 .addComponent(body, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addComponent(footer2, javax.swing.GroupLayout.DEFAULT_SIZE, 1098, Short.MAX_VALUE)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(header1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(footer, javax.swing.GroupLayout.DEFAULT_SIZE, 1098, Short.MAX_VALUE)
+            .addComponent(header, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addComponent(header1, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+        mainLayout.setVerticalGroup(
+            mainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, mainLayout.createSequentialGroup()
+                .addComponent(header, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(mainLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(body, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(menu, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addComponent(footer2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(footer, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0))
         );
 
@@ -381,11 +378,11 @@ public class Main extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(main, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(main, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         pack();
@@ -429,9 +426,9 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel body;
-    private component.Footer footer2;
-    private component.Header header1;
-    private javax.swing.JPanel jPanel1;
+    private component.Footer footer;
+    private component.Header header;
+    private javax.swing.JPanel main;
     private sys.menu.Menu menu;
     private sys.menu.MenuAnimation menuAnimation;
     private sys.swing.shadow.ShadowRenderer shadowRenderer;

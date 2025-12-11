@@ -18,7 +18,7 @@ public class CustomTextField extends JPanel implements FocusListener {
     private Timer heightTimer;
     private float borderThickness = 1.0f;
     private float currentHeight = 40.0f; // Starting height
-    private float maxHeight = 46.0f;     // Expanded height when focused
+    private float maxHeight = 50.0f;     // Expanded height when focused
     private float minHeight = 40.0f;     // Normal height when not focused
     private boolean isFocused = false;
     

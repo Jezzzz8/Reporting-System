@@ -30,6 +30,7 @@ public class Scheduling extends javax.swing.JPanel {
         initCalendar();
         initTimeSlots();
         updateUIForStep(currentStep);
+        forceCalendarRefresh();
 
         // Add tab change listener to ensure calendar is visible
         SchedulingTabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {

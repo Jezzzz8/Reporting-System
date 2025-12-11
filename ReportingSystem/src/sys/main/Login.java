@@ -13,7 +13,7 @@ public class Login extends javax.swing.JPanel {
     
     private void applyStyles() {
         // Set placeholders
-        UsernameText.setPlaceholder("Username");
+        UsernameText.setPlaceholder("Email");
         PasswordText.setPlaceholder("Password");
 
         // Set consistent colors
@@ -26,14 +26,14 @@ public class Login extends javax.swing.JPanel {
         UsernameText.setUnfocusedBorderColor(grayBorder);
         UsernameText.setPlaceholderColor(placeholderGray);
         UsernameText.setNormalHeight(40);  // Normal height
-        UsernameText.setExpandedHeight(46); // Height when focused
+        UsernameText.setExpandedHeight(50); // Height when focused
 
         // Style password field with animation heights
         PasswordText.setFocusedBorderColor(focusedBlue);
         PasswordText.setUnfocusedBorderColor(grayBorder);
         PasswordText.setPlaceholderColor(placeholderGray);
         PasswordText.setNormalHeight(40);  // Normal height
-        PasswordText.setExpandedHeight(46); // Height when focused
+        PasswordText.setExpandedHeight(50); // Height when focused
 
         // Set fonts for consistency
         Font textFieldFont = new Font("Segoe UI", Font.PLAIN, 14);
@@ -129,7 +129,7 @@ public class Login extends javax.swing.JPanel {
                 .addComponent(jLabel1)
                 .addGap(0, 0, Short.MAX_VALUE))
             .addGroup(RIGHTLayout.createSequentialGroup()
-                .addContainerGap(50, Short.MAX_VALUE)
+                .addContainerGap(83, Short.MAX_VALUE)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(PasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(UsernameText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -140,8 +140,8 @@ public class Login extends javax.swing.JPanel {
                             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(RegisterButton, javax.swing.GroupLayout.PREFERRED_SIZE, 122, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGap(22, 22, 22))))
-                .addContainerGap(50, Short.MAX_VALUE))
-            .addGroup(RIGHTLayout.createSequentialGroup()
+                .addContainerGap(17, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, RIGHTLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -185,9 +185,7 @@ public class Login extends javax.swing.JPanel {
     }//GEN-LAST:event_LoginButtonActionPerformed
 
     private void RegisterButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RegisterButtonActionPerformed
-        JOptionPane.showMessageDialog(this,
-            "Registration is currently closed. Please contact the National ID Office for registration.",
-            "Registration", JOptionPane.INFORMATION_MESSAGE);
+        clearForm();
     }//GEN-LAST:event_RegisterButtonActionPerformed
 
     private void ForgotPasswordButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ForgotPasswordButtonActionPerformed
@@ -208,6 +206,15 @@ public class Login extends javax.swing.JPanel {
         return PasswordText;
     }
     
+    public javax.swing.JButton getRegisterButton() {
+        return RegisterButton;
+    }
+    
+    // Helper method to clear form
+    private void clearForm() {
+        UsernameText.clear();
+        PasswordText.clear();
+    }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton ForgotPasswordButton;
     private javax.swing.JButton LoginButton;
