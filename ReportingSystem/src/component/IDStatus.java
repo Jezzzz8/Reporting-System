@@ -14,29 +14,54 @@ public class IDStatus extends javax.swing.JPanel {
     public IDStatus(Data.User user) {
         this.user = user;
         initComponents();
-        
+
+        // component listener to debug
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                System.out.println("IDStatus component shown - refreshing data");
+                loadCitizenData();
+            }
+        });
+
+        // Initialize progress bar with 5 steps first
+        customStepProgressBar1.setTotalSteps(5);
+        String[] stepLabels = {
+            "Application Submitted",
+            "Processing & Validation", 
+            "Printing & Packaging",
+            "Ready for Pickup",
+            "ID Claimed"
+        };
+        customStepProgressBar1.setStepLabels(stepLabels);
+
         loadCitizenData();
     }
-    
+
+
     private void loadCitizenData() {
         System.out.println("Loading citizen data for user ID: " + user.getUserId());
-        
+
         // Get citizen associated with this user
         citizen = Data.Citizen.getCitizenByUserId(user.getUserId());
-        
+
         if (citizen != null) {
             System.out.println("Citizen found: " + citizen.getFullName() + " (ID: " + citizen.getCitizenId() + ")");
-            
+
             // Get the ID status for this citizen
             idStatus = Data.IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-            
+
             // Update labels with actual data
             if (citizen.getApplicationDate() != null) {
                 String appDateStr = citizen.getApplicationDate().toString();
-                String nationalId = citizen.getNationalId() != null ? citizen.getNationalId() : "N/A";
-                jLabel4.setText("Application Date: " + appDateStr + " | National ID: " + nationalId);
+                String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+                    ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
+                    : "TXN-Not-Assigned";
+
+                // Show Transaction ID instead of National ID
+                jLabel4.setText("Application Date: " + appDateStr + " | TRN: " + transactionId);
             }
-            
+
             // Set step labels for 5-step progress
             String[] stepLabels = {
                 "Application Submitted",
@@ -45,17 +70,19 @@ public class IDStatus extends javax.swing.JPanel {
                 "Ready for Pickup",
                 "ID Claimed"
             };
-            
+
             // Ensure progress bar is initialized with 5 steps
             customStepProgressBar1.setTotalSteps(5);
             customStepProgressBar1.setStepLabels(stepLabels);
-            
+
+            System.out.println("Progress bar initialized with 5 steps");
+
             // Check if ID is ready for pickup
             checkIDStatus();
-            
+
             // Load live timeline data
             loadLiveTimeline();
-            
+
         } else {
             // If no citizen data found
             System.out.println("No citizen data found for user ID: " + user.getUserId());
@@ -64,32 +91,38 @@ public class IDStatus extends javax.swing.JPanel {
             loadDefaultTimeline();
         }
     }
-    
+
     private void checkIDStatus() {
         if (idStatus != null) {
             System.out.println("ID Status found: " + idStatus.getStatus());
             String status = idStatus.getStatus();
             int currentStep = getStepFromStatus(status);
-            
+
+            System.out.println("Current step calculated: " + currentStep + " for status: " + status);
+
             // Update progress bar
             customStepProgressBar1.setCurrentStep(currentStep);
-            
+
             // Update status label
             String displayStatus = formatStatusForDisplay(status);
             jLabel3.setText(displayStatus);
-            
+
             // Set color based on status
             setStatusLabelColor(status);
-            
-            // Show/hide pickup panel based on status
-            if ("READY_FOR_PICKUP".equalsIgnoreCase(status) || "READY".equalsIgnoreCase(status)) {
+
+            // Show/hide pickup panel based on status - handle spaces
+            String normalizedStatus = status.replace(" ", "_").toUpperCase();
+            if ("READY_FOR_PICKUP".equals(normalizedStatus) || "READY".equals(normalizedStatus)) {
+                System.out.println("Showing pickup panel for status: " + normalizedStatus);
                 showPickupPanel();
-            } else if ("ID_CLAIMED".equalsIgnoreCase(status) || "CLAIMED".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status)) {
+            } else if ("ID_CLAIMED".equals(normalizedStatus) || "CLAIMED".equals(normalizedStatus) || "COMPLETED".equals(normalizedStatus)) {
+                System.out.println("Showing claimed message for status: " + normalizedStatus);
                 showClaimedMessage();
             } else {
+                System.out.println("Hiding pickup panel for status: " + normalizedStatus);
                 hidePickupPanel();
             }
-            
+
         } else {
             // No status found
             System.out.println("No ID status found for citizen ID: " + citizen.getCitizenId());
@@ -102,36 +135,39 @@ public class IDStatus extends javax.swing.JPanel {
     
     private int getStepFromStatus(String status) {
         if (status == null) return 1;
-        
-        switch (status.toUpperCase()) {
+
+        // Normalize the status by removing spaces and converting to uppercase
+        String normalizedStatus = status.replace(" ", "_").toUpperCase();
+
+        switch (normalizedStatus) {
             case "SUBMITTED":
             case "PENDING":
                 return 1;
-                
+
             case "PROCESSING":
             case "VALIDATION":
             case "UNDER_REVIEW":
                 return 2;
-                
+
             case "PRINTING":
             case "PACKAGING":
             case "PRODUCTION":
                 return 3;
-                
+
             case "READY_FOR_PICKUP":
             case "READY":
                 return 4;
-                
+
             case "CLAIMED":
             case "ID_CLAIMED":
             case "COMPLETED":
                 return 5;
-                
+
             case "REJECTED":
             case "FAILED":
             case "CANCELLED":
                 return 0; // Error state
-                
+
             default:
                 return 1;
         }
@@ -139,8 +175,10 @@ public class IDStatus extends javax.swing.JPanel {
     
     private String formatStatusForDisplay(String status) {
         if (status == null) return "APPLICATION SUBMITTED";
-        
-        switch (status.toUpperCase()) {
+
+        String normalizedStatus = status.replace(" ", "_").toUpperCase();
+
+        switch (normalizedStatus) {
             case "SUBMITTED":
                 return "APPLICATION SUBMITTED";
             case "PENDING":
@@ -158,7 +196,6 @@ public class IDStatus extends javax.swing.JPanel {
             case "PRODUCTION":
                 return "IN PRODUCTION";
             case "READY_FOR_PICKUP":
-                return "READY FOR PICKUP";
             case "READY":
                 return "READY FOR PICKUP";
             case "CLAIMED":
@@ -173,7 +210,7 @@ public class IDStatus extends javax.swing.JPanel {
             case "CANCELLED":
                 return "APPLICATION CANCELLED";
             default:
-                return status.replace("_", " ").toUpperCase();
+                return status.toUpperCase();
         }
     }
     
@@ -182,13 +219,15 @@ public class IDStatus extends javax.swing.JPanel {
             jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue
             return;
         }
-        
-        switch (status.toUpperCase()) {
+
+        String normalizedStatus = status.replace(" ", "_").toUpperCase();
+
+        switch (normalizedStatus) {
             case "SUBMITTED":
             case "PENDING":
                 jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue
                 break;
-                
+
             case "PROCESSING":
             case "VALIDATION":
             case "UNDER_REVIEW":
@@ -197,36 +236,43 @@ public class IDStatus extends javax.swing.JPanel {
             case "PRODUCTION":
                 jLabel3.setForeground(new java.awt.Color(255, 165, 0)); // Orange
                 break;
-                
+
             case "READY_FOR_PICKUP":
             case "READY":
                 jLabel3.setForeground(new java.awt.Color(0, 150, 0)); // Green
                 break;
-                
+
             case "CLAIMED":
             case "ID_CLAIMED":
             case "COMPLETED":
                 jLabel3.setForeground(new java.awt.Color(0, 100, 0)); // Dark Green
                 break;
-                
+
             case "REJECTED":
             case "FAILED":
             case "CANCELLED":
                 jLabel3.setForeground(new java.awt.Color(220, 0, 0)); // Red
                 break;
-                
+
             default:
                 jLabel3.setForeground(new java.awt.Color(100, 100, 100)); // Gray
         }
     }
-    
+
     private void showPickupPanel() {
+        System.out.println("showPickupPanel() called");
         jPanel1.setVisible(true);
         jLabel1.setText("Congratulations! Your physical National ID card is ready. Please schedule an appointment to claim your ID at a center near you.");
         SchedulePickup.setText("SCHEDULE MY PICKUP");
         SchedulePickup.setBackground(new java.awt.Color(0, 150, 0)); // Green
+
+        // Force layout update
+        jPanel1.revalidate();
+        jPanel1.repaint();
         revalidate();
         repaint();
+
+        System.out.println("Pickup panel should now be visible");
     }
     
     private void showClaimedMessage() {
@@ -544,7 +590,9 @@ public class IDStatus extends javax.swing.JPanel {
     private String getStatusDescription(String status) {
         if (status == null) return "No status available";
 
-        switch (status.toUpperCase()) {
+        String normalizedStatus = status.replace(" ", "_").toUpperCase();
+
+        switch (normalizedStatus) {
             case "SUBMITTED":
             case "PENDING":
                 return "Application received and registered in the system";
@@ -585,10 +633,10 @@ public class IDStatus extends javax.swing.JPanel {
                 return "Application was cancelled by the applicant";
 
             default:
-                return "Status update: " + status.replace("_", " ").toLowerCase();
+                return "Status update: " + status;
         }
     }
-
+    
     private void loadDefaultTimeline() {
         System.out.println("Loading default timeline");
         
@@ -619,15 +667,28 @@ public class IDStatus extends javax.swing.JPanel {
     private void viewIDDetailsActionPerformed(java.awt.event.ActionEvent evt) {
         // Show ID details
         Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
-        
+
         StringBuilder details = new StringBuilder();
         details.append("ID Details:\n");
         details.append("----------------\n");
         details.append("Name: ").append(citizen.getFullName()).append("\n");
-        details.append("National ID: ").append(citizen.getNationalId()).append("\n");
+
+        // Show first, middle, last names separately
+        details.append("First Name: ").append(citizen.getFname()).append("\n");
+        if (citizen.getMname() != null && !citizen.getMname().isEmpty()) {
+            details.append("Middle Name: ").append(citizen.getMname()).append("\n");
+        }
+        details.append("Last Name: ").append(citizen.getLname()).append("\n");
+
+        // Show formatted Transaction ID
+        String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+            ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
+            : "Not Assigned";
+        details.append("Transaction ID: ").append(transactionId).append("\n");
+
         details.append("Date of Birth: ").append(citizen.getBirthDate()).append("\n");
         details.append("Address: ").append(citizen.getAddress()).append("\n");
-        
+
         if (appointment != null) {
             details.append("\nClaim Details:\n");
             details.append("----------------\n");
@@ -635,7 +696,7 @@ public class IDStatus extends javax.swing.JPanel {
             details.append("Claim Time: ").append(appointment.getAppTime()).append("\n");
             details.append("Status: ").append(appointment.getStatus()).append("\n");
         }
-        
+
         javax.swing.JOptionPane.showMessageDialog(this,
             details.toString(),
             "National ID Details",
@@ -815,29 +876,41 @@ public class IDStatus extends javax.swing.JPanel {
 
     private void SchedulePickupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SchedulePickupActionPerformed
         // Check if there's already an appointment
-        Data.Appointment existingAppointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
+    Data.Appointment existingAppointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
+
+    if (existingAppointment != null && "SCHEDULED".equalsIgnoreCase(existingAppointment.getStatus())) {
+        // Show existing appointment details
+        String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+            ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
+            : "Not Assigned";
+
+        javax.swing.JOptionPane.showMessageDialog(this,
+            "You already have a scheduled appointment:\n\n" +
+            "Transaction ID: " + transactionId + "\n" +
+            "Date: " + existingAppointment.getAppDate() + "\n" +
+            "Time: " + existingAppointment.getAppTime() + "\n" +
+            "Name: " + citizen.getFname() + " " + citizen.getLname() + "\n\n" +
+            "Would you like to reschedule?",
+            "Existing Appointment Found",
+            javax.swing.JOptionPane.INFORMATION_MESSAGE);
+
+        // TODO: Navigate to rescheduling page
+    } else {
+        // Navigate to scheduling page
+        String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+            ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
+            : "Not Assigned";
+
+        javax.swing.JOptionPane.showMessageDialog(this,
+            "Redirecting to scheduling page...\n\n" +
+            "Transaction ID: " + transactionId + "\n" +
+            "Citizen: " + citizen.getFullName() + "\n" +
+            "First Name: " + citizen.getFname() + "\n" +
+            "Last Name: " + citizen.getLname(),
+            "Schedule Pickup",
+            javax.swing.JOptionPane.INFORMATION_MESSAGE);
         
-        if (existingAppointment != null && "SCHEDULED".equalsIgnoreCase(existingAppointment.getStatus())) {
-            // Show existing appointment details
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "You already have a scheduled appointment:\n\n" +
-                "Date: " + existingAppointment.getAppDate() + "\n" +
-                "Time: " + existingAppointment.getAppTime() + "\n\n" +
-                "Would you like to reschedule?",
-                "Existing Appointment Found",
-                javax.swing.JOptionPane.INFORMATION_MESSAGE);
-            
-            // TODO: Navigate to rescheduling page
-        } else {
-            // Navigate to scheduling page
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "Redirecting to scheduling page...\n\n" +
-                "Citizen: " + citizen.getFullName() + "\n" +
-                "National ID: " + citizen.getNationalId(),
-                "Schedule Pickup",
-                javax.swing.JOptionPane.INFORMATION_MESSAGE);
-            
-            // In your Main class, you would call:
+            // In Main class, it would call:
             // main.showForm(new Scheduling(user));
         }
     }//GEN-LAST:event_SchedulePickupActionPerformed

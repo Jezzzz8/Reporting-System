@@ -28,12 +28,10 @@ public class Main extends javax.swing.JFrame {
         initComponents();
         setFullScreenMode();
         
-        // Debug: Print body panel info
         System.out.println("Main constructor - Body initialized");
         System.out.println("Body layout: " + body.getLayout());
         System.out.println("Body size: " + body.getWidth() + "x" + body.getHeight());
         
-        // First show login dialog
         showLoginForm();
     }
     
@@ -54,11 +52,9 @@ public class Main extends javax.swing.JFrame {
     }
     
     private void showLoginForm() {
-        // Create and show the Landing frame
         loginFrame = new Landing();
         loginFrame.setVisible(true);
         
-        // Add window listener to handle when Landing frame closes
         loginFrame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosed(java.awt.event.WindowEvent e) {
@@ -95,7 +91,7 @@ public class Main extends javax.swing.JFrame {
             }
         });
         
-        // Hide the main window while login is showing
+        // Hiding the main window while login is showing
         setVisible(false);
     }
     
@@ -276,8 +272,7 @@ public class Main extends javax.swing.JFrame {
                 }
             });
         }
-
-        // Debug info
+        
         System.out.println("Body child count: " + body.getComponentCount());
         System.out.println("Component size: " + com.getWidth() + "x" + com.getHeight());
         System.out.println("Component visible: " + com.isVisible());

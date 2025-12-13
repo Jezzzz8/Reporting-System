@@ -10,23 +10,29 @@ public class Data {
     // User class for users table
     public static class User {
         private int userId;
-        private String fullName;
+        private String fname;
+        private String mname;
+        private String lname;
         private String username;
         private String password;
         private String role;
         private String phone;
+        private String email;
         private Date createdDate;
         
         public User() {}
         
-        public User(int userId, String fullName, String username, String password, 
-                   String role, String phone, Date createdDate) {
+        public User(int userId, String fname, String mname, String lname, String username, String password, 
+                   String role, String phone, String email, Date createdDate) {
             this.userId = userId;
-            this.fullName = fullName;
+            this.fname = fname;
+            this.mname = mname;
+            this.lname = lname;
             this.username = username;
             this.password = password;
             this.role = role;
             this.phone = phone;
+            this.email = email;
             this.createdDate = createdDate;
         }
         
@@ -34,8 +40,18 @@ public class Data {
         public int getUserId() { return userId; }
         public void setUserId(int userId) { this.userId = userId; }
         
-        public String getFullName() { return fullName; }
-        public void setFullName(String fullName) { this.fullName = fullName; }
+        public String getFname() { return fname; }
+        public void setFname(String fname) { this.fname = fname; }
+        
+        public String getMname() { return mname; }
+        public void setMname(String mname) { this.mname = mname; }
+        
+        public String getLname() { return lname; }
+        public void setLname(String lname) { this.lname = lname; }
+        
+        public String getFullName() { 
+            return (fname + " " + (mname != null && !mname.isEmpty() ? mname + " " : "") + lname).trim();
+        }
         
         public String getUsername() { return username; }
         public void setUsername(String username) { this.username = username; }
@@ -48,6 +64,9 @@ public class Data {
         
         public String getPhone() { return phone; }
         public void setPhone(String phone) { this.phone = phone; }
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
         
         public Date getCreatedDate() { return createdDate; }
         public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
@@ -66,11 +85,14 @@ public class Data {
                 if (rs.next()) {
                     return new User(
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("created_date")
                     );
                 }
@@ -82,7 +104,7 @@ public class Data {
         
         public static List<User> getAllUsers() {
             List<User> users = new ArrayList<>();
-            String query = "SELECT * FROM users ORDER BY full_name";
+            String query = "SELECT * FROM users ORDER BY lname, fname";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query);
@@ -91,11 +113,14 @@ public class Data {
                 while (rs.next()) {
                     User user = new User(
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("created_date")
                     );
                     users.add(user);
@@ -107,18 +132,21 @@ public class Data {
         }
         
         public static boolean addUser(User user) {
-            String query = "INSERT INTO users (full_name, username, password, role, phone, created_date) " +
-                          "VALUES (?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO users (fname, mname, lname, username, password, role, phone, email, created_date) " +
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
                 
-                stmt.setString(1, user.getFullName());
-                stmt.setString(2, user.getUsername());
-                stmt.setString(3, user.getPassword());
-                stmt.setString(4, user.getRole());
-                stmt.setString(5, user.getPhone());
-                stmt.setDate(6, user.getCreatedDate());
+                stmt.setString(1, user.getFname());
+                stmt.setString(2, user.getMname());
+                stmt.setString(3, user.getLname());
+                stmt.setString(4, user.getUsername());
+                stmt.setString(5, user.getPassword());
+                stmt.setString(6, user.getRole());
+                stmt.setString(7, user.getPhone());
+                stmt.setString(8, user.getEmail());
+                stmt.setDate(9, user.getCreatedDate());
                 
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -128,18 +156,21 @@ public class Data {
         }
         
         public static boolean updateUser(User user) {
-            String query = "UPDATE users SET full_name = ?, username = ?, password = ?, " +
-                          "role = ?, phone = ? WHERE user_id = ?";
+            String query = "UPDATE users SET fname = ?, mname = ?, lname = ?, username = ?, password = ?, " +
+                          "role = ?, phone = ?, email = ? WHERE user_id = ?";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
                 
-                stmt.setString(1, user.getFullName());
-                stmt.setString(2, user.getUsername());
-                stmt.setString(3, user.getPassword());
-                stmt.setString(4, user.getRole());
-                stmt.setString(5, user.getPhone());
-                stmt.setInt(6, user.getUserId());
+                stmt.setString(1, user.getFname());
+                stmt.setString(2, user.getMname());
+                stmt.setString(3, user.getLname());
+                stmt.setString(4, user.getUsername());
+                stmt.setString(5, user.getPassword());
+                stmt.setString(6, user.getRole());
+                stmt.setString(7, user.getPhone());
+                stmt.setString(8, user.getEmail());
+                stmt.setInt(9, user.getUserId());
                 
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -160,11 +191,14 @@ public class Data {
                 if (rs.next()) {
                     return new User(
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("created_date")
                     );
                 }
@@ -192,7 +226,7 @@ public class Data {
         
         public static List<User> getUsersByRole(String role) {
             List<User> users = new ArrayList<>();
-            String query = "SELECT * FROM users WHERE role = ? ORDER BY full_name";
+            String query = "SELECT * FROM users WHERE role = ? ORDER BY lname, fname";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -203,11 +237,14 @@ public class Data {
                 while (rs.next()) {
                     User user = new User(
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("created_date")
                     );
                     users.add(user);
@@ -217,30 +254,74 @@ public class Data {
             }
             return users;
         }
+        
+        public static List<User> searchUsers(String searchTerm) {
+            List<User> users = new ArrayList<>();
+            String query = "SELECT * FROM users WHERE fname LIKE ? OR mname LIKE ? OR lname LIKE ? " +
+                          "OR username LIKE ? OR email LIKE ? OR phone LIKE ? ORDER BY lname, fname";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                String likeTerm = "%" + searchTerm + "%";
+                stmt.setString(1, likeTerm);
+                stmt.setString(2, likeTerm);
+                stmt.setString(3, likeTerm);
+                stmt.setString(4, likeTerm);
+                stmt.setString(5, likeTerm);
+                stmt.setString(6, likeTerm);
+                
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    User user = new User(
+                        rs.getInt("user_id"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("role"),
+                        rs.getString("phone"),
+                        rs.getString("email"),
+                        rs.getDate("created_date")
+                    );
+                    users.add(user);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error searching users: " + e.getMessage());
+            }
+            return users;
+        }
     }
     
     // Citizen class for citizens table
     public static class Citizen {
         private int citizenId;
         private Integer userId;
-        private String fullName;
+        private String fname;
+        private String mname;
+        private String lname;
         private String nationalId;
         private Date birthDate;
         private String address;
         private String phone;
+        private String email;
         private Date applicationDate;
         
         public Citizen() {}
         
-        public Citizen(int citizenId, Integer userId, String fullName, String nationalId,
-                      Date birthDate, String address, String phone, Date applicationDate) {
+        public Citizen(int citizenId, Integer userId, String fname, String mname, String lname, String nationalId,
+                      Date birthDate, String address, String phone, String email, Date applicationDate) {
             this.citizenId = citizenId;
             this.userId = userId;
-            this.fullName = fullName;
+            this.fname = fname;
+            this.mname = mname;
+            this.lname = lname;
             this.nationalId = nationalId;
             this.birthDate = birthDate;
             this.address = address;
             this.phone = phone;
+            this.email = email;
             this.applicationDate = applicationDate;
         }
         
@@ -251,8 +332,18 @@ public class Data {
         public Integer getUserId() { return userId; }
         public void setUserId(Integer userId) { this.userId = userId; }
         
-        public String getFullName() { return fullName; }
-        public void setFullName(String fullName) { this.fullName = fullName; }
+        public String getFname() { return fname; }
+        public void setFname(String fname) { this.fname = fname; }
+        
+        public String getMname() { return mname; }
+        public void setMname(String mname) { this.mname = mname; }
+        
+        public String getLname() { return lname; }
+        public void setLname(String lname) { this.lname = lname; }
+        
+        public String getFullName() { 
+            return (fname + " " + (mname != null && !mname.isEmpty() ? mname + " " : "") + lname).trim();
+        }
         
         public String getNationalId() { return nationalId; }
         public void setNationalId(String nationalId) { this.nationalId = nationalId; }
@@ -266,13 +357,16 @@ public class Data {
         public String getPhone() { return phone; }
         public void setPhone(String phone) { this.phone = phone; }
         
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        
         public Date getApplicationDate() { return applicationDate; }
         public void setApplicationDate(Date applicationDate) { this.applicationDate = applicationDate; }
         
         // Database Functions
         public static List<Citizen> getAllCitizens() {
             List<Citizen> citizens = new ArrayList<>();
-            String query = "SELECT * FROM citizens ORDER BY full_name";
+            String query = "SELECT * FROM citizens ORDER BY lname, fname";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query);
@@ -282,11 +376,14 @@ public class Data {
                     Citizen citizen = new Citizen(
                         rs.getInt("citizen_id"),
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
                         rs.getString("address"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("application_date")
                     );
                     citizens.add(citizen);
@@ -310,11 +407,14 @@ public class Data {
                     return new Citizen(
                         rs.getInt("citizen_id"),
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
                         rs.getString("address"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("application_date")
                     );
                 }
@@ -337,11 +437,14 @@ public class Data {
                     return new Citizen(
                         rs.getInt("citizen_id"),
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
                         rs.getString("address"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("application_date")
                     );
                 }
@@ -364,11 +467,14 @@ public class Data {
                     return new Citizen(
                         rs.getInt("citizen_id"),
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
                         rs.getString("address"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("application_date")
                     );
                 }
@@ -379,8 +485,8 @@ public class Data {
         }
         
         public static boolean addCitizen(Citizen citizen) {
-            String query = "INSERT INTO citizens (user_id, full_name, national_id, birth_date, address, phone, application_date) " +
-                          "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO citizens (user_id, fname, mname, lname, national_id, birth_date, address, phone, email, application_date) " +
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -390,12 +496,15 @@ public class Data {
                 } else {
                     stmt.setNull(1, java.sql.Types.INTEGER);
                 }
-                stmt.setString(2, citizen.getFullName());
-                stmt.setString(3, citizen.getNationalId());
-                stmt.setDate(4, citizen.getBirthDate());
-                stmt.setString(5, citizen.getAddress());
-                stmt.setString(6, citizen.getPhone());
-                stmt.setDate(7, citizen.getApplicationDate());
+                stmt.setString(2, citizen.getFname());
+                stmt.setString(3, citizen.getMname());
+                stmt.setString(4, citizen.getLname());
+                stmt.setString(5, citizen.getNationalId());
+                stmt.setDate(6, citizen.getBirthDate());
+                stmt.setString(7, citizen.getAddress());
+                stmt.setString(8, citizen.getPhone());
+                stmt.setString(9, citizen.getEmail());
+                stmt.setDate(10, citizen.getApplicationDate());
                 
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -405,8 +514,8 @@ public class Data {
         }
         
         public static boolean updateCitizen(Citizen citizen) {
-            String query = "UPDATE citizens SET user_id = ?, full_name = ?, national_id = ?, " +
-                          "birth_date = ?, address = ?, phone = ?, application_date = ? WHERE citizen_id = ?";
+            String query = "UPDATE citizens SET user_id = ?, fname = ?, mname = ?, lname = ?, national_id = ?, " +
+                          "birth_date = ?, address = ?, phone = ?, email = ?, application_date = ? WHERE citizen_id = ?";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -416,13 +525,16 @@ public class Data {
                 } else {
                     stmt.setNull(1, java.sql.Types.INTEGER);
                 }
-                stmt.setString(2, citizen.getFullName());
-                stmt.setString(3, citizen.getNationalId());
-                stmt.setDate(4, citizen.getBirthDate());
-                stmt.setString(5, citizen.getAddress());
-                stmt.setString(6, citizen.getPhone());
-                stmt.setDate(7, citizen.getApplicationDate());
-                stmt.setInt(8, citizen.getCitizenId());
+                stmt.setString(2, citizen.getFname());
+                stmt.setString(3, citizen.getMname());
+                stmt.setString(4, citizen.getLname());
+                stmt.setString(5, citizen.getNationalId());
+                stmt.setDate(6, citizen.getBirthDate());
+                stmt.setString(7, citizen.getAddress());
+                stmt.setString(8, citizen.getPhone());
+                stmt.setString(9, citizen.getEmail());
+                stmt.setDate(10, citizen.getApplicationDate());
+                stmt.setInt(11, citizen.getCitizenId());
                 
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -434,8 +546,8 @@ public class Data {
         public static List<Citizen> searchCitizens(String searchTerm) {
             List<Citizen> citizens = new ArrayList<>();
             String query = "SELECT * FROM citizens WHERE " +
-                          "full_name LIKE ? OR national_id LIKE ? OR phone LIKE ? OR address LIKE ? " +
-                          "ORDER BY full_name";
+                          "fname LIKE ? OR mname LIKE ? OR lname LIKE ? OR national_id LIKE ? OR phone LIKE ? OR address LIKE ? OR email LIKE ? " +
+                          "ORDER BY lname, fname";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -445,17 +557,23 @@ public class Data {
                 stmt.setString(2, likeTerm);
                 stmt.setString(3, likeTerm);
                 stmt.setString(4, likeTerm);
+                stmt.setString(5, likeTerm);
+                stmt.setString(6, likeTerm);
+                stmt.setString(7, likeTerm);
                 
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
                     Citizen citizen = new Citizen(
                         rs.getInt("citizen_id"),
                         rs.getInt("user_id"),
-                        rs.getString("full_name"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
                         rs.getString("address"),
                         rs.getString("phone"),
+                        rs.getString("email"),
                         rs.getDate("application_date")
                     );
                     citizens.add(citizen);
@@ -481,11 +599,42 @@ public class Data {
             }
             return 0;
         }
+        
+        public static List<Citizen> getCitizensWithNoUser() {
+            List<Citizen> citizens = new ArrayList<>();
+            String query = "SELECT * FROM citizens WHERE user_id IS NULL ORDER BY lname, fname";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+                
+                while (rs.next()) {
+                    Citizen citizen = new Citizen(
+                        rs.getInt("citizen_id"),
+                        rs.getInt("user_id"),
+                        rs.getString("fname"),
+                        rs.getString("mname"),
+                        rs.getString("lname"),
+                        rs.getString("national_id"),
+                        rs.getDate("birth_date"),
+                        rs.getString("address"),
+                        rs.getString("phone"),
+                        rs.getString("email"),
+                        rs.getDate("application_date")
+                    );
+                    citizens.add(citizen);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting citizens with no user: " + e.getMessage());
+            }
+            return citizens;
+        }
     }
     
     // IDStatus class for id_status table
     public static class IDStatus {
         private int statusId;
+        private String transactionId;
         private int citizenId;
         private String status;
         private Date updateDate;
@@ -493,8 +642,9 @@ public class Data {
         
         public IDStatus() {}
         
-        public IDStatus(int statusId, int citizenId, String status, Date updateDate, String notes) {
+        public IDStatus(int statusId, String transactionId, int citizenId, String status, Date updateDate, String notes) {
             this.statusId = statusId;
+            this.transactionId = transactionId;
             this.citizenId = citizenId;
             this.status = status;
             this.updateDate = updateDate;
@@ -504,6 +654,9 @@ public class Data {
         // Getters and Setters
         public int getStatusId() { return statusId; }
         public void setStatusId(int statusId) { this.statusId = statusId; }
+        
+        public String getTransactionId() { return transactionId; }
+        public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
         
         public int getCitizenId() { return citizenId; }
         public void setCitizenId(int citizenId) { this.citizenId = citizenId; }
@@ -530,6 +683,7 @@ public class Data {
                 if (rs.next()) {
                     return new IDStatus(
                         rs.getInt("status_id"),
+                        rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
                         rs.getString("status"),
                         rs.getDate("update_date"),
@@ -538,6 +692,70 @@ public class Data {
                 }
             } catch (SQLException e) {
                 System.err.println("Error getting status by citizen ID: " + e.getMessage());
+            }
+            return null;
+        }
+        
+        public static String formatTransactionId(String rawTransactionId) {
+            if (rawTransactionId == null || rawTransactionId.isEmpty()) {
+                return "TXN-Not-Assigned";
+            }
+
+            // If it's already in the correct format, return as is
+            if (rawTransactionId.matches("\\d{4}-\\d{4}-\\d{4}-\\d{4}-\\d{4}-\\d{4}-\\d{2}")) {
+                return rawTransactionId;
+            }
+
+            // If it's in the old TXN2024001 format, convert it
+            if (rawTransactionId.startsWith("TXN")) {
+                try {
+                    String numbers = rawTransactionId.replace("TXN", "").trim();
+                    // Pad with zeros to get 28 digits total
+                    String padded = String.format("%028d", Long.parseLong(numbers));
+
+                    // Format: 1234-5678-9012-3456-7890-1234-56
+                    return padded.replaceFirst("(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{2})", 
+                        "$1-$2-$3-$4-$5-$6-$7");
+                } catch (NumberFormatException e) {
+                    return rawTransactionId; // Return as is if can't convert
+                }
+            }
+
+            // For any other format, try to extract numbers and format
+            String numbersOnly = rawTransactionId.replaceAll("[^0-9]", "");
+            if (numbersOnly.length() >= 28) {
+                String padded = numbersOnly.substring(0, 28);
+                return padded.replaceFirst("(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{2})", 
+                    "$1-$2-$3-$4-$5-$6-$7");
+            }
+
+            // Pad with zeros if too short
+            String padded = String.format("%-28s", numbersOnly).replace(' ', '0');
+            return padded.replaceFirst("(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{2})", 
+                "$1-$2-$3-$4-$5-$6-$7");
+        }
+        
+        public static IDStatus getStatusByTransactionId(String transactionId) {
+            String query = "SELECT * FROM id_status WHERE transaction_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, transactionId);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    return new IDStatus(
+                        rs.getInt("status_id"),
+                        rs.getString("transaction_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getString("status"),
+                        rs.getDate("update_date"),
+                        rs.getString("notes")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting status by transaction ID: " + e.getMessage());
             }
             return null;
         }
@@ -554,6 +772,7 @@ public class Data {
                 if (rs.next()) {
                     return new IDStatus(
                         rs.getInt("status_id"),
+                        rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
                         rs.getString("status"),
                         rs.getDate("update_date"),
@@ -577,6 +796,7 @@ public class Data {
                 while (rs.next()) {
                     IDStatus idStatus = new IDStatus(
                         rs.getInt("status_id"),
+                        rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
                         rs.getString("status"),
                         rs.getDate("update_date"),
@@ -603,6 +823,7 @@ public class Data {
                 while (rs.next()) {
                     IDStatus idStatus = new IDStatus(
                         rs.getInt("status_id"),
+                        rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
                         rs.getString("status"),
                         rs.getDate("update_date"),
@@ -617,16 +838,17 @@ public class Data {
         }
         
         public static boolean addStatus(IDStatus idStatus) {
-            String query = "INSERT INTO id_status (citizen_id, status, update_date, notes) " +
-                          "VALUES (?, ?, ?, ?)";
+            String query = "INSERT INTO id_status (transaction_id, citizen_id, status, update_date, notes) " +
+                          "VALUES (?, ?, ?, ?, ?)";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
                 
-                stmt.setInt(1, idStatus.getCitizenId());
-                stmt.setString(2, idStatus.getStatus());
-                stmt.setDate(3, idStatus.getUpdateDate());
-                stmt.setString(4, idStatus.getNotes());
+                stmt.setString(1, idStatus.getTransactionId());
+                stmt.setInt(2, idStatus.getCitizenId());
+                stmt.setString(3, idStatus.getStatus());
+                stmt.setDate(4, idStatus.getUpdateDate());
+                stmt.setString(5, idStatus.getNotes());
                 
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -636,17 +858,18 @@ public class Data {
         }
         
         public static boolean updateStatus(IDStatus idStatus) {
-            String query = "UPDATE id_status SET citizen_id = ?, status = ?, update_date = ?, notes = ? " +
+            String query = "UPDATE id_status SET transaction_id = ?, citizen_id = ?, status = ?, update_date = ?, notes = ? " +
                           "WHERE status_id = ?";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
                 
-                stmt.setInt(1, idStatus.getCitizenId());
-                stmt.setString(2, idStatus.getStatus());
-                stmt.setDate(3, idStatus.getUpdateDate());
-                stmt.setString(4, idStatus.getNotes());
-                stmt.setInt(5, idStatus.getStatusId());
+                stmt.setString(1, idStatus.getTransactionId());
+                stmt.setInt(2, idStatus.getCitizenId());
+                stmt.setString(3, idStatus.getStatus());
+                stmt.setDate(4, idStatus.getUpdateDate());
+                stmt.setString(5, idStatus.getNotes());
+                stmt.setInt(6, idStatus.getStatusId());
                 
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -690,6 +913,24 @@ public class Data {
                 System.err.println("Error getting status count: " + e.getMessage());
             }
             return 0;
+        }
+        
+        public static String generateTransactionId(int citizenId) {
+            // Generate a 30-digit transaction ID in format: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XX
+            java.util.Random random = new java.util.Random();
+
+            // Generate random numbers for each segment
+            int segment1 = 1000 + random.nextInt(9000); // 4 digits
+            int segment2 = 1000 + random.nextInt(9000); // 4 digits
+            int segment3 = 1000 + random.nextInt(9000); // 4 digits
+            int segment4 = 1000 + random.nextInt(9000); // 4 digits
+            int segment5 = 1000 + random.nextInt(9000); // 4 digits
+            int segment6 = 1000 + random.nextInt(9000); // 4 digits
+            int segment7 = 10 + random.nextInt(90);     // 2 digits
+
+            // Format: 1234-5678-9012-3456-7890-1234-56
+            return String.format("%04d-%04d-%04d-%04d-%04d-%04d-%02d", 
+                segment1, segment2, segment3, segment4, segment5, segment6, segment7);
         }
     }
     
@@ -937,9 +1178,42 @@ public class Data {
             }
             return 0;
         }
+        
+        public static List<Appointment> searchAppointments(String searchTerm) {
+            List<Appointment> appointments = new ArrayList<>();
+            String query = "SELECT a.* FROM appointments a JOIN citizens c ON a.citizen_id = c.citizen_id " +
+                          "WHERE c.fname LIKE ? OR c.mname LIKE ? OR c.lname LIKE ? OR c.national_id LIKE ? " +
+                          "ORDER BY a.app_date, a.app_time";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                String likeTerm = "%" + searchTerm + "%";
+                stmt.setString(1, likeTerm);
+                stmt.setString(2, likeTerm);
+                stmt.setString(3, likeTerm);
+                stmt.setString(4, likeTerm);
+                
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    Appointment appointment = new Appointment(
+                        rs.getInt("appointment_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getDate("app_date"),
+                        rs.getString("app_time"),
+                        rs.getString("status"),
+                        rs.getDate("created_date")
+                    );
+                    appointments.add(appointment);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error searching appointments: " + e.getMessage());
+            }
+            return appointments;
+        }
     }
     
-    // ActivityLog class for activity_log table
+    // ActivityLog class for activity_log table (unchanged except for getFullName method usage)
     public static class ActivityLog {
         private int logId;
         private Integer userId;
@@ -957,7 +1231,7 @@ public class Data {
             this.actionTime = actionTime;
         }
         
-        // Getters and Setters
+        // Getters and Setters (unchanged)
         public int getLogId() { return logId; }
         public void setLogId(int logId) { this.logId = logId; }
         
@@ -973,7 +1247,7 @@ public class Data {
         public String getActionTime() { return actionTime; }
         public void setActionTime(String actionTime) { this.actionTime = actionTime; }
         
-        // Database Functions
+        // Database Functions (unchanged)
         public static List<ActivityLog> getAllActivityLogs() {
             List<ActivityLog> logs = new ArrayList<>();
             String query = "SELECT * FROM activity_log ORDER BY action_date DESC, action_time DESC";
@@ -997,8 +1271,6 @@ public class Data {
             }
             return logs;
         }
-        
-        
         
         public static List<ActivityLog> getActivityLogsByUser(int userId) {
             List<ActivityLog> logs = new ArrayList<>();
@@ -1131,20 +1403,22 @@ public class Data {
         }
     }
     
-    // Helper class to get combined citizen information
+    // Helper class to get combined citizen information (updated with new fields)
     public static class CitizenInfo {
         private Citizen citizen;
         private IDStatus status;
         private Appointment appointment;
         private User user;
+        private List<Document> documents;
         
         public CitizenInfo() {}
         
-        public CitizenInfo(Citizen citizen, IDStatus status, Appointment appointment, User user) {
+        public CitizenInfo(Citizen citizen, IDStatus status, Appointment appointment, User user, List<Document> documents) {
             this.citizen = citizen;
             this.status = status;
             this.appointment = appointment;
             this.user = user;
+            this.documents = documents;
         }
         
         // Getters and Setters
@@ -1160,6 +1434,9 @@ public class Data {
         public User getUser() { return user; }
         public void setUser(User user) { this.user = user; }
         
+        public List<Document> getDocuments() { return documents; }
+        public void setDocuments(List<Document> documents) { this.documents = documents; }
+        
         public static CitizenInfo getCitizenInfoByNationalId(String nationalId) {
             Citizen citizen = Citizen.getCitizenByNationalId(nationalId);
             if (citizen == null) return null;
@@ -1170,8 +1447,9 @@ public class Data {
             if (citizen.getUserId() != null) {
                 user = User.getUserById(citizen.getUserId());
             }
+            List<Document> documents = Document.getDocumentsByCitizenId(citizen.getCitizenId());
             
-            return new CitizenInfo(citizen, status, appointment, user);
+            return new CitizenInfo(citizen, status, appointment, user, documents);
         }
         
         public static CitizenInfo getCitizenInfoByCitizenId(int citizenId) {
@@ -1184,11 +1462,30 @@ public class Data {
             if (citizen.getUserId() != null) {
                 user = User.getUserById(citizen.getUserId());
             }
+            List<Document> documents = Document.getDocumentsByCitizenId(citizen.getCitizenId());
             
-            return new CitizenInfo(citizen, status, appointment, user);
+            return new CitizenInfo(citizen, status, appointment, user, documents);
+        }
+        
+        public static CitizenInfo getCitizenInfoByTransactionId(String transactionId) {
+            IDStatus status = IDStatus.getStatusByTransactionId(transactionId);
+            if (status == null) return null;
+            
+            Citizen citizen = Citizen.getCitizenById(status.getCitizenId());
+            if (citizen == null) return null;
+            
+            Appointment appointment = Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
+            User user = null;
+            if (citizen.getUserId() != null) {
+                user = User.getUserById(citizen.getUserId());
+            }
+            List<Document> documents = Document.getDocumentsByCitizenId(citizen.getCitizenId());
+            
+            return new CitizenInfo(citizen, status, appointment, user, documents);
         }
     }
     
+    // Document class for documents table (unchanged)
     public static class Document {
         private int documentId;
         private int citizenId;
@@ -1213,7 +1510,7 @@ public class Data {
             this.uploadDate = uploadDate;
         }
         
-        // Getters and Setters
+        // Getters and Setters (unchanged)
         public int getDocumentId() { return documentId; }
         public void setDocumentId(int documentId) { this.documentId = documentId; }
         
@@ -1238,7 +1535,7 @@ public class Data {
         public Date getUploadDate() { return uploadDate; }
         public void setUploadDate(Date uploadDate) { this.uploadDate = uploadDate; }
         
-        // Database Functions
+        // Database Functions (unchanged)
         public static List<Document> getDocumentsByCitizenId(int citizenId) {
             List<Document> documents = new ArrayList<>();
             String query = "SELECT * FROM documents WHERE citizen_id = ? ORDER BY required_by, document_name";
@@ -1480,7 +1777,7 @@ public class Data {
         }
     }
     
-    // Notification class for notifications table
+    // Notification class for notifications table (unchanged)
     public static class Notification {
         private int notificationId;
         private int citizenId;
@@ -1503,7 +1800,7 @@ public class Data {
             this.readStatus = readStatus;
         }
         
-        // Getters and Setters
+        // Getters and Setters (unchanged)
         public int getNotificationId() { return notificationId; }
         public void setNotificationId(int notificationId) { this.notificationId = notificationId; }
         
@@ -1525,7 +1822,7 @@ public class Data {
         public String getReadStatus() { return readStatus; }
         public void setReadStatus(String readStatus) { this.readStatus = readStatus; }
         
-        // Database Functions
+        // Database Functions (unchanged)
         public static List<Notification> getNotificationsByCitizenId(int citizenId) {
             List<Notification> notifications = new ArrayList<>();
             String query = "SELECT * FROM notifications WHERE citizen_id = ? ORDER BY notification_date DESC, notification_time DESC";

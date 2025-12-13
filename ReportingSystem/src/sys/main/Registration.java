@@ -18,7 +18,7 @@ public class Registration extends javax.swing.JPanel {
         MiddleNameTextOptional.setPlaceholder("Middle Name (Optional)");
         LastnameText.setPlaceholder("Last Name *");
         EmailText.setPlaceholder("Email Address *");
-        TransactionReferenceNumberText.setPlaceholder("Transaction Reference Number");
+        TransactionReferenceNumberText.setPlaceholder("Transaction Reference Number *");
         PasswordText.setPlaceholder("Password *");
         ConfirmPasswordText.setPlaceholder("Confirm Password *");
 
@@ -70,7 +70,7 @@ public class Registration extends javax.swing.JPanel {
         PasswordText.setExpandedHeight(50);
         PasswordText.disablePasswordVisibilityToggle();
         
-        // Style confirm password field - ADD THIS
+        // Style confirm password field
         ConfirmPasswordText.setFocusedBorderColor(focusedBlue);
         ConfirmPasswordText.setUnfocusedBorderColor(grayBorder);
         ConfirmPasswordText.setPlaceholderColor(placeholderGray);
@@ -126,6 +126,33 @@ public class Registration extends javax.swing.JPanel {
 
         JOptionPane.showMessageDialog(this, terms, 
             "Terms and Conditions", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void validateTransactionReferenceNumber(String transactionId) {
+        // This method can be called to validate the transaction ID
+        // For now, we'll just show a message
+        if (transactionId != null && !transactionId.isEmpty()) {
+            Data.IDStatus status = Data.IDStatus.getStatusByTransactionId(transactionId);
+            if (status != null) {
+                Data.Citizen citizen = Data.Citizen.getCitizenById(status.getCitizenId());
+                if (citizen != null) {
+                    // Pre-fill name fields if they match
+                    String enteredFirstName = FirstnameText.getText().trim();
+                    String enteredLastName = LastnameText.getText().trim();
+                    
+                    if (!enteredFirstName.isEmpty() && !enteredLastName.isEmpty()) {
+                        if (enteredFirstName.equalsIgnoreCase(citizen.getFname()) && 
+                            enteredLastName.equalsIgnoreCase(citizen.getLname())) {
+                            // Names match - show confirmation
+                            JOptionPane.showMessageDialog(this,
+                                "Transaction reference verified!\n" +
+                                "Application found for: " + citizen.getFullName(),
+                                "Verification Success", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -260,98 +287,7 @@ public class Registration extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void CreateAccountButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CreateAccountButtonActionPerformed
-        if (FirstnameText.getText().trim().isEmpty() ||
-            LastnameText.getText().trim().isEmpty() ||
-            TransactionReferenceNumberText.getText().trim().isEmpty() ||
-            PasswordText.getPassword().trim().isEmpty() ||
-            ConfirmPasswordText.getPassword().trim().isEmpty()) { // Add this
-
-            JOptionPane.showMessageDialog(this,
-                "Please fill in all required fields marked with *",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // Validate email format
-        String email = EmailText.getText().trim();
-        if (!isValidEmail(email)) {
-            JOptionPane.showMessageDialog(this,
-                "Please enter a valid email address",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // Validate password strength
-        String password = PasswordText.getPassword();
-        String passwordError = validatePassword(password);
-        if (passwordError != null) {
-            JOptionPane.showMessageDialog(this,
-                passwordError,
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
-            PasswordText.clear();
-            ConfirmPasswordText.clear();
-            PasswordText.requestFocus();
-            return;
-        }
-
-        // Validate password match - ADD THIS
-        String confirmPassword = ConfirmPasswordText.getPassword();
-        if (!password.equals(confirmPassword)) {
-            JOptionPane.showMessageDialog(this,
-                "Passwords do not match. Please ensure both password fields are identical.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
-            // Clear password fields
-            PasswordText.clear();
-            ConfirmPasswordText.clear();
-            PasswordText.requestFocus();
-            return;
-        }
-
-        // Validate terms and conditions - ADD THIS
-        if (!TermsAndConditionCheckBox.isSelected()) {
-            JOptionPane.showMessageDialog(this,
-                "You must agree to the Terms and Conditions to create an account.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
-            TermsAndConditionCheckBox.setError(true); // This will work now
-            return;
-        } else {
-            TermsAndConditionCheckBox.setError(false); // Clear error state
-        }
-
-        try {
-            // Create full name
-            String fullName = FirstnameText.getText().trim();
-            if (!MiddleNameTextOptional.getText().trim().isEmpty()) {
-                fullName += " " + MiddleNameTextOptional.getText().trim();
-            }
-            fullName += " " + LastnameText.getText().trim();
-
-            // Create user data object
-            Data.User newUser = new Data.User();
-            newUser.setFullName(fullName);
-            newUser.setUsername(email); // Using email as username
-            newUser.setPassword(password);
-            newUser.setRole("citizen");
-            newUser.setPhone(""); // Phone is not collected in this form
-            newUser.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
-
-            // TODO: Add database insertion logic here
-            // For now, show success message
-            JOptionPane.showMessageDialog(this,
-                "Registration successful!\n\n" +
-                "Account created for: " + fullName + "\n" +
-                "Email: " + email + "\n\n" +
-                "Please sign in with your credentials.",
-                "Registration Successful", JOptionPane.INFORMATION_MESSAGE);
-
-            // Clear form
-            clearForm();
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                "Error during registration: " + e.getMessage(),
-                "Registration Error", JOptionPane.ERROR_MESSAGE);
-        }
+        
     }//GEN-LAST:event_CreateAccountButtonActionPerformed
 
     private void SigninButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SigninButtonActionPerformed
@@ -379,11 +315,6 @@ public class Registration extends javax.swing.JPanel {
             return "Password must contain at least one letter";
         }
 
-        // Check for at least one special character (optional)
-        // if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
-        //     return "Password must contain at least one special character";
-        // }
-
         return null; // Password is valid
     }
     
@@ -395,12 +326,12 @@ public class Registration extends javax.swing.JPanel {
         EmailText.clear();
         TransactionReferenceNumberText.clear();
         PasswordText.clear();
-        ConfirmPasswordText.clear(); // Add this
-        TermsAndConditionCheckBox.setSelected(false); // Add this
-        TermsAndConditionCheckBox.setError(false); // Add this
+        ConfirmPasswordText.clear();
+        TermsAndConditionCheckBox.setSelected(false);
+        TermsAndConditionCheckBox.setError(false);
     }
 
-    // Getters for components (if needed)
+    // Getters for components
     public javax.swing.JButton getCreateAccountButton() {
         return CreateAccountButton;
     }
@@ -440,9 +371,6 @@ public class Registration extends javax.swing.JPanel {
     public javax.swing.JButton getSigninButton() {
         return SigninButton;
     }
-
-
-
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private sys.main.CustomPasswordField ConfirmPasswordText;

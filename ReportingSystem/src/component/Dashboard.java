@@ -7,6 +7,7 @@ import backend.objects.Data.IDStatus;
 import backend.objects.Data.Appointment;
 import backend.objects.Data.Document;
 import backend.objects.Data.Notification;
+import static backend.objects.Data.IDStatus.formatTransactionId;
 import sys.effect.RippleEffect;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -256,24 +257,34 @@ public class Dashboard extends javax.swing.JPanel {
             // Check if user already has a citizen record
             currentCitizen = Data.Citizen.getCitizenByUserId(currentUser.getUserId());
             if (currentCitizen != null) return;
-            
+
             // Create a new citizen record for the user
-            Citizen newCitizen = new Citizen();
+            Data.Citizen newCitizen = new Data.Citizen();
             newCitizen.setUserId(currentUser.getUserId());
-            newCitizen.setFullName(currentUser.getFullName());
+
+            // Set separate name fields instead of fullName
+            newCitizen.setFname(currentUser.getFname());
+            newCitizen.setMname(currentUser.getMname());
+            newCitizen.setLname(currentUser.getLname());
+
             newCitizen.setPhone(currentUser.getPhone());
+            newCitizen.setEmail(currentUser.getEmail());
             newCitizen.setApplicationDate(new java.sql.Date(System.currentTimeMillis()));
-            
+
+            // You might want to generate a temporary transaction ID or leave it null
+            // The actual transaction ID will be generated when status is created
+
             // Try to add citizen
             boolean success = Data.Citizen.addCitizen(newCitizen);
             if (success) {
                 // Reload citizen data
                 currentCitizen = Data.Citizen.getCitizenByUserId(currentUser.getUserId());
                 System.out.println("Created default citizen record for user: " + currentUser.getUsername());
-                
-                // Create default status
-                IDStatus defaultStatus = new IDStatus();
+
+                // Create default status with generated transaction ID
+                Data.IDStatus defaultStatus = new Data.IDStatus();
                 defaultStatus.setCitizenId(currentCitizen.getCitizenId());
+                defaultStatus.setTransactionId(Data.IDStatus.generateTransactionId(currentCitizen.getCitizenId()));
                 defaultStatus.setStatus("Application Submitted");
                 defaultStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
                 defaultStatus.setNotes("Application has been submitted for processing");
@@ -281,6 +292,7 @@ public class Dashboard extends javax.swing.JPanel {
             }
         } catch (Exception e) {
             System.err.println("Error creating default citizen record: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -424,11 +436,19 @@ public class Dashboard extends javax.swing.JPanel {
                 return;
             }
 
-            // Box 1: My Application Status
-            IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+            // Get transaction ID and format it
+            Data.IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+            String transactionId = (status != null && status.getTransactionId() != null && !status.getTransactionId().isEmpty()) 
+                ? Data.IDStatus.formatTransactionId(status.getTransactionId())
+                : "TXN-Not-Assigned";
+
+            // Box 1: My Application Status - Show transaction ID in tooltip or additional label
             String statusText = (status != null) ? status.getStatus() : "Application Submitted";
             MyApplicationStatusValueLabel.setText(statusText);
             MyApplicationStatusTitleLabel.setText("My Application Status");
+
+            // You could set tooltip with transaction ID
+            MyApplicationStatusBoxPanel.setToolTipText("Transaction ID: " + transactionId);
 
             // Box 2: Days Since Application
             if (currentCitizen.getApplicationDate() != null) {
@@ -441,7 +461,7 @@ public class Dashboard extends javax.swing.JPanel {
             }
 
             // Box 3: My Appointment
-            Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+            Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
             if (appointment != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("MMM dd");
                 MyAppointmentCountLabel.setText(sdf.format(appointment.getAppDate()));
@@ -455,6 +475,21 @@ public class Dashboard extends javax.swing.JPanel {
             int notificationCount = Data.Notification.getUnreadCount(currentCitizen.getCitizenId());
             NotificationsValueLabel.setText(String.valueOf(notificationCount));
             NotificationsTitleLabel.setText("Notifications");
+
+            // Update search label to include name details - FIXED the substring issue
+            String shortTransactionId = transactionId;
+            if (transactionId.length() > 15) {
+                // Show first 4 segments: 1234-5678-9012-3456...
+                shortTransactionId = transactionId.substring(0, 19) + "...";
+            }
+
+            // Get first and last name safely
+            String firstName = (currentCitizen.getFname() != null) ? currentCitizen.getFname() : "";
+            String lastName = (currentCitizen.getLname() != null) ? currentCitizen.getLname() : "";
+            String fullNameDisplay = firstName + " " + lastName;
+
+            searchLabel.setText(fullNameDisplay.trim() + " | TRN: " + shortTransactionId);
+
         } catch (Exception e) {
             System.err.println("Error loading dashboard data: " + e.getMessage());
             e.printStackTrace();
@@ -462,17 +497,42 @@ public class Dashboard extends javax.swing.JPanel {
         }
     }
     
+    public static String maskTransactionId(String transactionId) {
+        if (transactionId == null || transactionId.isEmpty()) {
+            return "TXN-Not-Assigned";
+        }
+
+        String formatted = formatTransactionId(transactionId);
+
+        // Mask all but last 4 digits of the last segment: 1234-5678-9012-3456-7890-1234-XX56
+        if (formatted.length() >= 8) {
+            String[] segments = formatted.split("-");
+            if (segments.length >= 7) {
+                String lastSegment = segments[6];
+                if (lastSegment.length() == 2) {
+                    // Show as XX-56 (last 2 digits)
+                    return segments[0] + "-" + segments[1] + "-XXXX-XXXX-XXXX-XXXX-XX" + lastSegment;
+                }
+            }
+        }
+
+        return formatted;
+    }
+    
     private void loadApplicationTimelineTable() {
-        DefaultTableModel model = (DefaultTableModel) ApplicationTimelineTable.getModel(); // Changed from RequiredDocumentsTable
+        DefaultTableModel model = (DefaultTableModel) ApplicationTimelineTable.getModel();
         model.setRowCount(0);
         currentView = 1;
-
+        
         try {
             if (currentCitizen == null) {
                 model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
                 return;
             }
-
+            
+            // Get transaction ID safely
+            Data.IDStatus currentStatus = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+            
             // Get all activity logs for this citizen
             List<Data.ActivityLog> activityLogs = Data.ActivityLog.getActivityLogsByCitizenId(currentCitizen.getCitizenId());
 
@@ -481,7 +541,20 @@ public class Dashboard extends javax.swing.JPanel {
 
             // Create a list to store all timeline entries
             List<Object[]> timelineEntries = new ArrayList<>();
-
+            
+            String transactionId = (currentStatus != null && currentStatus.getTransactionId() != null && !currentStatus.getTransactionId().isEmpty()) 
+                ? currentStatus.getTransactionId() 
+                : "TXN-Not-Assigned";
+            
+            // Add transaction ID as first entry
+            model.addRow(new Object[]{
+                "TXN ID",
+                transactionId,
+                "Your application tracking number",
+                "System",
+                "Use this to track your application"
+            });
+            
             // Add application submission
             if (currentCitizen.getApplicationDate() != null) {
                 timelineEntries.add(new Object[]{
@@ -489,7 +562,7 @@ public class Dashboard extends javax.swing.JPanel {
                     "Application Submitted",
                     "Your National ID application has been submitted",
                     "System",
-                    "Awaiting processing"
+                    "Transaction ID: " + transactionId
                 });
             }
 
@@ -751,6 +824,9 @@ public class Dashboard extends javax.swing.JPanel {
         if (NotificationsValueLabel != null) {
             NotificationsValueLabel.setText("0");
             NotificationsTitleLabel.setText("Notifications");
+        }
+        if (searchLabel != null) {
+            searchLabel.setText("User: Not Available | TXN: Not Available");
         }
     }
 

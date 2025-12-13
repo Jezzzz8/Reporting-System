@@ -70,7 +70,7 @@ public class Landing extends javax.swing.JFrame {
 
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "Please enter both username and password.", 
+                "Please enter both username/email and password.", 
                 "Login Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -79,7 +79,7 @@ public class Landing extends javax.swing.JFrame {
         loginButton.setEnabled(false);
         loginButton.setText("Logging in...");
 
-        // Try to authenticate
+        // Try to authenticate - allow both username or email
         loggedInUser = Data.User.authenticate(username, password);
 
         if (loggedInUser != null) {
@@ -90,10 +90,10 @@ public class Landing extends javax.swing.JFrame {
             dispose();
         } else {
             JOptionPane.showMessageDialog(this, 
-                "Invalid username or password!", 
+                "Invalid username/email or password!", 
                 "Login Failed", JOptionPane.ERROR_MESSAGE);
 
-            // Reset form - Use setPassword() instead of setText()
+            // Reset form
             passwordField.setPassword("");
             loginButton.setEnabled(true);
             loginButton.setText("LOGIN");
@@ -116,6 +116,7 @@ public class Landing extends javax.swing.JFrame {
         if (firstNameField.getText().trim().isEmpty() ||
             lastNameField.getText().trim().isEmpty() ||
             emailField.getText().trim().isEmpty() ||
+            refNumField.getText().trim().isEmpty() ||
             passwordField.getPassword().trim().isEmpty() ||
             confirmPasswordField.getPassword().trim().isEmpty()) {
             
@@ -171,13 +172,6 @@ public class Landing extends javax.swing.JFrame {
         }
         
         try {
-            // Create full name
-            String fullName = firstNameField.getText().trim();
-            if (!middleNameField.getText().trim().isEmpty()) {
-                fullName += " " + middleNameField.getText().trim();
-            }
-            fullName += " " + lastNameField.getText().trim();
-            
             // Check if email already exists
             if (isEmailAlreadyRegistered(email)) {
                 JOptionPane.showMessageDialog(this,
@@ -186,37 +180,84 @@ public class Landing extends javax.swing.JFrame {
                 return;
             }
             
-            // Create user data object
+            // Check if transaction reference number exists
+            String transactionId = refNumField.getText().trim();
+            Data.IDStatus status = Data.IDStatus.getStatusByTransactionId(transactionId);
+            if (status == null) {
+                JOptionPane.showMessageDialog(this,
+                    "Invalid transaction reference number. Please check and try again.",
+                    "Registration Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Get citizen associated with this transaction
+            Data.Citizen citizen = Data.Citizen.getCitizenById(status.getCitizenId());
+            if (citizen == null) {
+                JOptionPane.showMessageDialog(this,
+                    "No application found for this transaction reference number.",
+                    "Registration Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Check if citizen already has a user account
+            if (citizen.getUserId() != null) {
+                JOptionPane.showMessageDialog(this,
+                    "An account already exists for this application. Please sign in instead.",
+                    "Registration Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Create user data object with separate name fields
             Data.User newUser = new Data.User();
-            newUser.setFullName(fullName);
-            newUser.setUsername(email);
+            newUser.setFname(firstNameField.getText().trim());
+            newUser.setMname(middleNameField.getText().trim());
+            newUser.setLname(lastNameField.getText().trim());
+            newUser.setUsername(email); // Using email as username
             newUser.setPassword(password);
             newUser.setRole("citizen");
-            newUser.setPhone(""); // Phone is not collected in this form
+            newUser.setPhone(citizen.getPhone()); // Use phone from citizen record
+            newUser.setEmail(email);
             newUser.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
             
             // Save user to database
-            boolean success = Data.User.addUser(newUser);
+            boolean userSuccess = Data.User.addUser(newUser);
             
-            if (success) {
-                JOptionPane.showMessageDialog(this,
-                    "Registration successful!\n\n" +
-                    "Account created for: " + fullName + "\n" +
-                    "Email: " + email + "\n\n" +
-                    "Please sign in with your credentials.",
-                    "Registration Successful", JOptionPane.INFORMATION_MESSAGE);
-                
-                // Clear form
-                clearRegistrationForm();
-                
-                // Switch back to login tab
-                BodyTabbedPane.setSelectedIndex(0);
-                
-                // Auto-fill login form with new credentials
-                login.getUsernameText().setText(email);
-                login.getPasswordText().setPassword("");
-                login.getUsernameText().requestFocus();
-                
+            if (userSuccess) {
+                // Get the newly created user ID
+                Data.User createdUser = Data.User.authenticate(email, password);
+                if (createdUser != null) {
+                    // Link citizen to user
+                    citizen.setUserId(createdUser.getUserId());
+                    boolean citizenSuccess = Data.Citizen.updateCitizen(citizen);
+                    
+                    if (citizenSuccess) {
+                        // Log activity
+                        Data.ActivityLog.logActivity(createdUser.getUserId(), "Registered account and linked to citizen ID: " + citizen.getCitizenId());
+                        
+                        JOptionPane.showMessageDialog(this,
+                            "Registration successful!\n\n" +
+                            "Account created for: " + createdUser.getFullName() + "\n" +
+                            "Email: " + email + "\n" +
+                            "Linked to your PhilSys application\n\n" +
+                            "Please sign in with your credentials.",
+                            "Registration Successful", JOptionPane.INFORMATION_MESSAGE);
+                        
+                        // Clear form
+                        clearRegistrationForm();
+                        
+                        // Switch back to login tab
+                        BodyTabbedPane.setSelectedIndex(0);
+                        
+                        // Auto-fill login form with new credentials
+                        login.getUsernameText().setText(email);
+                        login.getPasswordText().setPassword("");
+                        login.getUsernameText().requestFocus();
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                            "Registration completed but could not link to your application. Please contact support.",
+                            "Partial Success", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
             } else {
                 JOptionPane.showMessageDialog(this,
                     "Registration failed. Please try again or contact support.",
@@ -256,10 +297,11 @@ public class Landing extends javax.swing.JFrame {
     
     private boolean isEmailAlreadyRegistered(String email) {
         // Check if email exists in database
-        // You can implement this by querying the database
-        // For now, we'll use a simple check with existing users
         java.util.List<Data.User> users = Data.User.getAllUsers();
         for (Data.User user : users) {
+            if (user.getEmail() != null && user.getEmail().equalsIgnoreCase(email)) {
+                return true;
+            }
             if (user.getUsername().equalsIgnoreCase(email)) {
                 return true;
             }
@@ -383,14 +425,8 @@ public class Landing extends javax.swing.JFrame {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private component.NoTabJTabbedPane BodyTabbedPane;
-    private javax.swing.JPanel LEFT;
-    private javax.swing.JPanel LEFT1;
     private javax.swing.JPanel LEFT2;
-    private javax.swing.JPanel LEFT3;
-    private javax.swing.JLabel LogoLabel;
-    private javax.swing.JLabel LogoLabel1;
     private javax.swing.JLabel LogoLabel2;
-    private javax.swing.JLabel LogoLabel3;
     private javax.swing.JPanel MainPanel;
     private javax.swing.JPanel RIGHT;
     private sys.main.Login login;

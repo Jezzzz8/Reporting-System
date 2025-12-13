@@ -2,6 +2,7 @@ package component;
 
 import backend.objects.Data.*;
 import component.Calendar.CalendarCustom.CalendarCustomListener;
+import backend.objects.Data.IDStatus;
 
 import java.awt.Color;
 import java.awt.GridLayout;
@@ -97,6 +98,11 @@ public class Scheduling extends javax.swing.JPanel {
         // Get citizen data for the current user
         this.citizen = Citizen.getCitizenByUserId(currentUser.getUserId());
         if (citizen != null) {
+            // Get transaction ID from IDStatus
+            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+            if (idStatus != null) {
+                System.out.println("Transaction ID found: " + idStatus.getTransactionId());
+            }
             updateSummaryPanel();
         } else {
             System.err.println("ERROR: No citizen found for user ID: " + currentUser.getUserId());
@@ -215,11 +221,18 @@ public class Scheduling extends javax.swing.JPanel {
     
     private void updateSummaryPanel() {
         if (citizen != null) {
+            // Get the transaction ID from IDStatus and format it
+            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+            String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+                ? IDStatus.formatTransactionId(idStatus.getTransactionId())
+                : "Not assigned";
+
             // Update citizen info labels
             lblName.setText(citizen.getFullName());
-            lblNationalId.setText(citizen.getNationalId());
+            // Show formatted Transaction ID
+            lblTransactionId.setText(transactionId);
             lblPhone.setText(citizen.getPhone());
-            
+
             if (selectedDate != null) {
                 lblSelectedDate.setText(dateFormat.format(selectedDate));
                 lblSelectedDay.setText(dayFormat.format(selectedDate));
@@ -227,7 +240,7 @@ public class Scheduling extends javax.swing.JPanel {
                 lblSelectedDate.setText("Not selected");
                 lblSelectedDay.setText("");
             }
-            
+
             if (selectedTime != null) {
                 lblSelectedTime.setText(selectedTime);
             } else {
@@ -235,7 +248,7 @@ public class Scheduling extends javax.swing.JPanel {
             }
         }
     }
-    
+
     private void updateProgress() {
         // Remove the automatic calculation since we're setting fixed values
         // This method is called when date/time is selected, but we don't want it to change progress bar
@@ -296,6 +309,12 @@ public class Scheduling extends javax.swing.JPanel {
             return false;
         }
 
+        // Get transaction ID
+        IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+        String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+            ? idStatus.getTransactionId() 
+            : "Not assigned";
+
         // Additional validation: Check if date is in the past
         Calendar today = Calendar.getInstance();
         today.set(Calendar.HOUR_OF_DAY, 0);
@@ -352,24 +371,27 @@ public class Scheduling extends javax.swing.JPanel {
         boolean success = Appointment.addAppointment(appointment);
 
         if (success) {
-
-            // Log activity
+            // Log activity with transaction ID
             ActivityLog.logActivity(currentUser.getUserId(), 
-                "Scheduled appointment for " + dateFormat.format(selectedDate) + " at " + selectedTime);
-            
-            // Send notification to citizen
+                "Scheduled appointment for Transaction ID: " + transactionId + 
+                " on " + dateFormat.format(selectedDate) + " at " + selectedTime);
+
+            // Send notification to citizen with transaction ID
             if (citizen.getUserId() != null) {
-                String message = "Your appointment has been scheduled for " + 
-                    dateFormat.format(selectedDate) + " at " + selectedTime;
+                String message = "Your appointment for Transaction ID: " + transactionId + 
+                    " has been scheduled for " + dateFormat.format(selectedDate) + " at " + selectedTime;
                 Notification.addNotification(citizen.getCitizenId(), message, "Appointment");
             }
 
             JOptionPane.showMessageDialog(this, 
                 "Appointment scheduled successfully!\n\n" +
+                "Transaction ID: " + transactionId + "\n" +
+                "Name: " + citizen.getFullName() + "\n" +
                 "Date: " + dateFormat.format(selectedDate) + "\n" +
                 "Time: " + selectedTime + "\n" +
                 "Status: Scheduled\n\n" +
-                "Please arrive 15 minutes before your appointment time.",
+                "Please arrive 15 minutes before your appointment time.\n" +
+                "Bring your Transaction ID: " + transactionId,
                 "Appointment Confirmed", JOptionPane.INFORMATION_MESSAGE);
 
             // Refresh calendar to show the new booking
@@ -386,7 +408,6 @@ public class Scheduling extends javax.swing.JPanel {
             return false;
         }
     }
-
     
     private void initTimeSlots() {
         // Remove existing components and set layout
@@ -475,7 +496,7 @@ public class Scheduling extends javax.swing.JPanel {
         PreviousButton = new javax.swing.JButton();
         ContinueButton = new javax.swing.JButton();
         lblName = new javax.swing.JLabel();
-        lblNationalId = new javax.swing.JLabel();
+        lblTransactionId = new javax.swing.JLabel();
         lblPhone = new javax.swing.JLabel();
         lblSelectedDate = new javax.swing.JLabel();
         lblSelectedDay = new javax.swing.JLabel();
@@ -513,7 +534,7 @@ public class Scheduling extends javax.swing.JPanel {
         ProgressHeaderPanel.setLayout(ProgressHeaderPanelLayout);
         ProgressHeaderPanelLayout.setHorizontalGroup(
             ProgressHeaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(customProgressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(customProgressBar, javax.swing.GroupLayout.DEFAULT_SIZE, 850, Short.MAX_VALUE)
         );
         ProgressHeaderPanelLayout.setVerticalGroup(
             ProgressHeaderPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -550,19 +571,19 @@ public class Scheduling extends javax.swing.JPanel {
             }
         });
 
-        lblName.setPreferredSize(new java.awt.Dimension(100, 40));
+        lblName.setPreferredSize(new java.awt.Dimension(90, 30));
 
-        lblNationalId.setPreferredSize(new java.awt.Dimension(100, 40));
+        lblTransactionId.setPreferredSize(new java.awt.Dimension(90, 30));
 
-        lblPhone.setPreferredSize(new java.awt.Dimension(100, 40));
+        lblPhone.setPreferredSize(new java.awt.Dimension(90, 30));
 
-        lblSelectedDate.setPreferredSize(new java.awt.Dimension(100, 40));
+        lblSelectedDate.setPreferredSize(new java.awt.Dimension(90, 30));
 
-        lblSelectedDay.setPreferredSize(new java.awt.Dimension(100, 40));
+        lblSelectedDay.setPreferredSize(new java.awt.Dimension(90, 30));
 
-        lblSelectedTime.setPreferredSize(new java.awt.Dimension(100, 40));
+        lblSelectedTime.setPreferredSize(new java.awt.Dimension(90, 30));
 
-        timeSlotsPanel.setPreferredSize(new java.awt.Dimension(200, 50));
+        timeSlotsPanel.setPreferredSize(new java.awt.Dimension(200, 35));
 
         javax.swing.GroupLayout timeSlotsPanelLayout = new javax.swing.GroupLayout(timeSlotsPanel);
         timeSlotsPanel.setLayout(timeSlotsPanelLayout);
@@ -572,94 +593,95 @@ public class Scheduling extends javax.swing.JPanel {
         );
         timeSlotsPanelLayout.setVerticalGroup(
             timeSlotsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 50, Short.MAX_VALUE)
+            .addGap(0, 35, Short.MAX_VALUE)
         );
 
         JLabel.setText("Name");
-        JLabel.setPreferredSize(new java.awt.Dimension(100, 40));
+        JLabel.setPreferredSize(new java.awt.Dimension(100, 30));
 
         JLabel1.setText("Phone");
-        JLabel1.setPreferredSize(new java.awt.Dimension(100, 40));
+        JLabel1.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        JLabel2.setText("National ID");
-        JLabel2.setPreferredSize(new java.awt.Dimension(100, 40));
+        JLabel2.setText("TRN");
+        JLabel2.setPreferredSize(new java.awt.Dimension(100, 30));
 
         JLabel3.setText("Selected Time");
-        JLabel3.setPreferredSize(new java.awt.Dimension(100, 40));
+        JLabel3.setPreferredSize(new java.awt.Dimension(100, 30));
 
         JLabel4.setText("Selected Date");
-        JLabel4.setPreferredSize(new java.awt.Dimension(100, 40));
+        JLabel4.setPreferredSize(new java.awt.Dimension(100, 30));
 
         JLabel5.setText("Selected Day");
-        JLabel5.setPreferredSize(new java.awt.Dimension(100, 40));
+        JLabel5.setPreferredSize(new java.awt.Dimension(100, 30));
 
         javax.swing.GroupLayout SummaryConfirmationPanelLayout = new javax.swing.GroupLayout(SummaryConfirmationPanel);
         SummaryConfirmationPanel.setLayout(SummaryConfirmationPanelLayout);
         SummaryConfirmationPanelLayout.setHorizontalGroup(
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addGap(25, 25, 25)
                         .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(ContinueButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addGap(21, 21, 21)
+                    .addComponent(timeSlotsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 221, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
                         .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(timeSlotsPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 189, Short.MAX_VALUE)
-                            .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(JLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
-                                    .addComponent(JLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
-                                    .addComponent(JLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
-                                    .addComponent(JLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
-                                    .addComponent(JLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE)
-                                    .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 112, Short.MAX_VALUE))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                                    .addComponent(lblNationalId, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                                    .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                                    .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                                    .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                                    .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE))))))
-                .addGap(23, 23, 23))
+                            .addComponent(JLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lblTransactionId, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
+                        .addComponent(JLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
+                        .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         SummaryConfirmationPanelLayout.setVerticalGroup(
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                .addGap(12, 12, 12)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblNationalId, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(lblTransactionId, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(JLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(JLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(JLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(JLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                    .addComponent(JLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(timeSlotsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(ContinueButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(PreviousButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(25, 25, 25))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         SchedulingTabbedPane.setBorder(null);
@@ -837,7 +859,7 @@ public class Scheduling extends javax.swing.JPanel {
                 .addComponent(ProgressHeaderPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)
                     .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -865,35 +887,45 @@ public class Scheduling extends javax.swing.JPanel {
         if (currentStep < 3) {
             if (isStepComplete(currentStep)) {
                 currentStep++;
-                updateUIForStep(currentStep); // This will update progress bar to 50 or 75
+                updateUIForStep(currentStep);
             } else {
                 JOptionPane.showMessageDialog(this, 
                     "Please complete the current step before continuing.", 
                     "Incomplete Step", JOptionPane.WARNING_MESSAGE);
             }
         } else {
-            // Final confirmation step - progress will be set to 100 in saveAppointment()
+            // Get transaction ID
+            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+            String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+                ? idStatus.getTransactionId() 
+                : "Not assigned";
+
+            // Final confirmation step
             int confirm = JOptionPane.showConfirmDialog(this,
                 "Confirm appointment details:\n\n" +
+                "Transaction ID: " + transactionId + "\n" +
                 "Date: " + dateFormat.format(selectedDate) + "\n" +
                 "Time: " + selectedTime + "\n" +
-                "Citizen: " + citizen.getFullName() + "\n\n" +
+                "Citizen: " + citizen.getFullName() + "\n" +
+                "First Name: " + citizen.getFname() + "\n" +
+                "Last Name: " + citizen.getLname() + "\n\n" +
                 "Are you sure you want to schedule this appointment?",
                 "Confirm Appointment", JOptionPane.YES_NO_OPTION);
 
             if (confirm == JOptionPane.YES_OPTION) {
-                boolean success = saveAppointment(); // This sets progress to 100 if successful
+                boolean success = saveAppointment();
                 if (success) {
                     // Reset form for new appointment
                     selectedDate = null;
                     selectedTime = null;
                     currentStep = 1;
-                    updateUIForStep(currentStep); // This will reset progress to 25
+                    updateUIForStep(currentStep);
                     updateSummaryPanel();
                     resetTimeSlots();
                 }
             }
         }
+
     }//GEN-LAST:event_ContinueButtonActionPerformed
     
     
@@ -925,11 +957,11 @@ public class Scheduling extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JLabel lblName;
-    private javax.swing.JLabel lblNationalId;
     private javax.swing.JLabel lblPhone;
     private javax.swing.JLabel lblSelectedDate;
     private javax.swing.JLabel lblSelectedDay;
     private javax.swing.JLabel lblSelectedTime;
+    private javax.swing.JLabel lblTransactionId;
     private javax.swing.JPanel timeSlotsPanel;
     // End of variables declaration//GEN-END:variables
 }
