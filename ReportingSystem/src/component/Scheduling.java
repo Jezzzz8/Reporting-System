@@ -514,13 +514,14 @@ public class Scheduling extends javax.swing.JPanel {
         EarliestAvailableButton = new javax.swing.JButton();
         ThisWeekButton = new javax.swing.JButton();
         NextWeekButton = new javax.swing.JButton();
-        calendarCustom = new component.Calendar.CalendarCustom();
-        jLabel1 = new javax.swing.JLabel();
+        DateIndicatorsPanel = new javax.swing.JPanel();
+        jLabel6 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
+        jLabel1 = new javax.swing.JLabel();
+        calendarCustom = new component.Calendar.CalendarCustom();
         SelectTimePanel = new javax.swing.JPanel();
         ConfirmDetailsPanel = new javax.swing.JPanel();
 
@@ -619,7 +620,7 @@ public class Scheduling extends javax.swing.JPanel {
         SummaryConfirmationPanelLayout.setHorizontalGroup(
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap()
                 .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
                         .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -646,7 +647,7 @@ public class Scheduling extends javax.swing.JPanel {
                         .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         SummaryConfirmationPanelLayout.setVerticalGroup(
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -726,13 +727,22 @@ public class Scheduling extends javax.swing.JPanel {
         });
         jLayeredPane1.add(NextWeekButton);
 
-        calendarCustom.setPreferredSize(new java.awt.Dimension(400, 300));
+        DateIndicatorsPanel.setBackground(new java.awt.Color(142, 217, 255));
+        DateIndicatorsPanel.setLayout(new java.awt.GridLayout());
 
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_today.png"))); // NOI18N
-        jLabel1.setText("Today");
-        jLabel1.setIconTextGap(2);
-        jLabel1.setPreferredSize(new java.awt.Dimension(16, 16));
+        jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_booked.png"))); // NOI18N
+        jLabel6.setText("Booked");
+        jLabel6.setIconTextGap(2);
+        jLabel6.setPreferredSize(new java.awt.Dimension(16, 16));
+        DateIndicatorsPanel.add(jLabel6);
+
+        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_weekend.png"))); // NOI18N
+        jLabel4.setText("Weekend");
+        jLabel4.setIconTextGap(2);
+        jLabel4.setPreferredSize(new java.awt.Dimension(16, 16));
+        DateIndicatorsPanel.add(jLabel4);
 
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_available.png"))); // NOI18N
@@ -740,75 +750,56 @@ public class Scheduling extends javax.swing.JPanel {
         jLabel2.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         jLabel2.setIconTextGap(2);
         jLabel2.setPreferredSize(new java.awt.Dimension(16, 16));
+        DateIndicatorsPanel.add(jLabel2);
 
         jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_selected.png"))); // NOI18N
         jLabel3.setText("Selected");
         jLabel3.setIconTextGap(2);
         jLabel3.setPreferredSize(new java.awt.Dimension(16, 16));
-
-        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_weekend.png"))); // NOI18N
-        jLabel4.setText("Weekend");
-        jLabel4.setIconTextGap(2);
-        jLabel4.setPreferredSize(new java.awt.Dimension(16, 16));
+        DateIndicatorsPanel.add(jLabel3);
 
         jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_holiday.png"))); // NOI18N
         jLabel5.setText("Holiday");
         jLabel5.setIconTextGap(2);
         jLabel5.setPreferredSize(new java.awt.Dimension(16, 16));
+        DateIndicatorsPanel.add(jLabel5);
 
-        jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_booked.png"))); // NOI18N
-        jLabel6.setText("Booked");
-        jLabel6.setIconTextGap(2);
-        jLabel6.setPreferredSize(new java.awt.Dimension(16, 16));
+        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/circle_today.png"))); // NOI18N
+        jLabel1.setText("Today");
+        jLabel1.setIconTextGap(2);
+        jLabel1.setPreferredSize(new java.awt.Dimension(16, 16));
+        DateIndicatorsPanel.add(jLabel1);
 
         javax.swing.GroupLayout SelectDatePanelLayout = new javax.swing.GroupLayout(SelectDatePanel);
         SelectDatePanel.setLayout(SelectDatePanelLayout);
         SelectDatePanelLayout.setHorizontalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
-                .addGap(145, 145, 145)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(145, 145, 145))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
-                .addGap(95, 95, 95)
-                .addGroup(SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(SelectDatePanelLayout.createSequentialGroup()
-                        .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(SelectDatePanelLayout.createSequentialGroup()
-                        .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE)
-                        .addGap(2, 2, 2)))
-                .addGap(95, 95, 95))
+                .addGap(106, 106, 106)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(106, 106, 106))
+            .addGroup(SelectDatePanelLayout.createSequentialGroup()
+                .addGap(53, 53, 53)
+                .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(53, 53, 53))
         );
         SelectDatePanelLayout.setVerticalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SelectDatePanelLayout.createSequentialGroup()
-                .addGap(104, 104, 104)
-                .addGroup(SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(5, 5, 5)
-                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE)
-                .addGap(4, 4, 4)
+                .addContainerGap()
+                .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(6, 6, 6))
+                .addContainerGap())
         );
 
         SchedulingTabbedPane.addTab("tab1", SelectDatePanel);
@@ -932,6 +923,7 @@ public class Scheduling extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel ConfirmDetailsPanel;
     private javax.swing.JButton ContinueButton;
+    private javax.swing.JPanel DateIndicatorsPanel;
     private javax.swing.JButton EarliestAvailableButton;
     private javax.swing.JLabel JLabel;
     private javax.swing.JLabel JLabel1;
