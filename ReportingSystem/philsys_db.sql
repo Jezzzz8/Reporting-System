@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 13, 2025 at 02:05 PM
+-- Generation Time: Dec 13, 2025 at 04:13 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -175,13 +175,13 @@ CREATE TABLE `id_status` (
 --
 
 INSERT INTO `id_status` (`status_id`, `transaction_id`, `citizen_id`, `status`, `update_date`, `notes`) VALUES
-(1, 'TXN2024001', 1, 'Processing', '2024-01-20', 'Being processed at Manila office'),
-(2, 'TXN2024002', 2, 'Ready for Pickup', '2024-01-25', 'Ready at Quezon City office'),
-(3, 'TXN2024003', 3, 'Pending Documents', '2024-01-18', 'Waiting for birth certificate'),
-(4, 'TXN2024004', 4, 'Submitted', '2024-01-19', 'Application submitted online'),
-(5, 'TXN2024005', 5, 'Processing', '2024-01-20', 'New application received'),
-(6, 'TXN2024006', 6, 'Verification', '2024-01-21', 'Documents under verification'),
-(7, 'TXN2024007', 7, 'Ready', '2024-01-22', 'ID printed and ready');
+(1, '1234-5678-9012-3456-7890-1234-01', 1, 'Processing', '2024-01-20', 'Being processed at Manila office'),
+(2, '1234-5678-9012-3456-7890-1234-02', 2, 'Ready for Pickup', '2024-01-25', 'Ready at Quezon City office'),
+(3, '1234-5678-9012-3456-7890-1234-03', 3, 'Pending Documents', '2024-01-18', 'Waiting for birth certificate'),
+(4, '1234-5678-9012-3456-7890-1234-04', 4, 'Submitted', '2024-01-19', 'Application submitted online'),
+(5, '1234-5678-9012-3456-7890-1234-05', 5, 'Processing', '2024-01-20', 'New application received'),
+(6, '1234-5678-9012-3456-7890-1234-06', 6, 'Verification', '2024-01-21', 'Documents under verification'),
+(7, '1234-5678-9012-3456-7890-1234-07', 7, 'Ready', '2024-01-22', 'ID printed and ready');
 
 -- --------------------------------------------------------
 

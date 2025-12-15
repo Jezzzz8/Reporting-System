@@ -3,6 +3,7 @@ package sys.main;
 import component.Dashboard;
 import component.DefaultForm;
 import component.IDStatus;
+import component.Profile;
 import backend.objects.Data;
 import backend.objects.Data.User;
 import component.Scheduling;
@@ -107,7 +108,7 @@ public class Main extends javax.swing.JFrame {
                         break;
                         
                     case 1: // Profile
-                        showForm(new DefaultForm("My Profile - Coming Soon"));
+                        showProfile();
                         break;
                         
                     case 2: // ID Status
@@ -197,6 +198,26 @@ public class Main extends javax.swing.JFrame {
                 
                 // Show the dashboard
                 showForm(dashboard);
+                
+            } catch (Exception e) {
+                System.err.println("Error creating dashboard: " + e.getMessage());
+                e.printStackTrace();
+                showError("Failed to load dashboard: " + e.getMessage());
+            }
+        });
+    }
+    
+    private void showProfile() {
+        System.out.println("showDashboard() called");
+        
+        SwingUtilities.invokeLater(() -> {
+            try {
+                System.out.println("Creating Dashboard for user: " + currentUser.getFullName());
+                Profile profile = new Profile(currentUser);
+                System.out.println("Dashboard created successfully");
+                
+                // Show the dashboard
+                showForm(profile);
                 
             } catch (Exception e) {
                 System.err.println("Error creating dashboard: " + e.getMessage());

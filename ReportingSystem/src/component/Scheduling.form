@@ -26,9 +26,9 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Component id="ProgressHeaderPanel" max="32767" attributes="0"/>
           <Group type="102" attributes="0">
-              <Component id="SchedulingTabbedPane" pref="617" max="32767" attributes="0"/>
+              <Component id="SchedulingTabbedPane" pref="666" max="32767" attributes="0"/>
               <EmptySpace min="-2" pref="0" max="-2" attributes="0"/>
-              <Component id="SummaryConfirmationPanel" pref="233" max="32767" attributes="0"/>
+              <Component id="SummaryConfirmationPanel" pref="184" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -102,31 +102,31 @@
                           <EmptySpace max="32767" attributes="0"/>
                           <Component id="ContinueButton" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <Component id="timeSlotsPanel" alignment="1" pref="221" max="32767" attributes="0"/>
+                      <Component id="timeSlotsPanel" alignment="1" pref="172" max="32767" attributes="0"/>
                       <Group type="102" alignment="0" attributes="0">
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="JLabel1" max="32767" attributes="0"/>
-                              <Component id="JLabel2" alignment="0" max="32767" attributes="0"/>
-                              <Component id="JLabel3" alignment="0" max="32767" attributes="0"/>
-                              <Component id="JLabel4" alignment="0" max="32767" attributes="0"/>
+                              <Component id="JLabel1" pref="0" max="32767" attributes="0"/>
+                              <Component id="JLabel2" alignment="0" pref="0" max="32767" attributes="0"/>
+                              <Component id="JLabel3" alignment="0" pref="0" max="32767" attributes="0"/>
+                              <Component id="JLabel4" alignment="0" pref="0" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="lblTransactionId" alignment="0" max="32767" attributes="0"/>
-                              <Component id="lblPhone" alignment="0" max="32767" attributes="0"/>
-                              <Component id="lblSelectedDate" alignment="0" max="32767" attributes="0"/>
-                              <Component id="lblSelectedTime" alignment="0" max="32767" attributes="0"/>
+                              <Component id="lblTransactionId" alignment="0" pref="0" max="32767" attributes="0"/>
+                              <Component id="lblPhone" alignment="0" pref="0" max="32767" attributes="0"/>
+                              <Component id="lblSelectedDate" alignment="0" pref="0" max="32767" attributes="0"/>
+                              <Component id="lblSelectedTime" alignment="0" pref="0" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                       <Group type="102" alignment="0" attributes="0">
-                          <Component id="JLabel5" max="32767" attributes="0"/>
+                          <Component id="JLabel5" pref="0" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="lblSelectedDay" max="32767" attributes="0"/>
+                          <Component id="lblSelectedDay" pref="0" max="32767" attributes="0"/>
                       </Group>
                       <Group type="102" alignment="0" attributes="0">
-                          <Component id="JLabel" max="32767" attributes="0"/>
+                          <Component id="JLabel" pref="0" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="lblName" max="32767" attributes="0"/>
+                          <Component id="lblName" pref="0" max="32767" attributes="0"/>
                       </Group>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>
@@ -367,14 +367,14 @@
                       <EmptySpace max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="1" attributes="0">
-                      <EmptySpace min="-2" pref="106" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                       <Component id="calendarCustom" max="32767" attributes="0"/>
-                      <EmptySpace min="-2" pref="106" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="0" attributes="0">
-                      <EmptySpace min="-2" pref="53" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                       <Component id="DateIndicatorsPanel" max="32767" attributes="0"/>
-                      <EmptySpace min="-2" pref="53" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -386,7 +386,7 @@
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                       <Component id="calendarCustom" max="32767" attributes="0"/>
                       <EmptySpace min="-2" max="-2" attributes="0"/>
-                      <Component id="jLayeredPane1" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLayeredPane1" max="32767" attributes="0"/>
                       <EmptySpace min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
@@ -597,7 +597,7 @@
           <Layout>
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <EmptySpace min="0" pref="612" max="32767" attributes="0"/>
+                  <EmptySpace min="0" pref="661" max="32767" attributes="0"/>
               </Group>
             </DimensionLayout>
             <DimensionLayout dim="1">

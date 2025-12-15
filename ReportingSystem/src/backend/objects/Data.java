@@ -918,7 +918,7 @@ public class Data {
         public static String generateTransactionId(int citizenId) {
             // Generate a 30-digit transaction ID in format: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XX
             java.util.Random random = new java.util.Random();
-
+            
             // Generate random numbers for each segment
             int segment1 = 1000 + random.nextInt(9000); // 4 digits
             int segment2 = 1000 + random.nextInt(9000); // 4 digits

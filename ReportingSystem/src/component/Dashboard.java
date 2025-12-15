@@ -1443,6 +1443,7 @@ public class Dashboard extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        dropdownContentFactory1 = new component.DropdownButton.DropdownContentFactory();
         BoxPanel = new javax.swing.JPanel();
         MyApplicationStatusBoxPanel = new javax.swing.JPanel();
         MyApplicationStatusValueLabel = new javax.swing.JLabel();
@@ -1808,7 +1809,7 @@ public class Dashboard extends javax.swing.JPanel {
         );
         ApplicationTimelineTablePanelLayout.setVerticalGroup(
             ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
         );
 
         DashboardCitizenTable.add(ApplicationTimelineTablePanel);
@@ -1867,7 +1868,7 @@ public class Dashboard extends javax.swing.JPanel {
             RequiredDocumentsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(RequiredDocumentsTablePanelLayout.createSequentialGroup()
                 .addGap(0, 0, 0)
-                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
 
@@ -1927,7 +1928,7 @@ public class Dashboard extends javax.swing.JPanel {
         );
         MyAppointmentDetailsTablePanelLayout.setVerticalGroup(
             MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
         );
 
         DashboardCitizenTable.add(MyAppointmentDetailsTablePanel);
@@ -1985,7 +1986,7 @@ public class Dashboard extends javax.swing.JPanel {
         MyNotificationsTablePanelLayout.setVerticalGroup(
             MyNotificationsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(MyNotificationsTablePanelLayout.createSequentialGroup()
-                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
                 .addGap(0, 0, 0))
         );
 
@@ -2013,14 +2014,14 @@ public class Dashboard extends javax.swing.JPanel {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(50, 50, 50)
+                .addGap(53, 53, 53)
                 .addComponent(BoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(146, 146, 146)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(searchLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(searchField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.DEFAULT_SIZE, 197, Short.MAX_VALUE)
+                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -2082,6 +2083,7 @@ public class Dashboard extends javax.swing.JPanel {
     private component.Table.CustomTable RequiredDocumentsTable;
     private javax.swing.JPanel RequiredDocumentsTablePanel;
     private javax.swing.JScrollPane RequiredDocumentsTableScrollPane;
+    private component.DropdownButton.DropdownContentFactory dropdownContentFactory1;
     private javax.swing.JTextField searchField;
     private javax.swing.JLabel searchLabel;
     // End of variables declaration//GEN-END:variables
