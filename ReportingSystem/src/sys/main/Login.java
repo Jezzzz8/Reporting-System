@@ -1,56 +1,59 @@
 package sys.main;
 
-import java.awt.Color;
-import java.awt.Font;
 import javax.swing.JOptionPane;
 
 public class Login extends javax.swing.JPanel {
     
     public Login() {
         initComponents();
-        applyStyles();
+        setupLoginAction();
     }
     
-    private void applyStyles() {
-        // Set placeholders - updated to mention email
-        UsernameText.setPlaceholder("Username or Email");
-        PasswordText.setPlaceholder("Password");
+    private void setupLoginAction() {
+        LoginButton.addActionListener(e -> performLogin());
 
-        // Set consistent colors
-        Color focusedBlue = new Color(0, 120, 215);
-        Color grayBorder = new Color(200, 200, 200);
-        Color placeholderGray = new Color(150, 150, 150);
+        // Add Enter key support
+        PasswordText.addActionListener(e -> performLogin());
+        UsernameText.addActionListener(e -> PasswordText.requestFocus());
+    }
 
-        // Style username field with animation heights
-        UsernameText.setFocusedBorderColor(focusedBlue);
-        UsernameText.setUnfocusedBorderColor(grayBorder);
-        UsernameText.setPlaceholderColor(placeholderGray);
-        UsernameText.setNormalHeight(40);  // Normal height
-        UsernameText.setExpandedHeight(50); // Height when focused
+    private void performLogin() {
+        String username = UsernameText.getText().trim();
+        String password = String.valueOf(PasswordText.getPassword());
 
-        // Style password field with animation heights
-        PasswordText.setFocusedBorderColor(focusedBlue);
-        PasswordText.setUnfocusedBorderColor(grayBorder);
-        PasswordText.setPlaceholderColor(placeholderGray);
-        PasswordText.setNormalHeight(40);  // Normal height
-        PasswordText.setExpandedHeight(50); // Height when focused
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Please enter both username/email and password.",
+                "Login Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        // Set fonts for consistency
-        Font textFieldFont = new Font("Segoe UI", Font.PLAIN, 14);
-        UsernameText.setFont(textFieldFont);
-        PasswordText.setFont(textFieldFont);
+        // Try to authenticate
+        backend.objects.Data.User user = backend.objects.Data.User.authenticate(username, password);
 
-        // Style login button
-        LoginButton.setBackground(focusedBlue);
-        LoginButton.setForeground(Color.WHITE);
-        LoginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        LoginButton.setBorder(null);
-        LoginButton.setFocusPainted(false);
+        if (user != null) {
+            JOptionPane.showMessageDialog(this,
+                "Login successful!\nWelcome " + user.getFullName(),
+                "Success", JOptionPane.INFORMATION_MESSAGE);
 
-        // Style other buttons
-        ForgotPasswordButton.setForeground(placeholderGray);
-        RegisterButton.setForeground(focusedBlue);
-        RegisterButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            // Log activity
+            backend.objects.Data.ActivityLog.logActivity(user.getUserId(),
+                "Logged in from Login panel");
+
+            // Clear form
+            clearForm();
+
+            // Note: In a real application, you would navigate to main dashboard here
+            // For now, just show success message
+        } else {
+            JOptionPane.showMessageDialog(this,
+                "Invalid username/email or password!",
+                "Login Failed", JOptionPane.ERROR_MESSAGE);
+
+            // Clear password field
+            PasswordText.setText("");
+            PasswordText.requestFocus();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -121,6 +124,10 @@ public class Login extends javax.swing.JPanel {
         jLabel3.setText("Don't have an account?");
         jLabel3.setPreferredSize(new java.awt.Dimension(150, 20));
 
+        UsernameText.setPlaceholder("Username or Email");
+
+        PasswordText.setPlaceholder("Password");
+
         javax.swing.GroupLayout RIGHTLayout = new javax.swing.GroupLayout(RIGHT);
         RIGHT.setLayout(RIGHTLayout);
         RIGHTLayout.setHorizontalGroup(
@@ -138,7 +145,7 @@ public class Login extends javax.swing.JPanel {
                         .addComponent(PasswordText, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(UsernameText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(50, Short.MAX_VALUE))
-            .addGroup(RIGHTLayout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, RIGHTLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -148,19 +155,19 @@ public class Login extends javax.swing.JPanel {
             .addGroup(RIGHTLayout.createSequentialGroup()
                 .addGap(24, 24, 24)
                 .addComponent(jLabel1)
-                .addGap(18, 78, Short.MAX_VALUE)
+                .addGap(18, 112, Short.MAX_VALUE)
                 .addComponent(UsernameText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(PasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(ForgotPasswordButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(31, 31, 31)
+                .addGap(18, 18, Short.MAX_VALUE)
                 .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(74, 74, 74)
+                .addGap(18, 18, 18)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(RegisterButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(54, Short.MAX_VALUE))
+                .addContainerGap(88, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
@@ -210,7 +217,7 @@ public class Login extends javax.swing.JPanel {
     // Helper method to clear form
     private void clearForm() {
         UsernameText.clear();
-        PasswordText.clear();
+        PasswordText.setText(""); // Changed from clear() to setText("")
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

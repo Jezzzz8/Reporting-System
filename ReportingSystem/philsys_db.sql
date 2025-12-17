@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 13, 2025 at 04:13 PM
+-- Generation Time: Dec 17, 2025 at 06:22 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -51,7 +51,56 @@ INSERT INTO `activity_log` (`log_id`, `user_id`, `action`, `action_date`, `actio
 (9, 6, 'Register', '2024-01-19', '09:00 AM'),
 (10, 7, 'Login', '2024-01-20', '10:30 AM'),
 (11, 3, 'Update Status', '2024-01-21', '11:15 AM'),
-(12, 4, 'Verify Document', '2024-01-22', '02:45 PM');
+(12, 4, 'Verify Document', '2024-01-22', '02:45 PM'),
+(459, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:27 PM'),
+(460, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:38 PM'),
+(461, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:39 PM'),
+(462, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:52 PM'),
+(463, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:09 AM'),
+(464, 1, 'Updated personal details', '2025-12-18', '12:11 AM'),
+(465, 2, 'Logged in successfully from Landing page', '2025-12-18', '12:11 AM'),
+(466, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:13 AM'),
+(467, 2, 'Logged in successfully from Landing page', '2025-12-18', '12:14 AM'),
+(468, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:18 AM'),
+(469, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:19 AM'),
+(470, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:25 AM'),
+(471, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:55 AM'),
+(472, 1, 'Logged in from Login panel', '2025-12-18', '12:55 AM'),
+(473, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:56 AM'),
+(474, 1, 'Logged in from Login panel', '2025-12-18', '12:56 AM'),
+(475, 1, 'Logged in successfully from Landing page', '2025-12-18', '01:09 AM'),
+(476, 1, 'Logged in from Login panel', '2025-12-18', '01:09 AM'),
+(477, 1, 'Logged in successfully from Landing page', '2025-12-18', '01:19 AM'),
+(478, 1, 'Logged in from Login panel', '2025-12-18', '01:19 AM');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `addresses`
+--
+
+CREATE TABLE `addresses` (
+  `address_id` int(11) NOT NULL,
+  `citizen_id` int(11) DEFAULT NULL,
+  `street_address` varchar(200) DEFAULT NULL,
+  `city` varchar(100) DEFAULT NULL,
+  `state_province` varchar(100) DEFAULT NULL,
+  `zip_postal_code` varchar(20) DEFAULT NULL,
+  `country` varchar(100) DEFAULT 'Philippines'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `addresses`
+--
+
+INSERT INTO `addresses` (`address_id`, `citizen_id`, `street_address`, `city`, `state_province`, `zip_postal_code`, `country`) VALUES
+(1, 1, '123 Rizal Avenue', 'Manila', 'Metro Manila', '1000', 'Philippines'),
+(2, 2, '456 Commonwealth Avenue', 'Quezon City', 'Metro Manila', '1100', 'Philippines'),
+(3, 3, '789 Ayala Avenue', 'Makati', 'Metro Manila', '1200', 'Philippines'),
+(4, 4, '321 Osmeña Boulevard', 'Cebu City', 'Cebu', '6000', 'Philippines'),
+(5, 5, '654 Roxas Avenue', 'Davao City', 'Davao del Sur', '8000', 'Philippines'),
+(6, 6, '987 Ledesma Street', 'Iloilo City', 'Iloilo', '5000', 'Philippines'),
+(7, 7, '159 Session Road', 'Baguio City', 'Benguet', '2600', 'Philippines');
 
 -- --------------------------------------------------------
 
@@ -95,7 +144,7 @@ CREATE TABLE `citizens` (
   `lname` varchar(50) DEFAULT NULL,
   `national_id` varchar(20) DEFAULT NULL,
   `birth_date` date DEFAULT NULL,
-  `address` varchar(200) DEFAULT NULL,
+  `gender` varchar(10) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
   `application_date` date DEFAULT NULL
@@ -105,14 +154,14 @@ CREATE TABLE `citizens` (
 -- Dumping data for table `citizens`
 --
 
-INSERT INTO `citizens` (`citizen_id`, `user_id`, `fname`, `mname`, `lname`, `national_id`, `birth_date`, `address`, `phone`, `email`, `application_date`) VALUES
-(1, 1, 'Juan', 'Santos', 'Dela Cruz', 'NID001', '1990-05-15', 'Manila', '09123456789', 'juan.delacruz@gmail.com', '2024-01-15'),
-(2, 2, 'Maria', 'Gonzales', 'Santos', 'NID002', '1985-08-22', 'Quezon City', '09234567890', 'maria.santos@gmail.com', '2024-01-16'),
-(3, 5, 'Pedro', 'Manuel', 'Reyes', NULL, '1978-11-30', 'Makati', '09345678901', 'pedro.reyes@gmail.com', '2024-01-17'),
-(4, NULL, 'Ana', 'Marie', 'Lopez', NULL, '1995-02-14', 'Cebu City', '09456789012', 'ana.lopez@gmail.com', '2024-01-18'),
-(5, 6, 'John', 'Paul', 'Smith', NULL, '1988-07-12', 'Davao City', '09567890123', 'john.smith@gmail.com', '2024-01-19'),
-(6, 7, 'Sarah', 'Jane', 'Tan', NULL, '1992-11-05', 'Iloilo City', '09678901234', 'sarah.tan@gmail.com', '2024-01-20'),
-(7, NULL, 'Michael', 'James', 'Lim', 'NID005', '1980-03-25', 'Baguio City', '09789012345', 'michael.lim@gmail.com', '2024-01-21');
+INSERT INTO `citizens` (`citizen_id`, `user_id`, `fname`, `mname`, `lname`, `national_id`, `birth_date`, `gender`, `phone`, `email`, `application_date`) VALUES
+(1, 1, 'Juan', 'Santos', 'Dela Cruz', 'NID001', '2004-08-24', 'Male', '09123456789', 'juan.delacruz@gmail.com', '2024-01-15'),
+(2, 2, 'Maria', 'Gonzales', 'Santos', 'NID002', '1985-08-22', 'Female', '09234567890', 'maria.santos@gmail.com', '2024-01-16'),
+(3, 5, 'Pedro', 'Manuel', 'Reyes', NULL, '1978-11-30', 'Male', '09345678901', 'pedro.reyes@gmail.com', '2024-01-17'),
+(4, NULL, 'Ana', 'Marie', 'Lopez', NULL, '1995-02-14', 'Female', '09456789012', 'ana.lopez@gmail.com', '2024-01-18'),
+(5, 6, 'John', 'Paul', 'Smith', NULL, '1988-07-12', 'Male', '09567890123', 'john.smith@gmail.com', '2024-01-19'),
+(6, 7, 'Sarah', 'Jane', 'Tan', NULL, '1992-11-05', 'Female', '09678901234', 'sarah.tan@gmail.com', '2024-01-20'),
+(7, NULL, 'Michael', 'James', 'Lim', 'NID005', '1980-03-25', 'Male', '09789012345', 'michael.lim@gmail.com', '2024-01-21');
 
 -- --------------------------------------------------------
 
@@ -260,6 +309,13 @@ ALTER TABLE `activity_log`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Indexes for table `addresses`
+--
+ALTER TABLE `addresses`
+  ADD PRIMARY KEY (`address_id`),
+  ADD KEY `citizen_id` (`citizen_id`);
+
+--
 -- Indexes for table `appointments`
 --
 ALTER TABLE `appointments`
@@ -311,7 +367,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `activity_log`
 --
 ALTER TABLE `activity_log`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=459;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=479;
+
+--
+-- AUTO_INCREMENT for table `addresses`
+--
+ALTER TABLE `addresses`
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `appointments`
@@ -358,6 +420,12 @@ ALTER TABLE `users`
 --
 ALTER TABLE `activity_log`
   ADD CONSTRAINT `activity_log_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+
+--
+-- Constraints for table `addresses`
+--
+ALTER TABLE `addresses`
+  ADD CONSTRAINT `addresses_ibfk_1` FOREIGN KEY (`citizen_id`) REFERENCES `citizens` (`citizen_id`);
 
 --
 -- Constraints for table `appointments`

@@ -66,7 +66,7 @@ public class Landing extends javax.swing.JFrame {
         javax.swing.JButton loginButton = login.getLoginButton();
 
         String username = usernameField.getText().trim();
-        String password = passwordField.getPassword();
+        String password = String.valueOf(passwordField.getPassword());
 
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
@@ -86,6 +86,10 @@ public class Landing extends javax.swing.JFrame {
             loginSuccessful = true;
             System.out.println("Login successful for: " + loggedInUser.getFullName());
 
+            // Log activity
+            Data.ActivityLog.logActivity(loggedInUser.getUserId(), 
+                "Logged in successfully from Landing page");
+
             // Close the login window
             dispose();
         } else {
@@ -94,7 +98,7 @@ public class Landing extends javax.swing.JFrame {
                 "Login Failed", JOptionPane.ERROR_MESSAGE);
 
             // Reset form
-            passwordField.setPassword("");
+            passwordField.setText("");
             loginButton.setEnabled(true);
             loginButton.setText("LOGIN");
             isLoggingIn = false;
@@ -117,8 +121,8 @@ public class Landing extends javax.swing.JFrame {
             lastNameField.getText().trim().isEmpty() ||
             emailField.getText().trim().isEmpty() ||
             refNumField.getText().trim().isEmpty() ||
-            passwordField.getPassword().trim().isEmpty() ||
-            confirmPasswordField.getPassword().trim().isEmpty()) {
+            String.valueOf(passwordField.getPassword()).trim().isEmpty() ||
+            String.valueOf(confirmPasswordField.getPassword()).trim().isEmpty()) {
             
             JOptionPane.showMessageDialog(this,
                 "Please fill in all required fields marked with *",
@@ -136,26 +140,26 @@ public class Landing extends javax.swing.JFrame {
         }
         
         // Validate password strength
-        String password = passwordField.getPassword();
+        String password = String.valueOf(passwordField.getPassword());
         String passwordError = validatePassword(password);
         if (passwordError != null) {
             JOptionPane.showMessageDialog(this,
                 passwordError,
                 "Validation Error", JOptionPane.WARNING_MESSAGE);
-            passwordField.clear();
-            confirmPasswordField.clear();
+            passwordField.setText("");
+            confirmPasswordField.setText("");
             passwordField.requestFocus();
             return;
         }
         
         // Validate password match
-        String confirmPassword = confirmPasswordField.getPassword();
+        String confirmPassword = String.valueOf(confirmPasswordField.getPassword());
         if (!password.equals(confirmPassword)) {
             JOptionPane.showMessageDialog(this,
                 "Passwords do not match. Please ensure both password fields are identical.",
                 "Validation Error", JOptionPane.WARNING_MESSAGE);
-            passwordField.clear();
-            confirmPasswordField.clear();
+            passwordField.setText("");
+            confirmPasswordField.setText("");
             passwordField.requestFocus();
             return;
         }
@@ -182,7 +186,11 @@ public class Landing extends javax.swing.JFrame {
             
             // Check if transaction reference number exists
             String transactionId = refNumField.getText().trim();
-            Data.IDStatus status = Data.IDStatus.getStatusByTransactionId(transactionId);
+            
+            // Format the transaction ID if needed
+            String formattedTransactionId = Data.IDStatus.formatTransactionId(transactionId);
+            Data.IDStatus status = Data.IDStatus.getStatusByTransactionId(formattedTransactionId);
+            
             if (status == null) {
                 JOptionPane.showMessageDialog(this,
                     "Invalid transaction reference number. Please check and try again.",
@@ -207,12 +215,30 @@ public class Landing extends javax.swing.JFrame {
                 return;
             }
             
+            // Verify name match with citizen record
+            if (!firstNameField.getText().trim().equalsIgnoreCase(citizen.getFname()) || 
+                !lastNameField.getText().trim().equalsIgnoreCase(citizen.getLname())) {
+                
+                int response = JOptionPane.showConfirmDialog(this,
+                    "The name you entered doesn't match the application record.\n" +
+                    "Application is registered to: " + citizen.getFullName() + "\n\n" +
+                    "Do you want to continue with your entered name?",
+                    "Name Mismatch", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                
+                if (response != JOptionPane.YES_OPTION) {
+                    return;
+                }
+            }
+            
+            // Generate username (first name + last name initial)
+            String username = generateUsername(firstNameField.getText().trim(), lastNameField.getText().trim());
+            
             // Create user data object with separate name fields
             Data.User newUser = new Data.User();
             newUser.setFname(firstNameField.getText().trim());
             newUser.setMname(middleNameField.getText().trim());
             newUser.setLname(lastNameField.getText().trim());
-            newUser.setUsername(email); // Using email as username
+            newUser.setUsername(username);
             newUser.setPassword(password);
             newUser.setRole("citizen");
             newUser.setPhone(citizen.getPhone()); // Use phone from citizen record
@@ -224,7 +250,7 @@ public class Landing extends javax.swing.JFrame {
             
             if (userSuccess) {
                 // Get the newly created user ID
-                Data.User createdUser = Data.User.authenticate(email, password);
+                Data.User createdUser = Data.User.authenticate(username, password);
                 if (createdUser != null) {
                     // Link citizen to user
                     citizen.setUserId(createdUser.getUserId());
@@ -232,11 +258,19 @@ public class Landing extends javax.swing.JFrame {
                     
                     if (citizenSuccess) {
                         // Log activity
-                        Data.ActivityLog.logActivity(createdUser.getUserId(), "Registered account and linked to citizen ID: " + citizen.getCitizenId());
+                        Data.ActivityLog.logActivity(createdUser.getUserId(), 
+                            "Registered account and linked to citizen ID: " + citizen.getCitizenId());
+                        
+                        // Send notification
+                        Data.Notification.addNotification(citizen.getCitizenId(),
+                            "Welcome! Your account has been successfully created. " +
+                            "You can now track your ID application status.",
+                            "Account Created");
                         
                         JOptionPane.showMessageDialog(this,
                             "Registration successful!\n\n" +
                             "Account created for: " + createdUser.getFullName() + "\n" +
+                            "Username: " + username + "\n" +
                             "Email: " + email + "\n" +
                             "Linked to your PhilSys application\n\n" +
                             "Please sign in with your credentials.",
@@ -249,8 +283,8 @@ public class Landing extends javax.swing.JFrame {
                         BodyTabbedPane.setSelectedIndex(0);
                         
                         // Auto-fill login form with new credentials
-                        login.getUsernameText().setText(email);
-                        login.getPasswordText().setPassword("");
+                        login.getUsernameText().setText(username);
+                        login.getPasswordText().setText("");
                         login.getUsernameText().requestFocus();
                     } else {
                         JOptionPane.showMessageDialog(this,
@@ -309,14 +343,40 @@ public class Landing extends javax.swing.JFrame {
         return false;
     }
     
+    private String generateUsername(String firstName, String lastName) {
+        String baseUsername = firstName.toLowerCase() + 
+                            (lastName.length() > 0 ? lastName.substring(0, 1).toLowerCase() : "");
+        
+        // Check if username exists
+        String username = baseUsername;
+        int counter = 1;
+        
+        while (usernameExists(username)) {
+            username = baseUsername + counter;
+            counter++;
+        }
+        
+        return username;
+    }
+    
+    private boolean usernameExists(String username) {
+        java.util.List<Data.User> allUsers = Data.User.getAllUsers();
+        for (Data.User user : allUsers) {
+            if (user.getUsername().equalsIgnoreCase(username)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     private void clearRegistrationForm() {
         registration.getFirstnameText().clear();
         registration.getMiddleNameTextOptional().clear();
         registration.getLastnameText().clear();
         registration.getEmailText().clear();
         registration.getTransactionReferenceNumberText().clear();
-        registration.getPasswordText().clear();
-        registration.getConfirmPasswordText().clear();
+        registration.getPasswordText().setText("");
+        registration.getConfirmPasswordText().setText("");
         registration.getTermsAndConditionCheckBox().setSelected(false);
         registration.getTermsAndConditionCheckBox().setError(false);
     }
@@ -339,7 +399,7 @@ public class Landing extends javax.swing.JFrame {
         BodyTabbedPane = new component.NoTabJTabbedPane();
         login = new sys.main.Login();
         registration = new sys.main.Registration();
-        LEFT2 = new javax.swing.JPanel();
+        LEFT = new javax.swing.JPanel();
         LogoLabel2 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -361,15 +421,15 @@ public class Landing extends javax.swing.JFrame {
         RIGHT.setLayout(RIGHTLayout);
         RIGHTLayout.setHorizontalGroup(
             RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(BodyTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)
+            .addComponent(BodyTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         RIGHTLayout.setVerticalGroup(
             RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(BodyTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
         );
 
-        LEFT2.setBackground(new java.awt.Color(142, 217, 255));
-        LEFT2.setPreferredSize(new java.awt.Dimension(350, 500));
+        LEFT.setBackground(new java.awt.Color(142, 217, 255));
+        LEFT.setPreferredSize(new java.awt.Dimension(350, 500));
 
         LogoLabel2.setBackground(new java.awt.Color(142, 217, 255));
         LogoLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -377,18 +437,18 @@ public class Landing extends javax.swing.JFrame {
         LogoLabel2.setMinimumSize(new java.awt.Dimension(2089, 2048));
         LogoLabel2.setPreferredSize(new java.awt.Dimension(300, 300));
 
-        javax.swing.GroupLayout LEFT2Layout = new javax.swing.GroupLayout(LEFT2);
-        LEFT2.setLayout(LEFT2Layout);
-        LEFT2Layout.setHorizontalGroup(
-            LEFT2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(LEFT2Layout.createSequentialGroup()
-                .addContainerGap(25, Short.MAX_VALUE)
+        javax.swing.GroupLayout LEFTLayout = new javax.swing.GroupLayout(LEFT);
+        LEFT.setLayout(LEFTLayout);
+        LEFTLayout.setHorizontalGroup(
+            LEFTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(LEFTLayout.createSequentialGroup()
+                .addContainerGap(23, Short.MAX_VALUE)
                 .addComponent(LogoLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(25, Short.MAX_VALUE))
+                .addContainerGap(22, Short.MAX_VALUE))
         );
-        LEFT2Layout.setVerticalGroup(
-            LEFT2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(LEFT2Layout.createSequentialGroup()
+        LEFTLayout.setVerticalGroup(
+            LEFTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(LEFTLayout.createSequentialGroup()
                 .addContainerGap(100, Short.MAX_VALUE)
                 .addComponent(LogoLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(100, Short.MAX_VALUE))
@@ -399,14 +459,14 @@ public class Landing extends javax.swing.JFrame {
         MainPanelLayout.setHorizontalGroup(
             MainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(MainPanelLayout.createSequentialGroup()
-                .addComponent(RIGHT, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(RIGHT, javax.swing.GroupLayout.DEFAULT_SIZE, 455, Short.MAX_VALUE)
                 .addGap(0, 0, 0)
-                .addComponent(LEFT2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(LEFT, javax.swing.GroupLayout.DEFAULT_SIZE, 345, Short.MAX_VALUE))
         );
         MainPanelLayout.setVerticalGroup(
             MainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(RIGHT, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(LEFT2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(LEFT, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -425,7 +485,7 @@ public class Landing extends javax.swing.JFrame {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private component.NoTabJTabbedPane BodyTabbedPane;
-    private javax.swing.JPanel LEFT2;
+    private javax.swing.JPanel LEFT;
     private javax.swing.JLabel LogoLabel2;
     private javax.swing.JPanel MainPanel;
     private javax.swing.JPanel RIGHT;

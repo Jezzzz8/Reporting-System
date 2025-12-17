@@ -23,7 +23,7 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
     private javax.swing.Timer heightTimer;
     private float borderThickness = 1.0f;
     private float currentHeight = 40.0f;
-    private float maxHeight = 45.0f;
+    private float maxHeight = 50.0f;
     private float minHeight = 40.0f;
     private boolean isFocused = false;
     private boolean isOpen = false;
@@ -85,7 +85,7 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
     private void initComponents() {
         setLayout(new BorderLayout());
         setBackground(backgroundColor);
-        
+
         // Create the initial border with empty title - EXACTLY like CustomTextField
         titledBorder = BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(unfocusedBorderColor, 1),
@@ -96,13 +96,13 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
         titledBorder.setTitleJustification(TitledBorder.LEFT);
         titledBorder.setTitleFont(new Font("Segoe UI", Font.PLAIN, 10));
         setBorder(titledBorder);
-        
+
         // Create inner button
         dropdownButton = new JButton() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                
+
                 // Paint placeholder text if empty and not focused - EXACTLY like CustomTextField
                 String buttonText = getText();
                 if (!isFocused && !isOpen && (buttonText == null || buttonText.isEmpty()) && 
@@ -111,16 +111,16 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g2.setColor(placeholderColor);
                     g2.setFont(getFont().deriveFont(Font.PLAIN));
-                    
+
                     FontMetrics fm = g2.getFontMetrics();
                     int textY = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-                    
+
                     g2.drawString(placeholder, 5, textY);
                     g2.dispose();
                 }
             }
         };
-        
+
         dropdownButton.setLayout(new BorderLayout());
         dropdownButton.setBackground(backgroundColor);
         dropdownButton.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -130,7 +130,7 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
         dropdownButton.setOpaque(false);
         dropdownButton.setHorizontalAlignment(SwingConstants.LEFT);
         dropdownButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         // Add mouse listener for hover effect
         dropdownButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -146,7 +146,7 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
                     repaint();
                 }
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 if (!isOpen) {
@@ -156,47 +156,57 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
                 }
             }
         });
-        
+
         // Create dropdown menu with matching style
         dropdownMenu = new JPopupMenu() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 // Background matching the text field
                 g2.setColor(backgroundColor);
                 g2.fillRect(0, 0, getWidth(), getHeight());
-                
+
                 // Border similar to text field when focused
                 g2.setColor(focusedBorderColor);
                 g2.setStroke(new BasicStroke(2.0f));
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
-                
+
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
         dropdownMenu.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        
+
         // Setup focus animation timers - EXACTLY like CustomTextField
         focusTimer = new javax.swing.Timer(10, e -> animateBorder());
         focusTimer.setRepeats(true);
-        
+
         heightTimer = new javax.swing.Timer(10, e -> animateHeight());
         heightTimer.setRepeats(true);
-        
+
         // Setup glow animation for hover
         setupGlowAnimation();
-        
+
         // Add mouse listener to the entire panel
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                toggleDropdown();
-                requestFocusInWindow();
+                // Check if click is on the arrow icon area (right side)
+                int clickX = e.getX();
+                int arrowStartX = getWidth() - 30; // Arrow area starts 30px from right
+
+                if (clickX >= arrowStartX) {
+                    // Clicked on arrow icon - toggle dropdown immediately
+                    requestFocusInWindow();
+                    toggleDropdown();
+                } else {
+                    // Clicked on text area - just focus
+                    requestFocusInWindow();
+                }
             }
-            
+
             @Override
             public void mouseEntered(MouseEvent e) {
                 if (!isOpen) {
@@ -204,7 +214,7 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
                     repaint();
                 }
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 if (!isOpen) {
@@ -213,16 +223,28 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
                 }
             }
         });
-        
+
         // Add focus listener
         addFocusListener(this);
-        
+
         // Also make the button clickable
         dropdownButton.addActionListener(e -> {
-            toggleDropdown();
-            requestFocusInWindow();
+            // Check if click is on arrow area
+            Point mousePoint = MouseInfo.getPointerInfo().getLocation();
+            SwingUtilities.convertPointFromScreen(mousePoint, dropdownButton);
+            int clickX = mousePoint.x;
+            int arrowStartX = dropdownButton.getWidth() - 30;
+
+            if (clickX >= arrowStartX) {
+                // Clicked on arrow - toggle dropdown
+                requestFocusInWindow();
+                toggleDropdown();
+            } else {
+                // Clicked on text - just focus
+                requestFocusInWindow();
+            }
         });
-        
+
         // Close dropdown when clicking outside
         addHierarchyListener(e -> {
             if (dropdownMenu.isVisible()) {
@@ -237,12 +259,61 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
                 }
             }
         });
-        
+
         // Add the button to the panel
         add(dropdownButton, BorderLayout.CENTER);
-        
+
         // Set initial preferred size - EXACTLY like CustomTextField
         setPreferredSize(new Dimension(300, (int) currentHeight));
+    }
+
+    public void setOptions(String[] options) {
+        // Clear existing content
+        contentList.clear();
+        dropdownMenu.removeAll();
+
+        // Create a simple content panel with the options
+        JPanel optionsPanel = new JPanel();
+        optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.Y_AXIS));
+        optionsPanel.setBackground(backgroundColor);
+        optionsPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        // Add each option as a button
+        for (String option : options) {
+            JButton optionButton = new JButton(option);
+            optionButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+            optionButton.setHorizontalAlignment(SwingConstants.LEFT);
+            optionButton.setBackground(backgroundColor);
+            optionButton.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            optionButton.setFocusPainted(false);
+            optionButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+            optionButton.addActionListener(e -> {
+                setText(option);
+                closeDropdown();
+            });
+
+            optionButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    optionButton.setBackground(hoverColor);
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    optionButton.setBackground(backgroundColor);
+                }
+            });
+
+            optionsPanel.add(optionButton);
+            if (!option.equals(options[options.length - 1])) {
+                optionsPanel.add(new JSeparator());
+            }
+        }
+
+        // Add the options panel to the dropdown menu
+        dropdownMenu.add(optionsPanel);
+        dropdownMenu.pack();
     }
     
     private void setupGlowAnimation() {
@@ -292,6 +363,11 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
                 }
             }
         }
+    }
+    
+    private boolean isClickOnArrowArea(int x) {
+        int arrowStartX = getWidth() - 30; // Arrow area is last 30px
+        return x >= arrowStartX;
     }
     
     private void animateHeight() {
@@ -373,18 +449,24 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
     private void drawDropdownArrow(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
+
         int arrowSize = 8;
         int x = getWidth() - arrowSize - 10;
         int y = getHeight() / 2;
-        
+
+        // Draw a subtle background for the arrow area
+        if (isOpen || isFocused) {
+            g2.setColor(new Color(focusedBorderColor.getRed(), focusedBorderColor.getGreen(), focusedBorderColor.getBlue(), 20));
+            g2.fillRect(getWidth() - 40, 0, 40, getHeight());
+        }
+
         // Use focused color when dropdown is open or focused
         if (isOpen || isFocused) {
             g2.setColor(focusedBorderColor);
         } else {
             g2.setColor(placeholderColor);
         }
-        
+
         if (isOpen) {
             // Draw upward arrow
             int[] xPoints = {x, x + arrowSize, x + arrowSize / 2};
@@ -396,10 +478,10 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
             int[] yPoints = {y - arrowSize / 2, y - arrowSize / 2, y + arrowSize / 2};
             g2.fillPolygon(xPoints, yPoints, 3);
         }
-        
+
         g2.dispose();
     }
-    
+
     // ========== PUBLIC METHODS ==========
     
     public void setText(String text) {
@@ -743,6 +825,13 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
         if (isOpen) {
             closeDropdown();
         } else {
+            // Force focus before opening
+            if (!isFocused) {
+                isFocused = true;
+                borderThickness = 1.0f;
+                focusTimer.start();
+                heightTimer.start();
+            }
             openDropdown();
         }
     }
@@ -752,7 +841,7 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
             currentContent = contentList.get(0);
             updateButtonIcon(currentContent);
         }
-        
+
         updateDropdownContent();
         dropdownMenu.show(this, 0, getHeight());
         isOpen = true;
@@ -767,14 +856,13 @@ public class CustomDropdownButton extends JPanel implements FocusListener {
     private void closeDropdown() {
         dropdownMenu.setVisible(false);
         isOpen = false;
-        isFocused = false;
-        borderThickness = 1.0f;
+        // Don't reset focus here - keep focus state
         focusTimer.start();
         heightTimer.start();
         stopGlowAnimation();
         repaint();
     }
-    
+
     // Getters and setters
     public boolean isDropdownOpen() {
         return isOpen;

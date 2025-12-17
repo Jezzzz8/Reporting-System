@@ -1,6 +1,7 @@
 package component;
 
 import backend.objects.Data;
+import backend.objects.Data.Address; // NEW: Import Address class
 import java.util.ArrayList;
 import javax.swing.table.DefaultTableModel;
 import java.util.List;
@@ -10,6 +11,7 @@ public class IDStatus extends javax.swing.JPanel {
     private Data.User user;
     private Data.Citizen citizen;
     private Data.IDStatus idStatus;
+    private Data.Address address; // NEW: Store address separately
     
     public IDStatus(Data.User user) {
         this.user = user;
@@ -24,7 +26,6 @@ public class IDStatus extends javax.swing.JPanel {
             }
         });
 
-        // Initialize progress bar with 5 steps first
         customStepProgressBar1.setTotalSteps(5);
         String[] stepLabels = {
             "Application Submitted",
@@ -42,13 +43,14 @@ public class IDStatus extends javax.swing.JPanel {
     private void loadCitizenData() {
         System.out.println("Loading citizen data for user ID: " + user.getUserId());
 
-        // Get citizen associated with this user
         citizen = Data.Citizen.getCitizenByUserId(user.getUserId());
 
         if (citizen != null) {
             System.out.println("Citizen found: " + citizen.getFullName() + " (ID: " + citizen.getCitizenId() + ")");
 
-            // Get the ID status for this citizen
+            // Load address information - NEW
+            address = Data.Address.getAddressByCitizenId(citizen.getCitizenId());
+            
             idStatus = Data.IDStatus.getStatusByCitizenId(citizen.getCitizenId());
 
             // Update labels with actual data
@@ -58,7 +60,7 @@ public class IDStatus extends javax.swing.JPanel {
                     ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
                     : "TXN-Not-Assigned";
 
-                // Show Transaction ID instead of National ID
+                // Show full information including application date and transaction ID
                 jLabel4.setText("Application Date: " + appDateStr + " | TRN: " + transactionId);
             }
 
@@ -71,16 +73,13 @@ public class IDStatus extends javax.swing.JPanel {
                 "ID Claimed"
             };
 
-            // Ensure progress bar is initialized with 5 steps
             customStepProgressBar1.setTotalSteps(5);
             customStepProgressBar1.setStepLabels(stepLabels);
 
             System.out.println("Progress bar initialized with 5 steps");
 
-            // Check if ID is ready for pickup
             checkIDStatus();
 
-            // Load live timeline data
             loadLiveTimeline();
 
         } else {
@@ -100,17 +99,13 @@ public class IDStatus extends javax.swing.JPanel {
 
             System.out.println("Current step calculated: " + currentStep + " for status: " + status);
 
-            // Update progress bar
             customStepProgressBar1.setCurrentStep(currentStep);
 
-            // Update status label
             String displayStatus = formatStatusForDisplay(status);
             jLabel3.setText(displayStatus);
 
-            // Set color based on status
             setStatusLabelColor(status);
 
-            // Show/hide pickup panel based on status - handle spaces
             String normalizedStatus = status.replace(" ", "_").toUpperCase();
             if ("READY_FOR_PICKUP".equals(normalizedStatus) || "READY".equals(normalizedStatus)) {
                 System.out.println("Showing pickup panel for status: " + normalizedStatus);
@@ -136,7 +131,6 @@ public class IDStatus extends javax.swing.JPanel {
     private int getStepFromStatus(String status) {
         if (status == null) return 1;
 
-        // Normalize the status by removing spaces and converting to uppercase
         String normalizedStatus = status.replace(" ", "_").toUpperCase();
 
         switch (normalizedStatus) {
@@ -266,7 +260,6 @@ public class IDStatus extends javax.swing.JPanel {
         SchedulePickup.setText("SCHEDULE MY PICKUP");
         SchedulePickup.setBackground(new java.awt.Color(0, 150, 0)); // Green
 
-        // Force layout update
         jPanel1.revalidate();
         jPanel1.repaint();
         revalidate();
@@ -281,7 +274,6 @@ public class IDStatus extends javax.swing.JPanel {
         SchedulePickup.setText("VIEW ID DETAILS");
         SchedulePickup.setBackground(new java.awt.Color(0, 120, 215)); // Blue
         
-        // Update action for claimed ID
         SchedulePickup.removeActionListener(SchedulePickup.getActionListeners()[0]);
         SchedulePickup.addActionListener(new java.awt.event.ActionListener() {
             @Override
@@ -309,15 +301,13 @@ public class IDStatus extends javax.swing.JPanel {
         }
 
         try {
-            // Get the table model
             DefaultTableModel model = (DefaultTableModel) FullStatusHistoryTable.getModel();
             model.setRowCount(0); // Clear existing data
 
-            // Get ALL status updates for this citizen, sorted by date
             List<Data.IDStatus> statusHistory = getStatusHistoryForCitizen(citizen.getCitizenId());
             System.out.println("Found " + statusHistory.size() + " status history entries for citizen ID: " + citizen.getCitizenId());
 
-            // Add application date as first entry (if exists)
+            // Add application date as first entry
             if (citizen.getApplicationDate() != null) {
                 model.addRow(new Object[]{
                     citizen.getApplicationDate().toString(),
@@ -343,7 +333,7 @@ public class IDStatus extends javax.swing.JPanel {
                 System.out.println("Added status: " + status.getStatus() + " on " + status.getUpdateDate());
             }
 
-            // Add document submissions (only the ones that were submitted/verified)
+            // Add document submissions
             List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(citizen.getCitizenId());
             System.out.println("Found " + documents.size() + " documents for this citizen");
 
@@ -367,7 +357,7 @@ public class IDStatus extends javax.swing.JPanel {
                 }
             }
 
-            // Add appointment information (if exists)
+            // Add appointment information
             Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
             if (appointment != null) {
                 String appStatus = appointment.getStatus();
@@ -399,25 +389,16 @@ public class IDStatus extends javax.swing.JPanel {
                 }
             }
 
-            // Add activity logs for this citizen
-            List<Data.ActivityLog> activityLogs = Data.ActivityLog.getActivityLogsByCitizenId(citizen.getCitizenId());
-            System.out.println("Found " + activityLogs.size() + " activity logs for this citizen");
-
-            for (Data.ActivityLog log : activityLogs) {
-                // Only add significant activities
-                if (log.getAction().toLowerCase().contains("update") || 
-                    log.getAction().toLowerCase().contains("approve") ||
-                    log.getAction().toLowerCase().contains("reject") ||
-                    log.getAction().toLowerCase().contains("verify")) {
-
-                    model.addRow(new Object[]{
-                        log.getActionDate() != null ? log.getActionDate().toString() : "",
-                        "System Activity",
-                        log.getAction(),
-                        log.getActionTime() != null ? log.getActionTime() : ""
-                    });
-                    System.out.println("Added activity: " + log.getAction());
-                }
+            // Add address updates if available - NEW
+            if (address != null && address.getAddressId() > 0) {
+                // We could add address verification as a step in the timeline
+                // For now, just note that address information is on file
+                model.addRow(new Object[]{
+                    citizen.getApplicationDate() != null ? citizen.getApplicationDate().toString() : "",
+                    "Address Verified",
+                    "Residential address verified and stored",
+                    "Address System"
+                });
             }
 
             // If no timeline data, show default based on current status
@@ -445,7 +426,6 @@ public class IDStatus extends javax.swing.JPanel {
             System.err.println("Error loading live timeline: " + e.getMessage());
             e.printStackTrace();
 
-            // Show error in table
             DefaultTableModel model = (DefaultTableModel) FullStatusHistoryTable.getModel();
             model.setRowCount(0);
             model.addRow(new Object[]{"Error", "Database Error", e.getMessage(), "System"});
@@ -475,7 +455,6 @@ public class IDStatus extends javax.swing.JPanel {
     }
     
     private void sortTableByDateDesc(DefaultTableModel model) {
-        // Convert table data to list
         List<Object[]> rows = new ArrayList<>();
         for (int i = 0; i < model.getRowCount(); i++) {
             Object[] row = new Object[model.getColumnCount()];
@@ -495,7 +474,6 @@ public class IDStatus extends javax.swing.JPanel {
             if (date2 == null || date2.isEmpty()) return -1;
 
             try {
-                // Parse dates (assuming format is yyyy-MM-dd)
                 java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
                 java.util.Date d1 = sdf.parse(date1);
                 java.util.Date d2 = sdf.parse(date2);
@@ -512,18 +490,14 @@ public class IDStatus extends javax.swing.JPanel {
         }
     }
     
-    
-
     private String[][] getDefaultTimelineBasedOnStatus() {
         String currentStatus = idStatus != null ? idStatus.getStatus() : null;
         int currentStep = getStepFromStatus(currentStatus);
         System.out.println("Current status: " + currentStatus + ", Step: " + currentStep);
 
-        // Get current date for realistic timeline
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
         String today = sdf.format(new java.util.Date());
 
-        // Calculate dates based on today
         String[] dates = new String[5];
         dates[0] = getDateOffset(-30); // Submitted 30 days ago
         dates[1] = getDateOffset(-25); // Processing 25 days ago
@@ -665,20 +639,18 @@ public class IDStatus extends javax.swing.JPanel {
     }
     
     private void viewIDDetailsActionPerformed(java.awt.event.ActionEvent evt) {
-        // Show ID details
         Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
 
         StringBuilder details = new StringBuilder();
         details.append("ID Details:\n");
         details.append("----------------\n");
         details.append("Name: ").append(citizen.getFullName()).append("\n");
-
-        // Show first, middle, last names separately
         details.append("First Name: ").append(citizen.getFname()).append("\n");
         if (citizen.getMname() != null && !citizen.getMname().isEmpty()) {
             details.append("Middle Name: ").append(citizen.getMname()).append("\n");
         }
         details.append("Last Name: ").append(citizen.getLname()).append("\n");
+        details.append("Gender: ").append(citizen.getGender() != null ? citizen.getGender() : "Not specified").append("\n");
 
         // Show formatted Transaction ID
         String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
@@ -687,7 +659,25 @@ public class IDStatus extends javax.swing.JPanel {
         details.append("Transaction ID: ").append(transactionId).append("\n");
 
         details.append("Date of Birth: ").append(citizen.getBirthDate()).append("\n");
-        details.append("Address: ").append(citizen.getAddress()).append("\n");
+
+        // Show address from Address table
+        if (address != null) {
+            details.append("Address: ").append(address.getFullAddress()).append("\n");
+        } else {
+            // Since there's no address field in Citizen class anymore, we need to check if address exists
+            // or load it from database if not already loaded
+            if (citizen != null) {
+                Data.Address citizenAddress = Data.Address.getAddressByCitizenId(citizen.getCitizenId());
+                if (citizenAddress != null) {
+                    details.append("Address: ").append(citizenAddress.getFullAddress()).append("\n");
+                    address = citizenAddress; // Cache it for future use
+                } else {
+                    details.append("Address: Not available\n");
+                }
+            } else {
+                details.append("Address: Not available\n");
+            }
+        }
 
         if (appointment != null) {
             details.append("\nClaim Details:\n");
@@ -702,7 +692,7 @@ public class IDStatus extends javax.swing.JPanel {
             "National ID Details",
             javax.swing.JOptionPane.INFORMATION_MESSAGE);
     }
-    
+
     // Add method to refresh status (can be called from outside)
     public void refreshData() {
         System.out.println("Refreshing ID Status data...");
@@ -876,42 +866,42 @@ public class IDStatus extends javax.swing.JPanel {
 
     private void SchedulePickupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SchedulePickupActionPerformed
         // Check if there's already an appointment
-    Data.Appointment existingAppointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
+        Data.Appointment existingAppointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
 
-    if (existingAppointment != null && "SCHEDULED".equalsIgnoreCase(existingAppointment.getStatus())) {
-        // Show existing appointment details
-        String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
-            ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
-            : "Not Assigned";
+        if (existingAppointment != null && "SCHEDULED".equalsIgnoreCase(existingAppointment.getStatus())) {
+            // Show existing appointment details
+            String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+                ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
+                : "Not Assigned";
 
-        javax.swing.JOptionPane.showMessageDialog(this,
-            "You already have a scheduled appointment:\n\n" +
-            "Transaction ID: " + transactionId + "\n" +
-            "Date: " + existingAppointment.getAppDate() + "\n" +
-            "Time: " + existingAppointment.getAppTime() + "\n" +
-            "Name: " + citizen.getFname() + " " + citizen.getLname() + "\n\n" +
-            "Would you like to reschedule?",
-            "Existing Appointment Found",
-            javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "You already have a scheduled appointment:\n\n" +
+                "Transaction ID: " + transactionId + "\n" +
+                "Date: " + existingAppointment.getAppDate() + "\n" +
+                "Time: " + existingAppointment.getAppTime() + "\n" +
+                "Name: " + citizen.getFname() + " " + citizen.getLname() + "\n\n" +
+                "Would you like to reschedule?",
+                "Existing Appointment Found",
+                javax.swing.JOptionPane.INFORMATION_MESSAGE);
 
-        // TODO: Navigate to rescheduling page
-    } else {
-        // Navigate to scheduling page
-        String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
-            ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
-            : "Not Assigned";
+            // TODO: Navigate to rescheduling page
+        } else {
+            // Navigate to scheduling page
+            String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
+                ? Data.IDStatus.formatTransactionId(idStatus.getTransactionId())
+                : "Not Assigned";
 
-        javax.swing.JOptionPane.showMessageDialog(this,
-            "Redirecting to scheduling page...\n\n" +
-            "Transaction ID: " + transactionId + "\n" +
-            "Citizen: " + citizen.getFullName() + "\n" +
-            "First Name: " + citizen.getFname() + "\n" +
-            "Last Name: " + citizen.getLname(),
-            "Schedule Pickup",
-            javax.swing.JOptionPane.INFORMATION_MESSAGE);
-        
-            // In Main class, it would call:
-            // main.showForm(new Scheduling(user));
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Redirecting to scheduling page...\n\n" +
+                "Transaction ID: " + transactionId + "\n" +
+                "Citizen: " + citizen.getFullName() + "\n" +
+                "First Name: " + citizen.getFname() + "\n" +
+                "Last Name: " + citizen.getLname(),
+                "Schedule Pickup",
+                javax.swing.JOptionPane.INFORMATION_MESSAGE);
+
+                // In Main class, it would call:
+                // main.showForm(new Scheduling(user));
         }
     }//GEN-LAST:event_SchedulePickupActionPerformed
 

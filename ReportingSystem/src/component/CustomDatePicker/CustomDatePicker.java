@@ -30,7 +30,7 @@ public class CustomDatePicker extends JPanel implements FocusListener {
     private Timer heightTimer;
     private float borderThickness = 1.0f;
     private float currentHeight = 40.0f;
-    private float maxHeight = 45.0f;
+    private float maxHeight = 50.0f;
     private float minHeight = 40.0f;
     private boolean isFocused = false;
     private boolean isOpen = false;

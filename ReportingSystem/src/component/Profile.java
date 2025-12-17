@@ -4,6 +4,7 @@ import backend.objects.Data.User;
 import backend.objects.Data.Citizen;
 import backend.objects.Data.Appointment;
 import backend.objects.Data.ActivityLog;
+import backend.objects.Data.Address; // NEW: Import Address class
 import java.awt.Color;
 import javax.swing.*;
 import java.text.SimpleDateFormat;
@@ -12,8 +13,9 @@ import java.util.Calendar;
 public class Profile extends javax.swing.JPanel {
     private User currentUser;
     private Citizen citizenInfo;
-    private backend.objects.Data.IDStatus idStatus; // Fixed: Use fully qualified name
+    private backend.objects.Data.IDStatus idStatus;
     private Appointment appointment;
+    private Address addressInfo; // NEW: Store address separately
     private SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy");
     private SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
     private SimpleDateFormat fullDateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm a");
@@ -21,14 +23,14 @@ public class Profile extends javax.swing.JPanel {
     public Profile(User user) {
         this.currentUser = user;
         initComponents();
-        loadUserData();
+        loadUserData();  // Load data FIRST
         setupDateDisplay();
         setReadOnlyFields();
         setupCustomFields();
+        setupGenderDropdown();  // Now citizenInfo is loaded
     }
     
     private void setupDateDisplay() {
-        // Set today's date
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dayFormat = new SimpleDateFormat("EEE");
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy");
@@ -37,7 +39,6 @@ public class Profile extends javax.swing.JPanel {
         String date = dateFormat.format(calendar.getTime());
         TodayDate.setText(day + " " + date);
         
-        // Set welcome message with user's name
         WelcomeLabel.setText("Welcome, " + currentUser.getFullName());
     }
     
@@ -54,12 +55,44 @@ public class Profile extends javax.swing.JPanel {
         ZIPPostalCodeTextField.setMaxLength(10);
         CountryTextField.setMaxLength(50);
         UsernameTextField.setMaxLength(50);
+        StreetAddressTextField.setMaxLength(200); // NEW: Street address field
         
-        // Disable password visibility toggle for the readonly password field
         PasswordField.disablePasswordVisibilityToggle();
-        
-        // Set address text area properties
-        AddressLineTextArea.setMaxLength(200);
+    }
+    
+    private void setupGenderDropdown() {
+        // Set gender options
+        String[] genderOptions = {"Male", "Female", "Other"};
+
+        // Create a custom dropdown button with options
+        JPopupMenu genderMenu = new JPopupMenu();
+
+        // Add options to the menu
+        for (String gender : genderOptions) {
+            JMenuItem menuItem = new JMenuItem(gender);
+            menuItem.addActionListener(e -> {
+                GenderDropdownButton.setText(gender);
+            });
+            genderMenu.add(menuItem);
+        }
+
+        // Add action listener to the dropdown button
+        GenderDropdownButton.getButton().addActionListener(e -> {
+            genderMenu.show(GenderDropdownButton, 0, GenderDropdownButton.getHeight());
+        });
+
+        // Set initial gender if available
+        if (citizenInfo != null && citizenInfo.getGender() != null && !citizenInfo.getGender().isEmpty()) {
+            String savedGender = citizenInfo.getGender();
+            for (String option : genderOptions) {
+                if (option.equalsIgnoreCase(savedGender)) {
+                    GenderDropdownButton.setText(option);
+                    break;
+                }
+            }
+        } else {
+            GenderDropdownButton.setText(null);
+        }
     }
     
     private void loadUserData() {
@@ -67,11 +100,14 @@ public class Profile extends javax.swing.JPanel {
         citizenInfo = Citizen.getCitizenByUserId(currentUser.getUserId());
         
         if (citizenInfo != null) {
-            // Load ID status - Fixed: Use citizenInfo, not citizen
+            // Load ID status
             idStatus = backend.objects.Data.IDStatus.getStatusByCitizenId(citizenInfo.getCitizenId());
             
             // Load appointment
             appointment = Appointment.getAppointmentByCitizenId(citizenInfo.getCitizenId());
+            
+            // Load address information - NEW
+            addressInfo = Address.getAddressByCitizenId(citizenInfo.getCitizenId());
             
             // Populate personal details
             FirstnameTextField.setText(citizenInfo.getFname());
@@ -84,25 +120,28 @@ public class Profile extends javax.swing.JPanel {
                 DateofBirthPicker.setDate(citizenInfo.getBirthDate());
             }
             
-            // Set gender if available
-            // Note: Gender field needs to be added to Citizen class or derived from somewhere
-            // For now, we'll leave it unset
+            // Set gender - NEW
+            if (citizenInfo.getGender() != null) {
+                GenderDropdownButton.setText(citizenInfo.getGender());
+            } else {
+                GenderDropdownButton.setText("Select Gender");
+            }
             
             // Populate contact details
             EmailAddressTextField.setText(citizenInfo.getEmail() != null ? citizenInfo.getEmail() : "");
             PhoneNumberTextField.setText(citizenInfo.getPhone() != null ? citizenInfo.getPhone() : "");
             
-            // Parse address if it contains multiple lines
-            String address = citizenInfo.getAddress();
-            if (address != null && !address.isEmpty()) {
-                AddressLineTextArea.setText(address);
-                // Parse address components if they are in a structured format
-                // For now, just display the full address
+            // Populate address details - UPDATED
+            if (addressInfo != null) {
+                StreetAddressTextField.setText(addressInfo.getStreetAddress() != null ? addressInfo.getStreetAddress() : "");
+                CityTextField.setText(addressInfo.getCity() != null ? addressInfo.getCity() : "");
+                StateProvinceTextField.setText(addressInfo.getStateProvince() != null ? addressInfo.getStateProvince() : "");
+                ZIPPostalCodeTextField.setText(addressInfo.getZipPostalCode() != null ? addressInfo.getZipPostalCode() : "");
+                CountryTextField.setText(addressInfo.getCountry() != null ? addressInfo.getCountry() : "");
             }
             
             // Populate ID application status
             if (idStatus != null) {
-                // Fixed: Use fully qualified class name
                 TransactionIDTextField.setText(backend.objects.Data.IDStatus.formatTransactionId(idStatus.getTransactionId()));
                 StatusTextField.setText(idStatus.getStatus());
                 
@@ -166,7 +205,7 @@ public class Profile extends javax.swing.JPanel {
     }
     
     private void setReadOnlyFields() {
-        // Make these fields read-only using the custom component's methods
+        // Make these fields read-only
         TransactionIDTextField.setEnabled(false);
         StatusTextField.setEnabled(false);
         AppliedDateTextField.setEnabled(false);
@@ -176,7 +215,7 @@ public class Profile extends javax.swing.JPanel {
         UsernameTextField.setEnabled(false);
         PasswordField.setEnabled(false);
         
-        // Style read-only fields using the custom component's background color
+        // Style read-only fields
         Color disabledBgColor = new Color(245, 245, 245);
         TransactionIDTextField.setBackground(disabledBgColor);
         StatusTextField.setBackground(disabledBgColor);
@@ -238,17 +277,18 @@ public class Profile extends javax.swing.JPanel {
             return false;
         }
         
-        // Basic phone number validation (allows numbers, spaces, dashes, parentheses)
+        // Basic phone number validation
         if (!phone.matches("^[0-9\\s\\-()+]*$")) {
             JOptionPane.showMessageDialog(this, "Please enter a valid phone number.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             PhoneNumberTextField.requestFocus();
             return false;
         }
         
-        String address = AddressLineTextArea.getText().trim();
-        if (address.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Address line is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
-            AddressLineTextArea.requestFocus();
+        // Validate address fields - UPDATED
+        String streetAddress = StreetAddressTextField.getText().trim();
+        if (streetAddress.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Street address is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            StreetAddressTextField.requestFocus();
             return false;
         }
         
@@ -256,6 +296,20 @@ public class Profile extends javax.swing.JPanel {
         if (city.isEmpty()) {
             JOptionPane.showMessageDialog(this, "City is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             CityTextField.requestFocus();
+            return false;
+        }
+        
+        String stateProvince = StateProvinceTextField.getText().trim();
+        if (stateProvince.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "State/Province is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            StateProvinceTextField.requestFocus();
+            return false;
+        }
+        
+        String zipCode = ZIPPostalCodeTextField.getText().trim();
+        if (zipCode.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "ZIP/Postal Code is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            ZIPPostalCodeTextField.requestFocus();
             return false;
         }
         
@@ -313,17 +367,18 @@ public class Profile extends javax.swing.JPanel {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
 
         ProfileHeader = new javax.swing.JPanel();
         WelcomeLabel = new javax.swing.JLabel();
         TodayDate = new javax.swing.JLabel();
         MainProfile = new javax.swing.JPanel();
         MainProfileContentTabbedPane = new component.NoTabJTabbedPane();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        customScrollPane1 = new component.Scroll.CustomScrollPane();
         PersonalInformationPanel = new javax.swing.JPanel();
         PersonalInformationCard = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
+        GenderDropdownButton = new component.DropdownButton.CustomDropdownButton();
+        DateofBirthPicker = new component.CustomDatePicker.CustomDatePicker();
         jLabel5 = new javax.swing.JLabel();
         MiddlenameTextField = new sys.main.CustomTextField();
         jLabel3 = new javax.swing.JLabel();
@@ -335,8 +390,6 @@ public class Profile extends javax.swing.JPanel {
         jLabel1 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
         UpdatePersonalDetailsButton = new javax.swing.JButton();
-        GenderDropdownButton = new component.DropdownButton.CustomDropdownButton();
-        DateofBirthPicker = new component.CustomDatePicker.CustomDatePicker();
         ContactInformationCard = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
@@ -354,6 +407,8 @@ public class Profile extends javax.swing.JPanel {
         jLabel17 = new javax.swing.JLabel();
         UpdateContactDetailsButton = new javax.swing.JButton();
         AddressLineTextArea = new component.CustomTextArea.CustomTextArea();
+        jLabel16 = new javax.swing.JLabel();
+        StreetAddressTextField = new sys.main.CustomTextField();
         AccountSecurityCard = new javax.swing.JPanel();
         jLabel12 = new javax.swing.JLabel();
         jLabel18 = new javax.swing.JLabel();
@@ -422,15 +477,17 @@ public class Profile extends javax.swing.JPanel {
         MainProfileContentTabbedPane.setTabLayoutPolicy(javax.swing.JTabbedPane.SCROLL_TAB_LAYOUT);
         MainProfileContentTabbedPane.setPreferredSize(new java.awt.Dimension(830, 440));
 
-        jScrollPane1.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        jScrollPane1.setPreferredSize(new java.awt.Dimension(850, 850));
-
         PersonalInformationCard.setBackground(new java.awt.Color(255, 255, 255));
-        PersonalInformationCard.setPreferredSize(new java.awt.Dimension(400, 400));
+        PersonalInformationCard.setPreferredSize(new java.awt.Dimension(400, 500));
 
         jLabel4.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel4.setText("Date of Birth:");
         jLabel4.setPreferredSize(new java.awt.Dimension(120, 40));
+
+        GenderDropdownButton.setPlaceholder("Select Gender");
+
+        DateofBirthPicker.setDate(null);
+        DateofBirthPicker.setPlaceholder("Date of Birth");
 
         jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel5.setText("Gender:");
@@ -482,12 +539,6 @@ public class Profile extends javax.swing.JPanel {
             }
         });
 
-        GenderDropdownButton.setPlaceholder("Select Gender");
-        GenderDropdownButton.setText("Male");
-
-        DateofBirthPicker.setDate(null);
-        DateofBirthPicker.setPlaceholder("Date of Birth");
-
         javax.swing.GroupLayout PersonalInformationCardLayout = new javax.swing.GroupLayout(PersonalInformationCard);
         PersonalInformationCard.setLayout(PersonalInformationCardLayout);
         PersonalInformationCardLayout.setHorizontalGroup(
@@ -502,7 +553,7 @@ public class Profile extends javax.swing.JPanel {
                     .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
-                        .addComponent(FirstnameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(FirstnameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE))
                     .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
@@ -516,8 +567,10 @@ public class Profile extends javax.swing.JPanel {
                             .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(GenderDropdownButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(DateofBirthPicker, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
+                            .addComponent(DateofBirthPicker, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addGroup(PersonalInformationCardLayout.createSequentialGroup()
+                                .addGap(0, 0, 0)
+                                .addComponent(GenderDropdownButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))))
                     .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
@@ -532,95 +585,37 @@ public class Profile extends javax.swing.JPanel {
             .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                 .addGap(17, 17, 17)
                 .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(6, 6, 6)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(FirstnameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(MiddlenameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(LastnameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(DateofBirthPicker, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(GenderDropdownButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(NationalIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
                 .addComponent(UpdatePersonalDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
-        // Add gender options to dropdown
-        GenderDropdownButton.addContent(new component.DropdownButton.CustomDropdownButton.DropdownContent() {
-            @Override
-            public java.awt.Component getContent() {
-                return new javax.swing.JLabel("Male");
-            }
-
-            @Override
-            public String getTitle() {
-                return "Male";
-            }
-
-            @Override
-            public component.DropdownButton.CustomDropdownButton.ContentType getType() {
-                return component.DropdownButton.CustomDropdownButton.ContentType.CUSTOM;
-            }
-        });
-
-        GenderDropdownButton.addContent(new component.DropdownButton.CustomDropdownButton.DropdownContent() {
-            @Override
-            public java.awt.Component getContent() {
-                return new javax.swing.JLabel("Female");
-            }
-
-            @Override
-            public String getTitle() {
-                return "Female";
-            }
-
-            @Override
-            public component.DropdownButton.CustomDropdownButton.ContentType getType() {
-                return component.DropdownButton.CustomDropdownButton.ContentType.CUSTOM;
-            }
-        });
-
-        GenderDropdownButton.addContent(new component.DropdownButton.CustomDropdownButton.DropdownContent() {
-            @Override
-            public java.awt.Component getContent() {
-                return new javax.swing.JLabel("Other");
-            }
-
-            @Override
-            public String getTitle() {
-                return "Other";
-            }
-
-            @Override
-            public component.DropdownButton.CustomDropdownButton.ContentType getType() {
-                return component.DropdownButton.CustomDropdownButton.ContentType.CUSTOM;
-            }
-        });
-
-        // Set initial gender if available
-        if (citizenInfo != null) {
-            // Note: Need to add gender field to Citizen class or get from somewhere
-            // For now, we'll leave it unset
-        }
-
         ContactInformationCard.setBackground(new java.awt.Color(255, 255, 255));
-        ContactInformationCard.setPreferredSize(new java.awt.Dimension(400, 386));
+        ContactInformationCard.setPreferredSize(new java.awt.Dimension(400, 520));
 
         jLabel8.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel8.setText("City:");
@@ -686,7 +681,14 @@ public class Profile extends javax.swing.JPanel {
             }
         });
 
-        AddressLineTextArea.setPlaceholder("Address Line");
+        AddressLineTextArea.setPlaceholder("Street, City, State/Province, ZIP/Postal Code, Country");
+
+        jLabel16.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel16.setText("Street:");
+        jLabel16.setPreferredSize(new java.awt.Dimension(120, 40));
+
+        StreetAddressTextField.setPlaceholder("Street");
+        StreetAddressTextField.setPreferredSize(new java.awt.Dimension(250, 40));
 
         javax.swing.GroupLayout ContactInformationCardLayout = new javax.swing.GroupLayout(ContactInformationCard);
         ContactInformationCard.setLayout(ContactInformationCardLayout);
@@ -702,7 +704,7 @@ public class Profile extends javax.swing.JPanel {
                     .addGroup(ContactInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
-                        .addComponent(CityTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 264, Short.MAX_VALUE))
+                        .addComponent(CityTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE))
                     .addGroup(ContactInformationCardLayout.createSequentialGroup()
                         .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(jLabel15, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -720,12 +722,13 @@ public class Profile extends javax.swing.JPanel {
                         .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(0, 0, 0)
+                            .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(PhoneNumberTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(EmailAddressTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(AddressLineTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))))
+                            .addComponent(AddressLineTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(StreetAddressTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         ContactInformationCardLayout.setVerticalGroup(
@@ -733,41 +736,45 @@ public class Profile extends javax.swing.JPanel {
             .addGroup(ContactInformationCardLayout.createSequentialGroup()
                 .addGap(17, 17, 17)
                 .addComponent(jLabel14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(6, 6, 6)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(EmailAddressTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(PhoneNumberTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
-                .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(AddressLineTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, 70, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(AddressLineTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(StreetAddressTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(CityTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(StateProvinceTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(ZIPPostalCodeTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(CountryTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(UpdateContactDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
         AccountSecurityCard.setBackground(new java.awt.Color(255, 255, 255));
-        AccountSecurityCard.setPreferredSize(new java.awt.Dimension(400, 400));
+        AccountSecurityCard.setPreferredSize(new java.awt.Dimension(400, 520));
 
         jLabel12.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel12.setText("Confirm Password:");
@@ -813,9 +820,7 @@ public class Profile extends javax.swing.JPanel {
 
         UsernameTextField.setPlaceholder("Username");
         UsernameTextField.setPreferredSize(new java.awt.Dimension(250, 40));
-        UsernameTextField.setText("john_doe123 (Read-only)");
 
-        PasswordField.setPassword("password123 (Read-only)");
         PasswordField.setPlaceholder("Password");
 
         jLabel37.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -857,7 +862,7 @@ public class Profile extends javax.swing.JPanel {
                     .addGroup(AccountSecurityCardLayout.createSequentialGroup()
                         .addComponent(jLabel35, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
-                        .addComponent(UsernameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)))
+                        .addComponent(UsernameTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         AccountSecurityCardLayout.setVerticalGroup(
@@ -869,32 +874,34 @@ public class Profile extends javax.swing.JPanel {
                 .addGroup(AccountSecurityCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel35, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(UsernameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(AccountSecurityCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 37, Short.MAX_VALUE)
+                .addGroup(AccountSecurityCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, AccountSecurityCardLayout.createSequentialGroup()
                         .addComponent(jLabel21, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
                         .addComponent(jLabel37, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel19, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, AccountSecurityCardLayout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 20, Short.MAX_VALUE))
+                    .addGroup(AccountSecurityCardLayout.createSequentialGroup()
                         .addComponent(PasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(52, 52, 52)
-                        .addComponent(CurrentPasswordField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(76, 76, 76)))
+                .addGroup(AccountSecurityCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(CurrentPasswordField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabel19, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 37, Short.MAX_VALUE)
                 .addGroup(AccountSecurityCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel18, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(NewPasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 36, Short.MAX_VALUE)
                 .addGroup(AccountSecurityCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(ConfirmPasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addComponent(UpdatePasswordButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
         IDApplicationStatusCard.setBackground(new java.awt.Color(255, 255, 255));
+        IDApplicationStatusCard.setPreferredSize(new java.awt.Dimension(400, 520));
 
         jLabel23.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jLabel23.setText("Estimated Date:");
@@ -940,27 +947,21 @@ public class Profile extends javax.swing.JPanel {
 
         TransactionIDTextField.setPlaceholder("Transaction ID");
         TransactionIDTextField.setPreferredSize(new java.awt.Dimension(250, 40));
-        TransactionIDTextField.setText("1234-5678-9012-3456-7890-12");
 
         StatusTextField.setPlaceholder("Status");
         StatusTextField.setPreferredSize(new java.awt.Dimension(250, 40));
-        StatusTextField.setText("● Processing");
 
         AppliedDateTextField.setPlaceholder("Applied Date");
         AppliedDateTextField.setPreferredSize(new java.awt.Dimension(250, 40));
-        AppliedDateTextField.setText("January 15, 2024");
 
         EstimatedDateTextField.setPlaceholder("Estimated Date");
         EstimatedDateTextField.setPreferredSize(new java.awt.Dimension(250, 40));
-        EstimatedDateTextField.setText("February 28, 2024");
 
         NextStepTextField.setPlaceholder("Next Step");
         NextStepTextField.setPreferredSize(new java.awt.Dimension(250, 40));
-        NextStepTextField.setText("Biometrics Appointment");
 
         AppointmentDateTextField.setPlaceholder("Appointment Date");
         AppointmentDateTextField.setPreferredSize(new java.awt.Dimension(250, 40));
-        AppointmentDateTextField.setText("February 10, 2024, 10:00 AM");
 
         javax.swing.GroupLayout IDApplicationStatusCardLayout = new javax.swing.GroupLayout(IDApplicationStatusCard);
         IDApplicationStatusCard.setLayout(IDApplicationStatusCardLayout);
@@ -1005,27 +1006,27 @@ public class Profile extends javax.swing.JPanel {
                 .addGroup(IDApplicationStatusCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel27, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(TransactionIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(IDApplicationStatusCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel26, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(StatusTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(IDApplicationStatusCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel25, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(AppliedDateTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(IDApplicationStatusCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel23, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(EstimatedDateTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(IDApplicationStatusCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel24, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(NextStepTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(IDApplicationStatusCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel29, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(AppointmentDateTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addComponent(RescheduleAppointmentButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -1037,31 +1038,31 @@ public class Profile extends javax.swing.JPanel {
             .addGroup(PersonalInformationPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(AccountSecurityCard, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE)
-                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE))
+                    .addComponent(AccountSecurityCard, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE)
+                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)
-                    .addComponent(IDApplicationStatusCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE)
+                    .addComponent(IDApplicationStatusCard, javax.swing.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE))
                 .addContainerGap())
         );
         PersonalInformationPanelLayout.setVerticalGroup(
             PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(PersonalInformationPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 473, Short.MAX_VALUE)
-                    .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 473, Short.MAX_VALUE))
+                .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 503, Short.MAX_VALUE)
+                    .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 503, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(IDApplicationStatusCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(AccountSecurityCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(AccountSecurityCard, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
 
-        jScrollPane1.setViewportView(PersonalInformationPanel);
+        customScrollPane1.setViewportView(PersonalInformationPanel);
 
-        MainProfileContentTabbedPane.addTab("tab2", jScrollPane1);
+        MainProfileContentTabbedPane.addTab("tab2", customScrollPane1);
 
         javax.swing.GroupLayout MainProfileLayout = new javax.swing.GroupLayout(MainProfile);
         MainProfile.setLayout(MainProfileLayout);
@@ -1102,7 +1103,6 @@ public class Profile extends javax.swing.JPanel {
             return;
         }
         
-        // Create a dialog for rescheduling appointment
         JDialog rescheduleDialog = new JDialog((java.awt.Frame)SwingUtilities.getWindowAncestor(this), "Reschedule Appointment", true);
         rescheduleDialog.setLayout(new java.awt.BorderLayout());
         rescheduleDialog.setSize(400, 300);
@@ -1113,7 +1113,6 @@ public class Profile extends javax.swing.JPanel {
         gbc.insets = new java.awt.Insets(10, 10, 10, 10);
         gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
         
-        // Date picker
         gbc.gridx = 0;
         gbc.gridy = 0;
         contentPanel.add(new JLabel("Select New Date:"), gbc);
@@ -1123,7 +1122,6 @@ public class Profile extends javax.swing.JPanel {
         newDatePicker.setPreferredSize(new java.awt.Dimension(200, 40));
         contentPanel.add(newDatePicker, gbc);
         
-        // Time selection
         gbc.gridx = 0;
         gbc.gridy = 1;
         contentPanel.add(new JLabel("Select Time:"), gbc);
@@ -1134,7 +1132,6 @@ public class Profile extends javax.swing.JPanel {
         timeComboBox.setPreferredSize(new java.awt.Dimension(200, 40));
         contentPanel.add(timeComboBox, gbc);
         
-        // Button panel
         JPanel buttonPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
         JButton cancelButton = new JButton("Cancel");
         JButton scheduleButton = new JButton("Schedule");
@@ -1149,7 +1146,6 @@ public class Profile extends javax.swing.JPanel {
             String selectedTime = (String) timeComboBox.getSelectedItem();
             
             try {
-                // Create or update appointment
                 Appointment newAppointment = new Appointment();
                 newAppointment.setCitizenId(citizenInfo.getCitizenId());
                 newAppointment.setAppDate(new java.sql.Date(newDatePicker.getDate().getTime()));
@@ -1170,7 +1166,6 @@ public class Profile extends javax.swing.JPanel {
                     String appointmentText = dateFormat.format(appointment.getAppDate()) + ", " + appointment.getAppTime();
                     AppointmentDateTextField.setText(appointmentText);
                     
-                    // Log activity
                     ActivityLog.logActivity(currentUser.getUserId(), "Rescheduled appointment to " + appointmentText);
                     
                     JOptionPane.showMessageDialog(rescheduleDialog, "Appointment rescheduled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -1198,20 +1193,16 @@ public class Profile extends javax.swing.JPanel {
         
         String newPassword = new String(NewPasswordField.getPassword());
         
-        // Update user password
         currentUser.setPassword(newPassword);
         boolean success = User.updateUser(currentUser);
         
         if (success) {
-            // Clear password fields
             CurrentPasswordField.setText("");
             NewPasswordField.setText("");
             ConfirmPasswordField.setText("");
             
-            // Update displayed password (masked)
             PasswordField.setText("********");
             
-            // Log activity
             ActivityLog.logActivity(currentUser.getUserId(), "Changed password");
             
             JOptionPane.showMessageDialog(this, "Password updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -1226,7 +1217,6 @@ public class Profile extends javax.swing.JPanel {
         }
         
         try {
-            // Update or create citizen record
             Citizen citizen = new Citizen();
             
             if (citizenInfo != null) {
@@ -1241,17 +1231,16 @@ public class Profile extends javax.swing.JPanel {
             citizen.setLname(LastnameTextField.getText().trim());
             citizen.setNationalId(NationalIDTextField.getText().trim());
             citizen.setBirthDate(new java.sql.Date(DateofBirthPicker.getDate().getTime()));
+            citizen.setGender(GenderDropdownButton.getText()); // NEW: Set gender
             
-            // Use existing application date or set current date for new records
             if (citizenInfo != null && citizenInfo.getApplicationDate() != null) {
                 citizen.setApplicationDate(citizenInfo.getApplicationDate());
             } else {
                 citizen.setApplicationDate(new java.sql.Date(System.currentTimeMillis()));
             }
             
-            // Keep existing contact info if not updating contact details separately
+            // Keep existing contact info
             if (citizenInfo != null) {
-                citizen.setAddress(citizenInfo.getAddress());
                 citizen.setPhone(citizenInfo.getPhone());
                 citizen.setEmail(citizenInfo.getEmail());
             }
@@ -1268,19 +1257,15 @@ public class Profile extends javax.swing.JPanel {
                 
                 // Create ID status if it doesn't exist
                 if (idStatus == null && citizenInfo != null) {
-                    // Create new IDStatus instance - Fixed: Use fully qualified name
                     backend.objects.Data.IDStatus newStatus = new backend.objects.Data.IDStatus();
                     newStatus.setCitizenId(citizenInfo.getCitizenId());
-                    // Fixed: Use fully qualified class name
                     newStatus.setTransactionId(backend.objects.Data.IDStatus.generateTransactionId(citizenInfo.getCitizenId()));
                     newStatus.setStatus("Submitted");
                     newStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
                     newStatus.setNotes("Initial application submitted");
                     
-                    // Fixed: Use fully qualified class name
                     if (backend.objects.Data.IDStatus.addStatus(newStatus)) {
                         idStatus = newStatus;
-                        // Fixed: Use fully qualified class name
                         TransactionIDTextField.setText(backend.objects.Data.IDStatus.formatTransactionId(idStatus.getTransactionId()));
                         StatusTextField.setText(idStatus.getStatus());
                         
@@ -1288,7 +1273,6 @@ public class Profile extends javax.swing.JPanel {
                             AppliedDateTextField.setText(dateFormat.format(citizenInfo.getApplicationDate()));
                         }
                         
-                        // Set estimated date
                         Calendar estimatedCal = Calendar.getInstance();
                         estimatedCal.setTime(citizenInfo.getApplicationDate());
                         estimatedCal.add(Calendar.DAY_OF_MONTH, 45);
@@ -1299,10 +1283,8 @@ public class Profile extends javax.swing.JPanel {
                     }
                 }
                 
-                // Update welcome message
                 WelcomeLabel.setText("Welcome, " + citizenInfo.getFullName());
                 
-                // Log activity
                 ActivityLog.logActivity(currentUser.getUserId(), "Updated personal details");
                 
                 JOptionPane.showMessageDialog(this, "Personal details updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -1318,60 +1300,79 @@ public class Profile extends javax.swing.JPanel {
         if (!validateContactDetails()) {
             return;
         }
-        
+
         if (citizenInfo == null) {
             JOptionPane.showMessageDialog(this, "Please update your personal details first.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         try {
-            // Update citizen record with contact information
+            // Update citizen contact information
             Citizen citizen = new Citizen();
             citizen.setCitizenId(citizenInfo.getCitizenId());
             citizen.setUserId(citizenInfo.getUserId());
-            
+
             // Copy existing personal details
             citizen.setFname(citizenInfo.getFname());
             citizen.setMname(citizenInfo.getMname());
             citizen.setLname(citizenInfo.getLname());
             citizen.setNationalId(citizenInfo.getNationalId());
             citizen.setBirthDate(citizenInfo.getBirthDate());
+            citizen.setGender(citizenInfo.getGender());
             citizen.setApplicationDate(citizenInfo.getApplicationDate());
-            
+
             // Update contact details
             citizen.setEmail(EmailAddressTextField.getText().trim());
             citizen.setPhone(PhoneNumberTextField.getText().trim());
-            
-            // Construct full address from components
-            StringBuilder fullAddress = new StringBuilder();
-            fullAddress.append(AddressLineTextArea.getText().trim());
-            
-            if (!CityTextField.getText().trim().isEmpty()) {
-                fullAddress.append(", ").append(CityTextField.getText().trim());
+
+            boolean citizenSuccess = Citizen.updateCitizen(citizen);
+
+            // Parse the address string into separate components
+            String fullAddress = AddressLineTextArea.getText().trim();
+            String[] addressParts = fullAddress.split(",");
+
+            if (addressParts.length < 5) {
+                JOptionPane.showMessageDialog(this, 
+                    "Please enter address in correct format:\nStreet, City, State/Province, ZIP/Postal Code, Country\n\nExample: 123 Rizal Avenue, Manila, Metro Manila, 1000, Philippines", 
+                    "Invalid Address Format", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
             }
-            
-            if (!StateProvinceTextField.getText().trim().isEmpty()) {
-                fullAddress.append(", ").append(StateProvinceTextField.getText().trim());
+
+            // Update or create address information
+            Address address = new Address();
+
+            if (addressInfo != null) {
+                address.setAddressId(addressInfo.getAddressId());
             }
-            
-            if (!ZIPPostalCodeTextField.getText().trim().isEmpty()) {
-                fullAddress.append(" ").append(ZIPPostalCodeTextField.getText().trim());
+
+            address.setCitizenId(citizenInfo.getCitizenId());
+            address.setStreetAddress(addressParts[0].trim());
+            address.setCity(addressParts[1].trim());
+            address.setStateProvince(addressParts[2].trim());
+            address.setZipPostalCode(addressParts[3].trim());
+            address.setCountry(addressParts[4].trim());
+
+            boolean addressSuccess;
+            if (addressInfo != null) {
+                addressSuccess = Address.updateAddress(address);
+            } else {
+                addressSuccess = Address.addAddress(address);
             }
-            
-            if (!CountryTextField.getText().trim().isEmpty()) {
-                fullAddress.append(", ").append(CountryTextField.getText().trim());
-            }
-            
-            citizen.setAddress(fullAddress.toString());
-            
-            boolean success = Citizen.updateCitizen(citizen);
-            
-            if (success) {
+
+            if (citizenSuccess && addressSuccess) {
                 citizenInfo = citizen;
-                
-                // Log activity
+                addressInfo = address;
+
+                // Also update the separate address fields for display
+                StreetAddressTextField.setText(address.getStreetAddress());
+                CityTextField.setText(address.getCity());
+                StateProvinceTextField.setText(address.getStateProvince());
+                ZIPPostalCodeTextField.setText(address.getZipPostalCode());
+                CountryTextField.setText(address.getCountry());
+
                 ActivityLog.logActivity(currentUser.getUserId(), "Updated contact details");
-                
+
                 JOptionPane.showMessageDialog(this, "Contact details updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to update contact details. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1413,6 +1414,7 @@ public class Profile extends javax.swing.JPanel {
     private javax.swing.JButton RescheduleAppointmentButton;
     private sys.main.CustomTextField StateProvinceTextField;
     private sys.main.CustomTextField StatusTextField;
+    private sys.main.CustomTextField StreetAddressTextField;
     private javax.swing.JLabel TodayDate;
     private sys.main.CustomTextField TransactionIDTextField;
     private javax.swing.JButton UpdateContactDetailsButton;
@@ -1421,6 +1423,7 @@ public class Profile extends javax.swing.JPanel {
     private sys.main.CustomTextField UsernameTextField;
     private javax.swing.JLabel WelcomeLabel;
     private sys.main.CustomTextField ZIPPostalCodeTextField;
+    private component.Scroll.CustomScrollPane customScrollPane1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -1428,6 +1431,7 @@ public class Profile extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel15;
+    private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel19;
@@ -1450,6 +1454,5 @@ public class Profile extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
-    private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
 }

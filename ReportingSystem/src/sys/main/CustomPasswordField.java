@@ -140,6 +140,30 @@ public class CustomPasswordField extends JPanel implements FocusListener {
         return new ImageIcon(scaledImg);
     }
     
+    public void setBorderColor(Color color) {
+        this.focusedBorderColor = color;
+        this.unfocusedBorderColor = color;
+        if (!isFocused) {
+            updateBorder(false);
+        } else {
+            updateBorder(true);
+        }
+    }
+
+    public void setBorderColor(Color focusedColor, Color unfocusedColor) {
+        this.focusedBorderColor = focusedColor;
+        this.unfocusedBorderColor = unfocusedColor;
+        updateBorder(isFocused);
+    }
+
+    public Color getFocusedBorderColor() {
+        return focusedBorderColor;
+    }
+
+    public Color getUnfocusedBorderColor() {
+        return unfocusedBorderColor;
+    }
+    
     private void animateBorder() {
         if (isFocused) {
             // Animate border thickness in

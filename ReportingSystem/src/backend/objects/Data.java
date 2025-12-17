@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Data {
     
-    // User class for users table
+    // User class for users table (unchanged)
     public static class User {
         private int userId;
         private String fname;
@@ -36,7 +36,7 @@ public class Data {
             this.createdDate = createdDate;
         }
         
-        // Getters and Setters
+        // Getters and Setters (unchanged)
         public int getUserId() { return userId; }
         public void setUserId(int userId) { this.userId = userId; }
         
@@ -71,7 +71,7 @@ public class Data {
         public Date getCreatedDate() { return createdDate; }
         public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
         
-        // Database Functions
+        // Database Functions (unchanged)
         public static User authenticate(String username, String password) {
             String query = "SELECT * FROM users WHERE username = ? AND password = ?";
             
@@ -294,7 +294,202 @@ public class Data {
         }
     }
     
-    // Citizen class for citizens table
+    // Address class for addresses table (NEW)
+    public static class Address {
+        private int addressId;
+        private int citizenId;
+        private String streetAddress;
+        private String city;
+        private String stateProvince;
+        private String zipPostalCode;
+        private String country;
+        
+        public Address() {}
+        
+        public Address(int addressId, int citizenId, String streetAddress, String city, 
+                      String stateProvince, String zipPostalCode, String country) {
+            this.addressId = addressId;
+            this.citizenId = citizenId;
+            this.streetAddress = streetAddress;
+            this.city = city;
+            this.stateProvince = stateProvince;
+            this.zipPostalCode = zipPostalCode;
+            this.country = country;
+        }
+        
+        // Getters and Setters
+        public int getAddressId() { return addressId; }
+        public void setAddressId(int addressId) { this.addressId = addressId; }
+        
+        public int getCitizenId() { return citizenId; }
+        public void setCitizenId(int citizenId) { this.citizenId = citizenId; }
+        
+        public String getStreetAddress() { return streetAddress; }
+        public void setStreetAddress(String streetAddress) { this.streetAddress = streetAddress; }
+        
+        public String getCity() { return city; }
+        public void setCity(String city) { this.city = city; }
+        
+        public String getStateProvince() { return stateProvince; }
+        public void setStateProvince(String stateProvince) { this.stateProvince = stateProvince; }
+        
+        public String getZipPostalCode() { return zipPostalCode; }
+        public void setZipPostalCode(String zipPostalCode) { this.zipPostalCode = zipPostalCode; }
+        
+        public String getCountry() { return country; }
+        public void setCountry(String country) { this.country = country; }
+        
+        public String getFullAddress() {
+            return String.format("%s, %s, %s %s, %s", 
+                streetAddress, city, stateProvince, zipPostalCode, country);
+        }
+        
+        // Database Functions
+        public static Address getAddressByCitizenId(int citizenId) {
+            String query = "SELECT * FROM addresses WHERE citizen_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, citizenId);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    return new Address(
+                        rs.getInt("address_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getString("street_address"),
+                        rs.getString("city"),
+                        rs.getString("state_province"),
+                        rs.getString("zip_postal_code"),
+                        rs.getString("country")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting address by citizen ID: " + e.getMessage());
+            }
+            return null;
+        }
+        
+        public static Address getAddressById(int addressId) {
+            String query = "SELECT * FROM addresses WHERE address_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, addressId);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    return new Address(
+                        rs.getInt("address_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getString("street_address"),
+                        rs.getString("city"),
+                        rs.getString("state_province"),
+                        rs.getString("zip_postal_code"),
+                        rs.getString("country")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting address: " + e.getMessage());
+            }
+            return null;
+        }
+        
+        public static boolean addAddress(Address address) {
+            String query = "INSERT INTO addresses (citizen_id, street_address, city, state_province, zip_postal_code, country) " +
+                          "VALUES (?, ?, ?, ?, ?, ?)";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, address.getCitizenId());
+                stmt.setString(2, address.getStreetAddress());
+                stmt.setString(3, address.getCity());
+                stmt.setString(4, address.getStateProvince());
+                stmt.setString(5, address.getZipPostalCode());
+                stmt.setString(6, address.getCountry());
+                
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error adding address: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean updateAddress(Address address) {
+            String query = "UPDATE addresses SET street_address = ?, city = ?, state_province = ?, " +
+                          "zip_postal_code = ?, country = ? WHERE address_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, address.getStreetAddress());
+                stmt.setString(2, address.getCity());
+                stmt.setString(3, address.getStateProvince());
+                stmt.setString(4, address.getZipPostalCode());
+                stmt.setString(5, address.getCountry());
+                stmt.setInt(6, address.getAddressId());
+                
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error updating address: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean updateAddressByCitizenId(int citizenId, Address address) {
+            String query = "UPDATE addresses SET street_address = ?, city = ?, state_province = ?, " +
+                          "zip_postal_code = ?, country = ? WHERE citizen_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, address.getStreetAddress());
+                stmt.setString(2, address.getCity());
+                stmt.setString(3, address.getStateProvince());
+                stmt.setString(4, address.getZipPostalCode());
+                stmt.setString(5, address.getCountry());
+                stmt.setInt(6, citizenId);
+                
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error updating address by citizen ID: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean deleteAddress(int addressId) {
+            String query = "DELETE FROM addresses WHERE address_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, addressId);
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error deleting address: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean deleteAddressByCitizenId(int citizenId) {
+            String query = "DELETE FROM addresses WHERE citizen_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, citizenId);
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error deleting address by citizen ID: " + e.getMessage());
+                return false;
+            }
+        }
+    }
+    
+    // Citizen class for citizens table (UPDATED with gender field, removed address)
     public static class Citizen {
         private int citizenId;
         private Integer userId;
@@ -303,7 +498,7 @@ public class Data {
         private String lname;
         private String nationalId;
         private Date birthDate;
-        private String address;
+        private String gender; // NEW FIELD
         private String phone;
         private String email;
         private Date applicationDate;
@@ -311,7 +506,7 @@ public class Data {
         public Citizen() {}
         
         public Citizen(int citizenId, Integer userId, String fname, String mname, String lname, String nationalId,
-                      Date birthDate, String address, String phone, String email, Date applicationDate) {
+                      Date birthDate, String gender, String phone, String email, Date applicationDate) {
             this.citizenId = citizenId;
             this.userId = userId;
             this.fname = fname;
@@ -319,7 +514,7 @@ public class Data {
             this.lname = lname;
             this.nationalId = nationalId;
             this.birthDate = birthDate;
-            this.address = address;
+            this.gender = gender;
             this.phone = phone;
             this.email = email;
             this.applicationDate = applicationDate;
@@ -351,8 +546,8 @@ public class Data {
         public Date getBirthDate() { return birthDate; }
         public void setBirthDate(Date birthDate) { this.birthDate = birthDate; }
         
-        public String getAddress() { return address; }
-        public void setAddress(String address) { this.address = address; }
+        public String getGender() { return gender; } // NEW GETTER
+        public void setGender(String gender) { this.gender = gender; } // NEW SETTER
         
         public String getPhone() { return phone; }
         public void setPhone(String phone) { this.phone = phone; }
@@ -363,7 +558,7 @@ public class Data {
         public Date getApplicationDate() { return applicationDate; }
         public void setApplicationDate(Date applicationDate) { this.applicationDate = applicationDate; }
         
-        // Database Functions
+        // Database Functions (UPDATED to include gender field)
         public static List<Citizen> getAllCitizens() {
             List<Citizen> citizens = new ArrayList<>();
             String query = "SELECT * FROM citizens ORDER BY lname, fname";
@@ -381,7 +576,7 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
-                        rs.getString("address"),
+                        rs.getString("gender"), // NEW FIELD
                         rs.getString("phone"),
                         rs.getString("email"),
                         rs.getDate("application_date")
@@ -412,7 +607,7 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
-                        rs.getString("address"),
+                        rs.getString("gender"), // NEW FIELD
                         rs.getString("phone"),
                         rs.getString("email"),
                         rs.getDate("application_date")
@@ -442,7 +637,7 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
-                        rs.getString("address"),
+                        rs.getString("gender"), // NEW FIELD
                         rs.getString("phone"),
                         rs.getString("email"),
                         rs.getDate("application_date")
@@ -472,7 +667,7 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
-                        rs.getString("address"),
+                        rs.getString("gender"), // NEW FIELD
                         rs.getString("phone"),
                         rs.getString("email"),
                         rs.getDate("application_date")
@@ -485,8 +680,8 @@ public class Data {
         }
         
         public static boolean addCitizen(Citizen citizen) {
-            String query = "INSERT INTO citizens (user_id, fname, mname, lname, national_id, birth_date, address, phone, email, application_date) " +
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO citizens (user_id, fname, mname, lname, national_id, birth_date, gender, phone, email, application_date) " +
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // UPDATED with gender
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -501,7 +696,7 @@ public class Data {
                 stmt.setString(4, citizen.getLname());
                 stmt.setString(5, citizen.getNationalId());
                 stmt.setDate(6, citizen.getBirthDate());
-                stmt.setString(7, citizen.getAddress());
+                stmt.setString(7, citizen.getGender()); // NEW FIELD
                 stmt.setString(8, citizen.getPhone());
                 stmt.setString(9, citizen.getEmail());
                 stmt.setDate(10, citizen.getApplicationDate());
@@ -515,7 +710,7 @@ public class Data {
         
         public static boolean updateCitizen(Citizen citizen) {
             String query = "UPDATE citizens SET user_id = ?, fname = ?, mname = ?, lname = ?, national_id = ?, " +
-                          "birth_date = ?, address = ?, phone = ?, email = ?, application_date = ? WHERE citizen_id = ?";
+                          "birth_date = ?, gender = ?, phone = ?, email = ?, application_date = ? WHERE citizen_id = ?"; // UPDATED with gender
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -530,7 +725,7 @@ public class Data {
                 stmt.setString(4, citizen.getLname());
                 stmt.setString(5, citizen.getNationalId());
                 stmt.setDate(6, citizen.getBirthDate());
-                stmt.setString(7, citizen.getAddress());
+                stmt.setString(7, citizen.getGender()); // NEW FIELD
                 stmt.setString(8, citizen.getPhone());
                 stmt.setString(9, citizen.getEmail());
                 stmt.setDate(10, citizen.getApplicationDate());
@@ -546,7 +741,7 @@ public class Data {
         public static List<Citizen> searchCitizens(String searchTerm) {
             List<Citizen> citizens = new ArrayList<>();
             String query = "SELECT * FROM citizens WHERE " +
-                          "fname LIKE ? OR mname LIKE ? OR lname LIKE ? OR national_id LIKE ? OR phone LIKE ? OR address LIKE ? OR email LIKE ? " +
+                          "fname LIKE ? OR mname LIKE ? OR lname LIKE ? OR national_id LIKE ? OR phone LIKE ? OR email LIKE ? " +
                           "ORDER BY lname, fname";
             
             try (Connection conn = DatabaseConnection.getConnection();
@@ -559,7 +754,6 @@ public class Data {
                 stmt.setString(4, likeTerm);
                 stmt.setString(5, likeTerm);
                 stmt.setString(6, likeTerm);
-                stmt.setString(7, likeTerm);
                 
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
@@ -571,7 +765,7 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
-                        rs.getString("address"),
+                        rs.getString("gender"), // NEW FIELD
                         rs.getString("phone"),
                         rs.getString("email"),
                         rs.getDate("application_date")
@@ -617,7 +811,7 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("national_id"),
                         rs.getDate("birth_date"),
-                        rs.getString("address"),
+                        rs.getString("gender"), // NEW FIELD
                         rs.getString("phone"),
                         rs.getString("email"),
                         rs.getDate("application_date")
@@ -629,10 +823,30 @@ public class Data {
             }
             return citizens;
         }
+        
+        public static int getCitizenCountByGender(String gender) {
+            String query = "SELECT COUNT(*) as total FROM citizens WHERE gender = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, gender);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    return rs.getInt("total");
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting citizen count by gender: " + e.getMessage());
+            }
+            return 0;
+        }
     }
     
-    // IDStatus class for id_status table
+    // IDStatus class for id_status table (UNCHANGED)
     public static class IDStatus {
+        // ... (all IDStatus code remains exactly the same as in the original file)
+        // No changes needed for this class
         private int statusId;
         private String transactionId;
         private int citizenId;
@@ -670,7 +884,7 @@ public class Data {
         public String getNotes() { return notes; }
         public void setNotes(String notes) { this.notes = notes; }
         
-        // Database Functions
+        // Database Functions (unchanged)
         public static IDStatus getStatusByCitizenId(int citizenId) {
             String query = "SELECT * FROM id_status WHERE citizen_id = ?";
             
@@ -934,8 +1148,10 @@ public class Data {
         }
     }
     
-    // Appointment class for appointments table
+    // Appointment class for appointments table (UNCHANGED)
     public static class Appointment {
+        // ... (all Appointment code remains exactly the same as in the original file)
+        // No changes needed for this class
         private int appointmentId;
         private int citizenId;
         private Date appDate;
@@ -1213,8 +1429,10 @@ public class Data {
         }
     }
     
-    // ActivityLog class for activity_log table (unchanged except for getFullName method usage)
+    // ActivityLog class for activity_log table (UNCHANGED)
     public static class ActivityLog {
+        // ... (all ActivityLog code remains exactly the same as in the original file)
+        // No changes needed for this class
         private int logId;
         private Integer userId;
         private String action;
@@ -1403,22 +1621,25 @@ public class Data {
         }
     }
     
-    // Helper class to get combined citizen information (updated with new fields)
+    // Helper class to get combined citizen information (UPDATED to include Address)
     public static class CitizenInfo {
         private Citizen citizen;
         private IDStatus status;
         private Appointment appointment;
         private User user;
         private List<Document> documents;
+        private Address address; // NEW FIELD
         
         public CitizenInfo() {}
         
-        public CitizenInfo(Citizen citizen, IDStatus status, Appointment appointment, User user, List<Document> documents) {
+        public CitizenInfo(Citizen citizen, IDStatus status, Appointment appointment, User user, 
+                          List<Document> documents, Address address) {
             this.citizen = citizen;
             this.status = status;
             this.appointment = appointment;
             this.user = user;
             this.documents = documents;
+            this.address = address;
         }
         
         // Getters and Setters
@@ -1437,6 +1658,9 @@ public class Data {
         public List<Document> getDocuments() { return documents; }
         public void setDocuments(List<Document> documents) { this.documents = documents; }
         
+        public Address getAddress() { return address; } // NEW GETTER
+        public void setAddress(Address address) { this.address = address; } // NEW SETTER
+        
         public static CitizenInfo getCitizenInfoByNationalId(String nationalId) {
             Citizen citizen = Citizen.getCitizenByNationalId(nationalId);
             if (citizen == null) return null;
@@ -1448,8 +1672,9 @@ public class Data {
                 user = User.getUserById(citizen.getUserId());
             }
             List<Document> documents = Document.getDocumentsByCitizenId(citizen.getCitizenId());
+            Address address = Address.getAddressByCitizenId(citizen.getCitizenId()); // NEW
             
-            return new CitizenInfo(citizen, status, appointment, user, documents);
+            return new CitizenInfo(citizen, status, appointment, user, documents, address);
         }
         
         public static CitizenInfo getCitizenInfoByCitizenId(int citizenId) {
@@ -1463,8 +1688,9 @@ public class Data {
                 user = User.getUserById(citizen.getUserId());
             }
             List<Document> documents = Document.getDocumentsByCitizenId(citizen.getCitizenId());
+            Address address = Address.getAddressByCitizenId(citizen.getCitizenId()); // NEW
             
-            return new CitizenInfo(citizen, status, appointment, user, documents);
+            return new CitizenInfo(citizen, status, appointment, user, documents, address);
         }
         
         public static CitizenInfo getCitizenInfoByTransactionId(String transactionId) {
@@ -1480,13 +1706,16 @@ public class Data {
                 user = User.getUserById(citizen.getUserId());
             }
             List<Document> documents = Document.getDocumentsByCitizenId(citizen.getCitizenId());
+            Address address = Address.getAddressByCitizenId(citizen.getCitizenId()); // NEW
             
-            return new CitizenInfo(citizen, status, appointment, user, documents);
+            return new CitizenInfo(citizen, status, appointment, user, documents, address);
         }
     }
     
-    // Document class for documents table (unchanged)
+    // Document class for documents table (UNCHANGED)
     public static class Document {
+        // ... (all Document code remains exactly the same as in the original file)
+        // No changes needed for this class
         private int documentId;
         private int citizenId;
         private String documentName;
@@ -1777,8 +2006,10 @@ public class Data {
         }
     }
     
-    // Notification class for notifications table (unchanged)
+    // Notification class for notifications table (UNCHANGED)
     public static class Notification {
+        // ... (all Notification code remains exactly the same as in the original file)
+        // No changes needed for this class
         private int notificationId;
         private int citizenId;
         private Date notificationDate;
