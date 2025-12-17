@@ -2,14 +2,29 @@ package sys.main;
 
 import javax.swing.JOptionPane;
 import java.awt.Color;
-import backend.objects.Data;
+import backend.objects.*;
 import java.sql.Date;
+import javax.swing.JComboBox;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+
 public class Registration extends javax.swing.JPanel {
+    
+    private Data.Citizen citizenInfo;
+    
     
     public Registration() {
         initComponents();
+
+        // Set gender options immediately after initComponents
+        setupGenderDropdown();
+
         applyStyles();
         setupValidationListeners();
+
+        // Debug: Print component info
+        System.out.println("GenderDropdownButton initialized: " + (GenderDropdownButton != null));
+        System.out.println("GenderDropdownButton class: " + GenderDropdownButton.getClass().getName());
     }
     
     private void applyStyles() {
@@ -17,10 +32,6 @@ public class Registration extends javax.swing.JPanel {
         // ENABLE THE FORMAT GUIDE
         TransactionIDText.enableFormatGuide("XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XX");
         TransactionIDText.setPlaceholder("Transaction Reference Number *");
-        
-                // Set gender options
-        String[] genderOptions = {"Select Gender", "Male", "Female", "Other"};
-        GenderDropdownButton.setOptions(genderOptions);
 
         PasswordText.disablePasswordVisibilityToggle();
         ConfirmPasswordText.disablePasswordVisibilityToggle();
@@ -35,14 +46,99 @@ public class Registration extends javax.swing.JPanel {
         });
     }
     
+    private void setupGenderDropdown() {
+        // Set gender options
+        String[] genderOptions = {"Male", "Female", "Other"};
+
+        // Create a custom dropdown button with options
+        JPopupMenu genderMenu = new JPopupMenu();
+
+        // Add options to the menu
+        for (String gender : genderOptions) {
+            JMenuItem menuItem = new JMenuItem(gender);
+            menuItem.addActionListener(e -> {
+                GenderDropdownButton.setText(gender);
+            });
+            genderMenu.add(menuItem);
+        }
+
+        // Add action listener to the dropdown button
+        GenderDropdownButton.getButton().addActionListener(e -> {
+            genderMenu.show(GenderDropdownButton, 0, GenderDropdownButton.getHeight());
+        });
+
+        // Set initial gender if available
+        if (citizenInfo != null && citizenInfo.getGender() != null && !citizenInfo.getGender().isEmpty()) {
+            String savedGender = citizenInfo.getGender();
+            for (String option : genderOptions) {
+                if (option.equalsIgnoreCase(savedGender)) {
+                    GenderDropdownButton.setText(option);
+                    break;
+                }
+            }
+        } else {
+            GenderDropdownButton.setText(null);
+        }
+    }
+    
+    private void setupFallbackGenderDropdown() {
+        // This is a fallback method in case CustomDropdownButton doesn't work
+        System.out.println("Setting up fallback gender dropdown...");
+        
+        // Remove the existing dropdown button
+        this.remove(GenderDropdownButton);
+        
+        // Create a simple JComboBox as fallback
+        JComboBox<String> genderComboBox = new JComboBox<>();
+        genderComboBox.addItem("Select Gender");
+        genderComboBox.addItem("Male");
+        genderComboBox.addItem("Female");
+        genderComboBox.addItem("Other");
+        genderComboBox.setPreferredSize(new java.awt.Dimension(350, 40));
+        
+        // Add it to the layout (you might need to adjust the layout)
+        // This is a simplified approach - you may need to adjust based on your actual layout
+        
+        System.out.println("Fallback dropdown created");
+    }
+
     private void setupValidationListeners() {
         // Add focus listener for transaction reference validation
-        CityText.addFocusListener(new java.awt.event.FocusAdapter() {
+        TransactionIDText.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override
             public void focusLost(java.awt.event.FocusEvent evt) {
                 validateTransactionReferenceOnFocusLost();
             }
         });
+        
+        // Add password strength checker
+        PasswordText.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                String password = String.valueOf(PasswordText.getPassword());
+                checkPasswordStrength(password);
+            }
+        });
+        
+        // Add a test button listener for debugging
+        CreateAccountButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                // Test gender dropdown before account creation
+                testGenderDropdown();
+                // Then proceed with account creation
+                createAccount();
+            }
+        });
+    }
+    
+    private void testGenderDropdown() {
+        System.out.println("=== Testing Gender Dropdown ===");
+        System.out.println("GenderDropdownButton is null: " + (GenderDropdownButton == null));
+        System.out.println("Current text: " + GenderDropdownButton.getText());
+        System.out.println("Placeholder: " + GenderDropdownButton.getPlaceholder());
+        System.out.println("Is enabled: " + GenderDropdownButton.isEnabled());
+        System.out.println("Is visible: " + GenderDropdownButton.isVisible());
+        System.out.println("=== End Test ===");
     }
     
     private void showTermsAndConditionsDialog() {
@@ -127,10 +223,22 @@ public class Registration extends javax.swing.JPanel {
     }
     
     private void validateTransactionReferenceOnFocusLost() {
-        String transactionId = CityText.getText().trim();
+        String transactionId = TransactionIDText.getText().trim();
         if (!transactionId.isEmpty()) {
             validateTransactionReferenceNumber(transactionId);
         }
+    }
+    
+    private boolean validateGenderSelection() {
+        String selectedGender = GenderDropdownButton.getText();
+        System.out.println("Validating gender: " + selectedGender);
+        
+        if (selectedGender == null || selectedGender.isEmpty() || selectedGender.equals("Select Gender")) {
+            JOptionPane.showMessageDialog(this, "Please select a gender.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            GenderDropdownButton.requestFocus();
+            return false;
+        }
+        return true;
     }
     
     @SuppressWarnings("unchecked")
@@ -264,12 +372,9 @@ public class Registration extends javax.swing.JPanel {
             .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)
             .addGroup(RIGHTLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(RIGHTLayout.createSequentialGroup()
-                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(RIGHTLayout.createSequentialGroup()
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -300,6 +405,10 @@ public class Registration extends javax.swing.JPanel {
                                 .addComponent(StreetAddressText, javax.swing.GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE)
                                 .addComponent(PhoneNumberText, javax.swing.GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE)
                                 .addComponent(CityText, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(RIGHTLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         RIGHTLayout.setVerticalGroup(
@@ -347,9 +456,9 @@ public class Registration extends javax.swing.JPanel {
                 .addComponent(ConfirmPasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(TermsAndConditionCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -401,7 +510,19 @@ public class Registration extends javax.swing.JPanel {
         String transactionRef = TransactionIDText.getText().trim();
         String password = String.valueOf(PasswordText.getPassword()).trim();
         String confirmPassword = String.valueOf(ConfirmPasswordText.getPassword()).trim();
+        String selectedGender = GenderDropdownButton.getText();
         boolean agreedToTerms = TermsAndConditionCheckBox.isSelected();
+        
+        // Debug output
+        System.out.println("=== Creating Account ===");
+        System.out.println("First Name: " + firstName);
+        System.out.println("Last Name: " + lastName);
+        System.out.println("Gender: " + selectedGender);
+        System.out.println("Email: " + email);
+        System.out.println("Transaction Ref: " + transactionRef);
+        System.out.println("Password length: " + password.length());
+        System.out.println("Confirm Password length: " + confirmPassword.length());
+        System.out.println("Terms agreed: " + agreedToTerms);
         
         // Step 2: Validate required fields
         if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || 
@@ -412,7 +533,14 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 3: Validate transaction reference format
+        // Step 3: Validate gender selection
+        if (selectedGender == null || selectedGender.isEmpty() || selectedGender.equals("Select Gender")) {
+            JOptionPane.showMessageDialog(this, "Please select a gender.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            GenderDropdownButton.requestFocus();
+            return;
+        }
+        
+        // Step 4: Validate transaction reference format
         if (!TransactionIDText.isFormatFilled()) {
             JOptionPane.showMessageDialog(this,
                 "Please complete the transaction reference number format.\n" +
@@ -422,7 +550,7 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 4: Validate email format
+        // Step 5: Validate email format
         if (!isValidEmail(email)) {
             JOptionPane.showMessageDialog(this,
                 "Please enter a valid email address",
@@ -431,7 +559,7 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 5: Validate password
+        // Step 6: Validate password
         String passwordError = validatePassword(password);
         if (passwordError != null) {
             JOptionPane.showMessageDialog(this, passwordError,
@@ -440,7 +568,7 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 6: Check password match
+        // Step 7: Check password match
         if (!password.equals(confirmPassword)) {
             JOptionPane.showMessageDialog(this,
                 "Passwords do not match. Please re-enter your password.",
@@ -449,7 +577,7 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 7: Validate transaction reference and match with citizen data
+        // Step 8: Validate transaction reference and match with citizen data
         String formattedTransactionId = Data.IDStatus.formatTransactionId(transactionRef);
         Data.IDStatus status = Data.IDStatus.getStatusByTransactionId(formattedTransactionId);
         
@@ -469,7 +597,7 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 8: Verify name match with citizen record
+        // Step 9: Verify name match with citizen record
         if (!firstName.equalsIgnoreCase(citizen.getFname()) || 
             !lastName.equalsIgnoreCase(citizen.getLname())) {
             int response = JOptionPane.showConfirmDialog(this,
@@ -483,7 +611,7 @@ public class Registration extends javax.swing.JPanel {
             }
         }
         
-        // Step 9: Check if citizen already has a user account
+        // Step 10: Check if citizen already has a user account
         if (citizen.getUserId() != null) {
             JOptionPane.showMessageDialog(this,
                 "An account already exists for this application.\n" +
@@ -492,7 +620,7 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 10: Validate email uniqueness
+        // Step 11: Validate email uniqueness
         if (isEmailAlreadyUsed(email)) {
             JOptionPane.showMessageDialog(this,
                 "This email address is already registered. Please use a different email.",
@@ -501,7 +629,7 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 11: Validate terms agreement
+        // Step 12: Validate terms agreement
         if (!agreedToTerms) {
             TermsAndConditionCheckBox.setError(true);
             JOptionPane.showMessageDialog(this,
@@ -510,10 +638,10 @@ public class Registration extends javax.swing.JPanel {
             return;
         }
         
-        // Step 12: Generate username (using first name + last name initial + random number)
+        // Step 13: Generate username (using first name + last name initial + random number)
         String username = generateUsername(firstName, lastName);
         
-        // Step 13: Create user object
+        // Step 14: Create user object
         Data.User newUser = new Data.User();
         newUser.setFname(firstName);
         newUser.setMname(middleName.isEmpty() ? null : middleName);
@@ -525,17 +653,19 @@ public class Registration extends javax.swing.JPanel {
         newUser.setEmail(email);
         newUser.setCreatedDate(new Date(System.currentTimeMillis()));
         
-        // Step 14: Save user to database
+        // Step 15: Save user to database
         if (Data.User.addUser(newUser)) {
             // Get the newly created user ID
             Data.User savedUser = Data.User.authenticate(username, password);
             if (savedUser != null) {
                 // Update citizen record with user ID
                 citizen.setUserId(savedUser.getUserId());
+                citizen.setGender(selectedGender); // Save the selected gender
+                
                 if (Data.Citizen.updateCitizen(citizen)) {
                     // Log activity
                     Data.ActivityLog.logActivity(savedUser.getUserId(), 
-                        "New account created for citizen: " + citizen.getFullName());
+                        "New account created for citizen: " + citizen.getFullName() + " (Gender: " + selectedGender + ")");
                     
                     // Send notification
                     Data.Notification.addNotification(citizen.getCitizenId(),
@@ -546,6 +676,7 @@ public class Registration extends javax.swing.JPanel {
                     JOptionPane.showMessageDialog(this,
                         "Account created successfully!\n\n" +
                         "Username: " + username + "\n" +
+                        "Gender: " + selectedGender + "\n" +
                         "Please use this username to sign in.\n\n" +
                         "You can now track your ID application status.",
                         "Registration Successful", JOptionPane.INFORMATION_MESSAGE);
@@ -630,11 +761,12 @@ public class Registration extends javax.swing.JPanel {
         CityText.clear();
         PasswordText.setText(""); // Changed from clear()
         ConfirmPasswordText.setText(""); // Changed from clear()
+        GenderDropdownButton.setText("Select Gender");
         TermsAndConditionCheckBox.setSelected(false);
         TermsAndConditionCheckBox.setError(false);
     }
 
-    // Getters for components (existing code remains the same)
+    // Getters for components
     public javax.swing.JButton getCreateAccountButton() {
         return CreateAccountButton;
     }
@@ -673,6 +805,10 @@ public class Registration extends javax.swing.JPanel {
     
     public javax.swing.JButton getSigninButton() {
         return SigninButton;
+    }
+    
+    public component.DropdownButton.CustomDropdownButton getGenderDropdownButton() {
+        return GenderDropdownButton;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
