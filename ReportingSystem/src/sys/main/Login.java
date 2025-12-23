@@ -6,15 +6,6 @@ public class Login extends javax.swing.JPanel {
     
     public Login() {
         initComponents();
-        setupLoginAction();
-    }
-    
-    private void setupLoginAction() {
-        LoginButton.addActionListener(e -> performLogin());
-
-        // Add Enter key support
-        PasswordText.addActionListener(e -> performLogin());
-        UsernameText.addActionListener(e -> PasswordText.requestFocus());
     }
 
     private void performLogin() {
@@ -35,10 +26,6 @@ public class Login extends javax.swing.JPanel {
             JOptionPane.showMessageDialog(this,
                 "Login successful!\nWelcome " + user.getFullName(),
                 "Success", JOptionPane.INFORMATION_MESSAGE);
-
-            // Log activity
-            backend.objects.Data.ActivityLog.logActivity(user.getUserId(),
-                "Logged in from Login panel");
 
             // Clear form
             clearForm();
@@ -69,8 +56,10 @@ public class Login extends javax.swing.JPanel {
         UsernameText = new sys.main.CustomTextField();
         PasswordText = new sys.main.CustomPasswordField();
 
+        setPreferredSize(new java.awt.Dimension(450, 500));
+
         RIGHT.setBackground(new java.awt.Color(255, 255, 255));
-        RIGHT.setPreferredSize(new java.awt.Dimension(400, 500));
+        RIGHT.setPreferredSize(new java.awt.Dimension(450, 500));
 
         jLabel1.setBackground(new java.awt.Color(255, 255, 255));
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
@@ -134,7 +123,7 @@ public class Login extends javax.swing.JPanel {
             RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(RIGHTLayout.createSequentialGroup()
-                .addContainerGap(50, Short.MAX_VALUE)
+                .addContainerGap(75, Short.MAX_VALUE)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(RIGHTLayout.createSequentialGroup()
                         .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -144,8 +133,8 @@ public class Login extends javax.swing.JPanel {
                     .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                         .addComponent(PasswordText, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(UsernameText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(50, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, RIGHTLayout.createSequentialGroup()
+                .addContainerGap(75, Short.MAX_VALUE))
+            .addGroup(RIGHTLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -161,9 +150,9 @@ public class Login extends javax.swing.JPanel {
                 .addComponent(PasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(ForgotPasswordButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, Short.MAX_VALUE)
-                .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
+                .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(RegisterButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))

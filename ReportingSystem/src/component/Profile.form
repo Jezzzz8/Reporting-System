@@ -170,9 +170,9 @@
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Group type="102" attributes="0">
                                       <EmptySpace max="-2" attributes="0"/>
-                                      <Component id="ContactInformationCard" pref="503" max="32767" attributes="0"/>
+                                      <Component id="ContactInformationCard" pref="549" max="32767" attributes="0"/>
                                   </Group>
-                                  <Component id="PersonalInformationCard" alignment="0" pref="509" max="32767" attributes="0"/>
+                                  <Component id="PersonalInformationCard" alignment="0" pref="555" max="32767" attributes="0"/>
                               </Group>
                               <EmptySpace max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" max="-2" attributes="0">
@@ -228,10 +228,7 @@
                                           </Group>
                                           <Group type="103" groupAlignment="0" attributes="0">
                                               <Component id="DateofBirthPicker" pref="0" max="32767" attributes="0"/>
-                                              <Group type="102" attributes="0">
-                                                  <EmptySpace min="0" pref="0" max="-2" attributes="0"/>
-                                                  <Component id="GenderDropdownButton" pref="0" max="32767" attributes="0"/>
-                                              </Group>
+                                              <Component id="GenderDropdownButton" pref="0" max="32767" attributes="0"/>
                                           </Group>
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
@@ -258,32 +255,32 @@
                                       <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
                                       <Component id="FirstnameTextField" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="27" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
                                       <Component id="MiddlenameTextField" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="27" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
                                       <Component id="LastnameTextField" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="27" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="jLabel4" alignment="1" min="-2" max="-2" attributes="0"/>
                                       <Component id="DateofBirthPicker" alignment="1" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="27" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="jLabel5" min="-2" max="-2" attributes="0"/>
                                       <Component id="GenderDropdownButton" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="27" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Component id="jLabel6" min="-2" max="-2" attributes="0"/>
                                       <Component id="NationalIDTextField" min="-2" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace pref="29" max="32767" attributes="0"/>
+                                  <EmptySpace max="32767" attributes="0"/>
                                   <Component id="UpdatePersonalDetailsButton" min="-2" pref="36" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                               </Group>
@@ -487,12 +484,14 @@
                                               <Component id="jLabel11" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel10" alignment="0" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel16" alignment="0" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jLabel20" alignment="0" min="-2" max="-2" attributes="0"/>
                                           </Group>
                                           <Group type="103" groupAlignment="0" attributes="0">
                                               <Component id="PhoneNumberTextField" alignment="0" max="32767" attributes="0"/>
                                               <Component id="EmailAddressTextField" max="32767" attributes="0"/>
                                               <Component id="AddressLineTextArea" alignment="0" pref="0" max="32767" attributes="0"/>
                                               <Component id="StreetAddressTextField" max="32767" attributes="0"/>
+                                              <Component id="BarangayAddressTextField" max="32767" attributes="0"/>
                                           </Group>
                                       </Group>
                                   </Group>
@@ -522,8 +521,16 @@
                                   </Group>
                                   <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jLabel16" min="-2" max="-2" attributes="0"/>
-                                      <Component id="StreetAddressTextField" min="-2" max="-2" attributes="0"/>
+                                      <Group type="102" attributes="0">
+                                          <Component id="jLabel16" min="-2" max="-2" attributes="0"/>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Component id="jLabel20" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                      <Group type="102" attributes="0">
+                                          <Component id="StreetAddressTextField" min="-2" max="-2" attributes="0"/>
+                                          <EmptySpace max="32767" attributes="0"/>
+                                          <Component id="BarangayAddressTextField" min="-2" max="-2" attributes="0"/>
+                                      </Group>
                                   </Group>
                                   <EmptySpace max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
@@ -735,6 +742,25 @@
                             <Property name="placeholder" type="java.lang.String" value="Street"/>
                             <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                               <Dimension value="[250, 40]"/>
+                            </Property>
+                          </Properties>
+                        </Component>
+                        <Component class="sys.main.CustomTextField" name="BarangayAddressTextField">
+                          <Properties>
+                            <Property name="placeholder" type="java.lang.String" value="Barangay"/>
+                            <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                              <Dimension value="[250, 40]"/>
+                            </Property>
+                          </Properties>
+                        </Component>
+                        <Component class="javax.swing.JLabel" name="jLabel20">
+                          <Properties>
+                            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+                              <Font name="Segoe UI" size="12" style="1"/>
+                            </Property>
+                            <Property name="text" type="java.lang.String" value="Street:"/>
+                            <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                              <Dimension value="[120, 40]"/>
                             </Property>
                           </Properties>
                         </Component>
@@ -1172,6 +1198,7 @@
                         </Component>
                         <Component class="sys.main.CustomTextField" name="TransactionIDTextField">
                           <Properties>
+                            <Property name="focusable" type="boolean" value="false"/>
                             <Property name="placeholder" type="java.lang.String" value="Transaction ID"/>
                             <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                               <Dimension value="[250, 40]"/>

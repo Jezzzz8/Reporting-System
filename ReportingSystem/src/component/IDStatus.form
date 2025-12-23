@@ -109,7 +109,7 @@
           <Color blue="64" green="64" red="64" type="rgb"/>
         </Property>
         <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="text" type="java.lang.String" value="Application Date: 2024-1-15 | TRN: 1234-5678-9123-4567-8912-4567-8912-34"/>
+        <Property name="text" type="java.lang.String" value="Application Date: yyyy-mm-dd | TRN: 1234-5678-9123-4567-8912-4567-8912-34"/>
         <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
           <Dimension value="[850, 25]"/>
         </Property>

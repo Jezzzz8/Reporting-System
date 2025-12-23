@@ -7,6 +7,8 @@ import backend.objects.Data.IDStatus;
 import backend.objects.Data.Appointment;
 import backend.objects.Data.Document;
 import backend.objects.Data.Notification;
+import backend.objects.Data.Address;
+import backend.objects.Data.CitizenInfo;
 import static backend.objects.Data.IDStatus.formatTransactionId;
 import sys.effect.RippleEffect;
 import javax.swing.table.DefaultTableModel;
@@ -29,6 +31,7 @@ public class Dashboard extends javax.swing.JPanel {
     
     private User currentUser;
     private Citizen currentCitizen;
+    private Address currentAddress; // ADD THIS FIELD
     private int currentView = 1;
     private Animator glowAnimator;
     private float glowAlpha = 0.0f;
@@ -243,12 +246,21 @@ public class Dashboard extends javax.swing.JPanel {
     private void loadCitizenData() {
         // Get citizen data for current user
         currentCitizen = Data.Citizen.getCitizenByUserId(currentUser.getUserId());
+        
+        // Get address data for current citizen
+        if (currentCitizen != null) {
+            currentAddress = Data.Address.getAddressByCitizenId(currentCitizen.getCitizenId());
+        }
+        
         if (currentCitizen == null) {
             System.out.println("No citizen record found for user ID: " + currentUser.getUserId());
             // If no citizen record exists, create a default one
             createDefaultCitizenRecord();
         } else {
             System.out.println("Loaded citizen data for: " + currentCitizen.getFullName());
+            if (currentAddress != null) {
+                System.out.println("Loaded address data: " + currentAddress.getFullAddress());
+            }
         }
     }
     
@@ -263,52 +275,107 @@ public class Dashboard extends javax.swing.JPanel {
             newCitizen.setUserId(currentUser.getUserId());
 
             // Set separate name fields instead of fullName
-            newCitizen.setFname(currentUser.getFname());
+            newCitizen.setFname(currentUser.getFname() != null ? currentUser.getFname() : "");
             newCitizen.setMname(currentUser.getMname());
-            newCitizen.setLname(currentUser.getLname());
+            newCitizen.setLname(currentUser.getLname() != null ? currentUser.getLname() : "");
 
             newCitizen.setPhone(currentUser.getPhone());
             newCitizen.setEmail(currentUser.getEmail());
             newCitizen.setApplicationDate(new java.sql.Date(System.currentTimeMillis()));
 
-            // You might want to generate a temporary transaction ID or leave it null
-            // The actual transaction ID will be generated when status is created
+            // Set default gender if not provided
+            newCitizen.setGender("Not Specified");
 
             // Try to add citizen
-            boolean success = Data.Citizen.addCitizen(newCitizen);
-            if (success) {
+            int citizenId = Data.Citizen.addCitizenAndGetId(newCitizen);
+            if (citizenId > 0) {
                 // Reload citizen data
                 currentCitizen = Data.Citizen.getCitizenByUserId(currentUser.getUserId());
                 System.out.println("Created default citizen record for user: " + currentUser.getUsername());
 
                 // Create default status with generated transaction ID
                 Data.IDStatus defaultStatus = new Data.IDStatus();
-                defaultStatus.setCitizenId(currentCitizen.getCitizenId());
-                defaultStatus.setTransactionId(Data.IDStatus.generateTransactionId(currentCitizen.getCitizenId()));
-                defaultStatus.setStatus("Application Submitted");
+                defaultStatus.setCitizenId(citizenId);
+                defaultStatus.setTransactionId(Data.IDStatus.generateTransactionId(citizenId));
+                // Set status_name_id to 1 for "Submitted" status
+                defaultStatus.setStatusNameId(1);
                 defaultStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
-                defaultStatus.setNotes("Application has been submitted for processing");
+                defaultStatus.setNotes("Initial application submitted");
                 Data.IDStatus.addStatus(defaultStatus);
+
+                // Create default address
+                createDefaultAddress();
+            } else {
+                System.err.println("Failed to create citizen record");
             }
         } catch (Exception e) {
             System.err.println("Error creating default citizen record: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+    private void createDefaultAddress() {
+        try {
+            if (currentCitizen == null) return;
+            
+            Data.Address address = new Data.Address();
+            address.setCitizenId(currentCitizen.getCitizenId());
+            address.setStreetAddress("Not Provided");
+            address.setCity("Not Provided");
+            address.setStateProvince("Not Provided");
+            address.setZipPostalCode("0000");
+            address.setCountry("Philippines");
+            
+            boolean success = Data.Address.addAddress(address);
+            if (success) {
+                currentAddress = Data.Address.getAddressByCitizenId(currentCitizen.getCitizenId());
+                System.out.println("Created default address for citizen ID: " + currentCitizen.getCitizenId());
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating default address: " + e.getMessage());
+        }
+    }
     
     private void testDatabaseConnection() {
         try {
             System.out.println("Testing database connection for user: " + currentUser.getUsername());
-            
+
             // Test getting citizens
             List<Citizen> citizens = Data.Citizen.getAllCitizens();
-            System.out.println("Total citizens in database: " + citizens.size());
+            System.out.println("Total citizens in database: " + (citizens != null ? citizens.size() : 0));
+
+            // Test getting addresses
+            int addressCount = 0;
+            if (citizens != null) {
+                for (Citizen citizen : citizens) {
+                    Address addr = Data.Address.getAddressByCitizenId(citizen.getCitizenId());
+                    if (addr != null) {
+                        addressCount++;
+                    }
+                }
+            }
+            System.out.println("Total addresses in database: " + addressCount);
+
+            // Test CitizenInfo class
+            if (currentCitizen != null) {
+                CitizenInfo info = Data.CitizenInfo.getCitizenInfoByCitizenId(currentCitizen.getCitizenId());
+                if (info != null) {
+                    System.out.println("CitizenInfo loaded successfully:");
+                    System.out.println("  Citizen: " + info.getCitizen().getFullName());
+                    System.out.println("  Gender: " + info.getCitizen().getGender());
+                    System.out.println("  Address: " + (info.getAddress() != null ? info.getAddress().getFullAddress() : "No address"));
+                    System.out.println("  Status: " + (info.getStatus() != null ? info.getStatus().getStatus() : "No status"));
+                    System.out.println("  Transaction ID: " + (info.getStatus() != null ? info.getStatus().getTransactionId() : "No transaction ID"));
+                } else {
+                    System.out.println("Could not load CitizenInfo for citizen ID: " + currentCitizen.getCitizenId());
+                }
+            }
 
         } catch (Exception e) {
             System.err.println("Database connection test failed: " + e.getMessage());
             e.printStackTrace();
         }
-    }
+    }   
     
     private void enhanceDashboard() {
         // Apply ripple effects to buttons
@@ -388,21 +455,6 @@ public class Dashboard extends javax.swing.JPanel {
             }
         });
 
-        // Add search icon effect - with null check
-        try {
-            java.net.URL imageUrl = getClass().getResource("/images/search.png");
-            if (imageUrl != null) {
-                searchLabel.setIcon(new javax.swing.ImageIcon(imageUrl));
-            } else {
-                // Use text if image not found
-                searchLabel.setText("🔍 Search:");
-                System.out.println("Search icon not found at /images/search.png");
-            }
-        } catch (Exception e) {
-            // Fallback to text
-            searchLabel.setText("Search:");
-        }
-
         // Add animation to search
         searchField.addActionListener((ActionEvent e) -> {
             String searchTerm = searchField.getText().trim();
@@ -436,19 +488,40 @@ public class Dashboard extends javax.swing.JPanel {
                 return;
             }
 
-            // Get transaction ID and format it
+            // Get ID status with proper SQL query
             Data.IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
-            String transactionId = (status != null && status.getTransactionId() != null && !status.getTransactionId().isEmpty()) 
-                ? Data.IDStatus.formatTransactionId(status.getTransactionId())
-                : "TXN-Not-Assigned";
+            String transactionId = "TXN-Not-Assigned";
+            String statusText = "Application Submitted";
+
+            if (status != null) {
+                // Get raw transaction ID
+                String rawTransactionId = status.getTransactionId();
+                if (rawTransactionId != null && !rawTransactionId.trim().isEmpty()) {
+                    transactionId = Data.IDStatus.formatTransactionId(rawTransactionId);
+                }
+
+                // Get status text
+                String rawStatus = status.getStatus();
+                if (rawStatus != null && !rawStatus.trim().isEmpty()) {
+                    statusText = rawStatus;
+                }
+            }
 
             // Box 1: My Application Status - Show transaction ID in tooltip or additional label
-            String statusText = (status != null) ? status.getStatus() : "Application Submitted";
             MyApplicationStatusValueLabel.setText(statusText);
             MyApplicationStatusTitleLabel.setText("My Application Status");
 
-            // You could set tooltip with transaction ID
-            MyApplicationStatusBoxPanel.setToolTipText("Transaction ID: " + transactionId);
+            // Set tooltip with more details
+            StringBuilder tooltip = new StringBuilder();
+            tooltip.append("Transaction ID: ").append(transactionId).append("\n");
+            tooltip.append("Gender: ").append(currentCitizen.getGender() != null ? currentCitizen.getGender() : "Not specified").append("\n");
+
+            // Add address information if available
+            if (currentAddress != null) {
+                tooltip.append("Address: ").append(currentAddress.getConciseAddress()).append("\n");
+            }
+
+            MyApplicationStatusBoxPanel.setToolTipText(tooltip.toString());
 
             // Box 2: Days Since Application
             if (currentCitizen.getApplicationDate() != null) {
@@ -472,11 +545,16 @@ public class Dashboard extends javax.swing.JPanel {
             }
 
             // Box 4: Notifications - Use the new Notification class
-            int notificationCount = Data.Notification.getUnreadCount(currentCitizen.getCitizenId());
+            int notificationCount = 0;
+            try {
+                notificationCount = Data.Notification.getUnreadCount(currentCitizen.getCitizenId());
+            } catch (Exception e) {
+                System.err.println("Error getting notification count: " + e.getMessage());
+            }
             NotificationsValueLabel.setText(String.valueOf(notificationCount));
             NotificationsTitleLabel.setText("Notifications");
 
-            // Update search label to include name details - FIXED the substring issue
+            // Update search label to include name details
             String shortTransactionId = transactionId;
             if (transactionId.length() > 15) {
                 // Show first 4 segments: 1234-5678-9012-3456...
@@ -486,9 +564,18 @@ public class Dashboard extends javax.swing.JPanel {
             // Get first and last name safely
             String firstName = (currentCitizen.getFname() != null) ? currentCitizen.getFname() : "";
             String lastName = (currentCitizen.getLname() != null) ? currentCitizen.getLname() : "";
-            String fullNameDisplay = firstName + " " + lastName;
+            String gender = (currentCitizen.getGender() != null && !currentCitizen.getGender().equals("Not Specified")) 
+                ? "(" + currentCitizen.getGender() + ")" : "";
+            String fullNameDisplay = firstName + " " + lastName + " " + gender;
 
-            searchLabel.setText(fullNameDisplay.trim() + " | TRN: " + shortTransactionId);
+            // Add address info to search label if available
+            String addressInfo = "";
+            if (currentAddress != null && currentAddress.getConciseAddress() != null 
+                && !currentAddress.getConciseAddress().equals("Not Provided")) {
+                addressInfo = " | " + currentAddress.getConciseAddress();
+            }
+
+            searchLabel.setText(fullNameDisplay.trim() + " | TRN: " + shortTransactionId + addressInfo);
 
         } catch (Exception e) {
             System.err.println("Error loading dashboard data: " + e.getMessage());
@@ -519,34 +606,47 @@ public class Dashboard extends javax.swing.JPanel {
         return formatted;
     }
     
+    private CitizenInfo getCompleteCitizenInfo() {
+        if (currentCitizen == null) return null;
+        
+        // Use the CitizenInfo class from Data.java
+        return Data.CitizenInfo.getCitizenInfoByCitizenId(currentCitizen.getCitizenId());
+    }
+    
     private void loadApplicationTimelineTable() {
         DefaultTableModel model = (DefaultTableModel) ApplicationTimelineTable.getModel();
         model.setRowCount(0);
         currentView = 1;
-        
+
         try {
-            if (currentCitizen == null) {
+            // Use CitizenInfo to get all data at once
+            CitizenInfo citizenInfo = getCompleteCitizenInfo();
+
+            if (citizenInfo == null || citizenInfo.getCitizen() == null) {
                 model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
                 return;
             }
-            
+
+            Citizen citizen = citizenInfo.getCitizen();
+            IDStatus status = citizenInfo.getStatus();
+            Address address = citizenInfo.getAddress();
+
             // Get transaction ID safely
-            Data.IDStatus currentStatus = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
-            
-            // Get all activity logs for this citizen
-            List<Data.ActivityLog> activityLogs = Data.ActivityLog.getActivityLogsByCitizenId(currentCitizen.getCitizenId());
+            String transactionId = "TXN-Not-Assigned";
+            if (status != null && status.getTransactionId() != null && !status.getTransactionId().trim().isEmpty()) {
+                transactionId = Data.IDStatus.formatTransactionId(status.getTransactionId());
+            }
 
-            // Get all status updates
-            List<Data.IDStatus> statuses = Data.IDStatus.getAllStatus();
+            // Add personal information as first entry
+            model.addRow(new Object[]{
+                "Personal Info",
+                "Gender: " + (citizen.getGender() != null ? citizen.getGender() : "Not specified"),
+                "Date of Birth: " + formatDate(citizen.getBirthDate()),
+                "System",
+                "Basic Information"
+            });
 
-            // Create a list to store all timeline entries
-            List<Object[]> timelineEntries = new ArrayList<>();
-            
-            String transactionId = (currentStatus != null && currentStatus.getTransactionId() != null && !currentStatus.getTransactionId().isEmpty()) 
-                ? currentStatus.getTransactionId() 
-                : "TXN-Not-Assigned";
-            
-            // Add transaction ID as first entry
+            // Add transaction ID as second entry
             model.addRow(new Object[]{
                 "TXN ID",
                 transactionId,
@@ -554,11 +654,11 @@ public class Dashboard extends javax.swing.JPanel {
                 "System",
                 "Use this to track your application"
             });
-            
+
             // Add application submission
-            if (currentCitizen.getApplicationDate() != null) {
-                timelineEntries.add(new Object[]{
-                    formatDate(currentCitizen.getApplicationDate()),
+            if (citizen.getApplicationDate() != null) {
+                model.addRow(new Object[]{
+                    formatDate(citizen.getApplicationDate()),
                     "Application Submitted",
                     "Your National ID application has been submitted",
                     "System",
@@ -566,23 +666,42 @@ public class Dashboard extends javax.swing.JPanel {
                 });
             }
 
-            // Add status updates for this citizen
-            for (Data.IDStatus status : statuses) {
-                if (status.getCitizenId() == currentCitizen.getCitizenId()) {
-                    timelineEntries.add(new Object[]{
-                        formatDate(status.getUpdateDate()),
-                        status.getStatus(),
-                        "Status updated",
-                        "PSA Staff",
-                        status.getNotes()
+            // Add address information if available
+            if (address != null) {
+                String addressText = address.getFullAddress();
+                if (addressText != null && !addressText.trim().isEmpty() && !addressText.contains("Not Provided")) {
+                    model.addRow(new Object[]{
+                        formatDate(citizen.getApplicationDate()),
+                        "Address Registered",
+                        "Address information added to application",
+                        "System",
+                        "Address: " + addressText
                     });
                 }
             }
 
+            // Get status history using the new method from Data.IDStatus class
+            // First, let's try to get all status entries and filter them
+            List<Data.IDStatus> citizenStatuses = getStatusHistoryForCitizen(citizen.getCitizenId());
+            for (IDStatus statusEntry : citizenStatuses) {
+                String statusText = statusEntry.getStatus();
+                if (statusText == null) {
+                    statusText = "Status Update";
+                }
+
+                model.addRow(new Object[]{
+                    formatDate(statusEntry.getUpdateDate()),
+                    statusText,
+                    "Status updated",
+                    "PSA Staff",
+                    statusEntry.getNotes() != null ? statusEntry.getNotes() : "System update"
+                });
+            }
+
             // Add appointment information
-            Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+            Appointment appointment = citizenInfo.getAppointment();
             if (appointment != null) {
-                timelineEntries.add(new Object[]{
+                model.addRow(new Object[]{
                     formatDate(appointment.getCreatedDate()),
                     "Appointment " + appointment.getStatus(),
                     "Appointment scheduled for ID pickup",
@@ -592,49 +711,70 @@ public class Dashboard extends javax.swing.JPanel {
             }
 
             // Add activity logs
-            for (Data.ActivityLog log : activityLogs) {
-                timelineEntries.add(new Object[]{
-                    formatDate(log.getActionDate()),
-                    "Activity",
-                    log.getAction(),
-                    "System",
-                    "Time: " + log.getActionTime()
-                });
-            }
-
-            // Add document submission events
-            List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
-            for (Data.Document doc : documents) {
-                if ("Yes".equals(doc.getSubmitted()) || "Verified".equals(doc.getStatus())) {
-                    timelineEntries.add(new Object[]{
-                        formatDate(doc.getUploadDate()),
-                        "Document Submitted",
-                        doc.getDocumentName() + " uploaded",
-                        "You",
-                        "Status: " + doc.getStatus()
+            List<Data.ActivityLog> activityLogs = Data.ActivityLog.getActivityLogsByCitizenId(citizen.getCitizenId());
+            if (activityLogs != null) {
+                for (Data.ActivityLog log : activityLogs) {
+                    model.addRow(new Object[]{
+                        formatDate(log.getActionDate()),
+                        "Activity",
+                        log.getAction(),
+                        "System",
+                        "Time: " + log.getActionTime()
                     });
                 }
             }
 
+            // Add document submission events
+            List<Document> documents = citizenInfo.getDocuments();
+            if (documents != null) {
+                for (Document doc : documents) {
+                    if ("Yes".equalsIgnoreCase(doc.getSubmitted()) || 
+                        "Verified".equalsIgnoreCase(doc.getStatus()) ||
+                        "Submitted".equalsIgnoreCase(doc.getSubmitted())) {
+
+                        String docStatus = "Submitted";
+                        if ("Verified".equalsIgnoreCase(doc.getStatus())) {
+                            docStatus = "Verified";
+                        }
+
+                        model.addRow(new Object[]{
+                            formatDate(doc.getUploadDate()),
+                            "Document " + docStatus,
+                            doc.getDocumentName() + " document",
+                            "You",
+                            "Status: " + doc.getStatus()
+                        });
+                    }
+                }
+            }
+
             // Sort timeline by date (most recent first)
-            timelineEntries.sort((a, b) -> {
+            java.util.Collections.sort(java.util.Arrays.asList(model.getDataVector().toArray()), (a, b) -> {
                 try {
+                    Object[] rowA = ((java.util.Vector) a).toArray();
+                    Object[] rowB = ((java.util.Vector) b).toArray();
+
+                    // Skip the Personal Info and TXN ID rows
+                    if (rowA[0].equals("Personal Info")) return -1;
+                    if (rowB[0].equals("Personal Info")) return 1;
+                    if (rowA[0].equals("TXN ID")) return -1;
+                    if (rowB[0].equals("TXN ID")) return 1;
+
+                    // Handle empty dates
+                    if (rowA[0] == null || rowA[0].toString().isEmpty()) return 1;
+                    if (rowB[0] == null || rowB[0].toString().isEmpty()) return -1;
+
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                    Date dateA = sdf.parse(a[0].toString());
-                    Date dateB = sdf.parse(b[0].toString());
+                    Date dateA = sdf.parse(rowA[0].toString());
+                    Date dateB = sdf.parse(rowB[0].toString());
                     return dateB.compareTo(dateA); // Descending order
                 } catch (Exception e) {
                     return 0;
                 }
             });
 
-            // Add to table model
-            for (Object[] entry : timelineEntries) {
-                model.addRow(entry);
-            }
-
             // If no data, add a message
-            if (model.getRowCount() == 0) {
+            if (model.getRowCount() <= 2) { // Only Personal Info and TXN ID rows
                 model.addRow(new Object[]{"No timeline data available", "", "Submit your application to see updates", "", ""});
             }
 
@@ -646,6 +786,36 @@ public class Dashboard extends javax.swing.JPanel {
             model.fireTableDataChanged();
             ApplicationTimelineTable.revalidate();
             ApplicationTimelineTable.repaint();
+        }
+    }
+    
+    private List<Data.IDStatus> getStatusHistoryForCitizen(int citizenId) {
+        try {
+            // Call the getAllStatus() method which should return all status records
+            List<Data.IDStatus> allStatuses = Data.IDStatus.getAllStatus();
+            List<Data.IDStatus> citizenStatuses = new ArrayList<>();
+
+            if (allStatuses != null) {
+                for (Data.IDStatus status : allStatuses) {
+                    if (status != null && status.getCitizenId() == citizenId) {
+                        citizenStatuses.add(status);
+                    }
+                }
+
+                // Sort by date (oldest to newest for timeline)
+                citizenStatuses.sort((s1, s2) -> {
+                    if (s1.getUpdateDate() == null && s2.getUpdateDate() == null) return 0;
+                    if (s1.getUpdateDate() == null) return -1;
+                    if (s2.getUpdateDate() == null) return 1;
+                    return s1.getUpdateDate().compareTo(s2.getUpdateDate());
+                });
+            }
+
+            return citizenStatuses;
+        } catch (Exception e) {
+            System.err.println("Error getting status history: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
         }
     }
     
@@ -662,23 +832,32 @@ public class Dashboard extends javax.swing.JPanel {
 
             // Use the new Document class
             List<Document> documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
-            
-            if (documents.isEmpty()) {
-                // Create default documents if none exist
-                createDefaultDocuments();
-                documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
+
+            if (documents == null || documents.isEmpty()) {
+                model.addRow(new Object[]{"No documents found", "", "", "", ""});
+                return;
             }
 
             for (Document doc : documents) {
+                String documentName = doc.getDocumentName();
+                if (documentName == null || documentName.isEmpty()) {
+                    // Try to get document name from doc_forms table
+                    if (doc.getDocForm() != null) {
+                        documentName = doc.getDocForm().getFormName();
+                    } else {
+                        documentName = "Unknown Document";
+                    }
+                }
+
                 String actionText = "View";
                 if ("Pending".equals(doc.getStatus()) && "No".equals(doc.getSubmitted())) {
                     actionText = "Upload";
                 } else if ("Not Required".equals(doc.getStatus())) {
                     actionText = "N/A";
                 }
-                
+
                 model.addRow(new Object[]{
-                    doc.getDocumentName(),
+                    documentName,
                     doc.getStatus(),
                     doc.getSubmitted(),
                     doc.getRequiredBy(),
@@ -688,41 +867,87 @@ public class Dashboard extends javax.swing.JPanel {
 
         } catch (Exception e) {
             System.err.println("Error loading required documents: " + e.getMessage());
-            model.addRow(new Object[]{"Error loading data", "", "", "", ""});
+            e.printStackTrace();
+            model.addRow(new Object[]{"Error loading data", e.getMessage(), "", "", ""});
         } finally {
             model.fireTableDataChanged();
             RequiredDocumentsTable.revalidate();
             RequiredDocumentsTable.repaint();
         }
     }
-    
+
     private void createDefaultDocuments() {
         try {
-            // Create default documents for the citizen
-            String[][] defaultDocs = {
-                {"Birth Certificate", "Verified", "Yes", "Required"},
-                {"Proof of Address", "Pending", "No", "Required"},
-                {"Government ID", "Not Required", "N/A", "Optional"},
-                {"Application Form", "Submitted", "Yes", "Required"}
-            };
-            
-            for (String[] docData : defaultDocs) {
-                Document doc = new Document();
-                doc.setCitizenId(currentCitizen.getCitizenId());
-                doc.setDocumentName(docData[0]);
-                doc.setStatus(docData[1]);
-                doc.setSubmitted(docData[2]);
-                doc.setRequiredBy(docData[3]);
-                doc.setUploadDate(new java.sql.Date(System.currentTimeMillis()));
-                
-                Data.Document.addDocument(doc);
+            if (currentCitizen == null) {
+                System.err.println("No citizen to create documents for");
+                return;
             }
+
+            // Get all available doc forms
+            List<Data.DocForm> docForms = Data.DocForm.getAllDocForms();
+            if (docForms == null || docForms.isEmpty()) {
+                System.err.println("No document forms found in database");
+                return;
+            }
+
+            System.out.println("Found " + docForms.size() + " document forms");
+
+            // Create documents for required forms
+            for (Data.DocForm docForm : docForms) {
+                Data.Document doc = new Data.Document();
+                doc.setCitizenId(currentCitizen.getCitizenId());
+                doc.setFormId(docForm.getFormId()); // Use form_id instead of document_name
+
+                // Set initial status based on whether it's required
+                if (docForm.isRequired()) {
+                    doc.setStatus("Pending");
+                    doc.setSubmitted("No");
+                } else {
+                    doc.setStatus("Not Required");
+                    doc.setSubmitted("N/A");
+                }
+
+                doc.setRequiredBy("PSA Requirement");
+                doc.setUploadDate(new java.sql.Date(System.currentTimeMillis()));
+
+                // Use the new addDocument method that takes form_id
+                boolean success = addDocumentWithFormId(doc);
+                if (success) {
+                    System.out.println("Created document for form: " + docForm.getFormName() + 
+                                      " (Form ID: " + docForm.getFormId() + ")");
+                } else {
+                    System.err.println("Failed to create document for form: " + docForm.getFormName());
+                }
+            }
+
+            System.out.println("Created default documents for citizen ID: " + currentCitizen.getCitizenId());
         } catch (Exception e) {
             System.err.println("Error creating default documents: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private boolean addDocumentWithFormId(Data.Document doc) {
+        String query = "INSERT INTO documents (citizen_id, form_id, status, submitted, required_by, upload_date) " +
+                      "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (java.sql.Connection conn = backend.database.DatabaseConnection.getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, doc.getCitizenId());
+            stmt.setInt(2, doc.getFormId());
+            stmt.setString(3, doc.getStatus());
+            stmt.setString(4, doc.getSubmitted());
+            stmt.setString(5, doc.getRequiredBy());
+            stmt.setDate(6, doc.getUploadDate());
+
+            return stmt.executeUpdate() > 0;
+        } catch (Exception e) {
+            System.err.println("Error adding document with form_id: " + e.getMessage());
+            return false;
         }
     }
 
-    
     private void loadNotificationsTable() {
         DefaultTableModel model = (DefaultTableModel) MyNotificationsTable.getModel();
         model.setRowCount(0);
@@ -1430,15 +1655,23 @@ public class Dashboard extends javax.swing.JPanel {
     }
     
     private String getAppointmentActions(Appointment appointment) {
-        if ("Scheduled".equals(appointment.getStatus())) {
+        if (appointment == null) return "Schedule";
+
+        String status = appointment.getStatus();
+        if (status == null) return "Schedule";
+
+        if ("SCHEDULED".equalsIgnoreCase(status) || "Scheduled".equals(status)) {
             return "Reschedule/Cancel";
-        } else if ("Completed".equals(appointment.getStatus())) {
+        } else if ("COMPLETED".equalsIgnoreCase(status)) {
             return "Completed";
+        } else if ("CANCELLED".equalsIgnoreCase(status)) {
+            return "Cancelled";
+        } else if ("RESCHEDULED".equalsIgnoreCase(status)) {
+            return "Rescheduled";
         } else {
-            return appointment.getStatus();
+            return status;
         }
     }
-
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -1477,7 +1710,7 @@ public class Dashboard extends javax.swing.JPanel {
         MyNotificationsTable = new component.Table.CustomTable();
 
         setBackground(new java.awt.Color(255, 255, 255));
-        setPreferredSize(new java.awt.Dimension(850, 550));
+        setPreferredSize(new java.awt.Dimension(930, 550));
 
         BoxPanel.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -1750,7 +1983,7 @@ public class Dashboard extends javax.swing.JPanel {
 
         searchLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
         searchLabel.setForeground(new java.awt.Color(25, 25, 25));
-        searchLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        searchLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/search.png"))); // NOI18N
         searchLabel.setToolTipText("");
         searchLabel.setPreferredSize(new java.awt.Dimension(30, 30));
 
@@ -1804,7 +2037,7 @@ public class Dashboard extends javax.swing.JPanel {
         ApplicationTimelineTablePanel.setLayout(ApplicationTimelineTablePanelLayout);
         ApplicationTimelineTablePanelLayout.setHorizontalGroup(
             ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
+            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 918, Short.MAX_VALUE)
         );
         ApplicationTimelineTablePanelLayout.setVerticalGroup(
             ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1995,19 +2228,21 @@ public class Dashboard extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(50, 50, 50)
-                .addComponent(BoxPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGap(50, 50, 50)
+                        .addComponent(BoxPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addGap(50, 50, 50))
             .addGroup(layout.createSequentialGroup()
-                .addGap(14, 14, 14)
-                .addComponent(searchLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(DashboardCitizenTable)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(DashboardCitizenTable)
+                    .addComponent(searchLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -2015,11 +2250,11 @@ public class Dashboard extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGap(53, 53, 53)
                 .addComponent(BoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(146, 146, 146)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(searchLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(searchField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(111, 111, 111)
+                .addComponent(searchLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(5, 5, 5)
                 .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
                 .addContainerGap())
         );

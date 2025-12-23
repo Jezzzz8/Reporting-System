@@ -1,5 +1,6 @@
 package component.Table;
 
+import component.Scroll.CustomScrollPane;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
@@ -21,6 +22,9 @@ public class CustomTable extends JTable {
     private Dimension viewportSize = new Dimension(400, 100);
     private boolean autoResizeVertical = true;
     private boolean autoResizeHorizontal = true;
+    
+    // Reference to the scroll pane (if created through factory methods)
+    private CustomScrollPane scrollPane;
     
     public CustomTable() {
         super();
@@ -455,57 +459,131 @@ public class CustomTable extends JTable {
         }
     }
     
-    // Static helper method to create a scroll pane with CustomTable
-    public static JScrollPane createScrollableTable(CustomTable table) {
-        JScrollPane scrollPane = new JScrollPane(table);
+    // Getter for scroll pane
+    public CustomScrollPane getScrollPane() {
+        return scrollPane;
+    }
+    
+    // Set scroll pane style based on table auto-resize settings
+    public void configureScrollPaneStyle(CustomScrollPane scrollPane) {
+        if (scrollPane == null) return;
         
-        // Set scroll pane policies based on auto-resize settings
-        if (table.isAutoResizeVertical()) {
+        // Set scroll bar policies based on auto-resize settings
+        if (autoResizeVertical) {
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         } else {
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         }
         
-        if (table.isAutoResizeHorizontal()) {
+        if (autoResizeHorizontal) {
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         } else {
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         }
         
+        // Apply a style that matches the table
+        scrollPane.applySecondaryStyle();
+        
+        // Update view background to match table background
+        scrollPane.setViewBackground(oddRowColor);
+        
+        // Enable smooth scrolling for better user experience
+        scrollPane.enableSmoothScrolling(true);
+    }
+    
+    // Static helper method to create a scroll pane with CustomTable using CustomScrollPane
+    public static CustomScrollPane createScrollableTable(CustomTable table) {
+        CustomScrollPane scrollPane = new CustomScrollPane(table);
+        
+        // Configure the scroll pane based on table settings
+        table.configureScrollPaneStyle(scrollPane);
+        
+        // Store reference to scroll pane in table
+        table.scrollPane = scrollPane;
+        
         return scrollPane;
     }
     
     // Factory method to create a complete scrollable table setup
-    public static JScrollPane createScrollableTable(TableModel model, 
-                                                   boolean autoResizeVertical, 
-                                                   boolean autoResizeHorizontal) {
+    public static CustomScrollPane createScrollableTable(TableModel model, 
+                                                        boolean autoResizeVertical, 
+                                                        boolean autoResizeHorizontal) {
         CustomTable table = new CustomTable(model);
         table.setAutoResize(autoResizeVertical, autoResizeHorizontal);
         return createScrollableTable(table);
     }
     
-    public static JScrollPane createScrollableTable(Object[][] rowData, Object[] columnNames,
-                                                   boolean autoResizeVertical, 
-                                                   boolean autoResizeHorizontal) {
+    public static CustomScrollPane createScrollableTable(Object[][] rowData, Object[] columnNames,
+                                                        boolean autoResizeVertical, 
+                                                        boolean autoResizeHorizontal) {
         CustomTable table = new CustomTable(rowData, columnNames);
         table.setAutoResize(autoResizeVertical, autoResizeHorizontal);
         return createScrollableTable(table);
     }
     
     // Convenience methods for common configurations
-    public static JScrollPane createAutoResizingTable(TableModel model) {
+    public static CustomScrollPane createAutoResizingTable(TableModel model) {
         return createScrollableTable(model, true, true);
     }
     
-    public static JScrollPane createAutoResizingTable(Object[][] rowData, Object[] columnNames) {
+    public static CustomScrollPane createAutoResizingTable(Object[][] rowData, Object[] columnNames) {
         return createScrollableTable(rowData, columnNames, true, true);
     }
     
-    public static JScrollPane createScrollableOnlyTable(TableModel model) {
+    public static CustomScrollPane createScrollableOnlyTable(TableModel model) {
         return createScrollableTable(model, false, false);
     }
     
-    public static JScrollPane createScrollableOnlyTable(Object[][] rowData, Object[] columnNames) {
+    public static CustomScrollPane createScrollableOnlyTable(Object[][] rowData, Object[] columnNames) {
         return createScrollableTable(rowData, columnNames, false, false);
+    }
+    
+    // Method to apply a specific scroll pane style
+    public void applyScrollPaneStyle(String style) {
+        if (scrollPane == null) return;
+        
+        switch (style.toLowerCase()) {
+            case "primary":
+                scrollPane.applyPrimaryStyle();
+                break;
+            case "secondary":
+                scrollPane.applySecondaryStyle();
+                break;
+            case "minimal":
+                scrollPane.applyMinimalStyle();
+                break;
+            default:
+                scrollPane.applySecondaryStyle();
+        }
+        
+        // Update view background to match table background
+        scrollPane.setViewBackground(oddRowColor);
+    }
+    
+    // Method to update scroll pane when table colors change
+    public void updateScrollPaneColors() {
+        if (scrollPane != null) {
+            scrollPane.setViewBackground(oddRowColor);
+        }
+    }
+    
+    // Override color setters to also update scroll pane
+    @Override
+    public void setBackground(Color bg) {
+        super.setBackground(bg);
+        if (scrollPane != null) {
+            scrollPane.setViewBackground(bg);
+        }
+    }
+    
+    public void setTableAndScrollColors(Color oddRow, Color evenRow, Color header, Color hover) {
+        setOddRowColor(oddRow);
+        setEvenRowColor(evenRow);
+        setHeaderColor(header);
+        setHoverColor(hover);
+        
+        if (scrollPane != null) {
+            scrollPane.setViewBackground(oddRow);
+        }
     }
 }

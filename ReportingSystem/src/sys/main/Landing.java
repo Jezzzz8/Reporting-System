@@ -2,6 +2,7 @@ package sys.main;
 
 import backend.objects.Data;
 import backend.objects.Data.User;
+import backend.services.AccountService;
 import javax.swing.JOptionPane;
 
 public class Landing extends javax.swing.JFrame {
@@ -83,12 +84,41 @@ public class Landing extends javax.swing.JFrame {
         loggedInUser = Data.User.authenticate(username, password);
 
         if (loggedInUser != null) {
+            // Check if user is active
+            if (!loggedInUser.isActive()) {
+                JOptionPane.showMessageDialog(this,
+                    "Your account has been deactivated. Please contact support.",
+                    "Account Disabled", JOptionPane.ERROR_MESSAGE);
+                
+                // Reset form
+                passwordField.setText("");
+                loginButton.setEnabled(true);
+                loginButton.setText("LOGIN");
+                isLoggingIn = false;
+                return;
+            }
+            
+            // Check if user has at least one role assigned
+            if (loggedInUser.getRoles() == null || loggedInUser.getRoles().isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                    "Your account has no roles assigned. Please contact administrator.",
+                    "Role Error", JOptionPane.ERROR_MESSAGE);
+                
+                // Reset form
+                passwordField.setText("");
+                loginButton.setEnabled(true);
+                loginButton.setText("LOGIN");
+                isLoggingIn = false;
+                return;
+            }
+            
+            // Update last login time
+            Data.User.updateLastLogin(loggedInUser.getUserId());
+            
             loginSuccessful = true;
             System.out.println("Login successful for: " + loggedInUser.getFullName());
-
-            // Log activity
-            Data.ActivityLog.logActivity(loggedInUser.getUserId(), 
-                "Logged in successfully from Landing page");
+            System.out.println("Roles: " + loggedInUser.getRoles());
+            System.out.println("Primary Role: " + loggedInUser.getRole());
 
             // Close the login window
             dispose();
@@ -111,37 +141,88 @@ public class Landing extends javax.swing.JFrame {
         CustomTextField middleNameField = registration.getMiddleNameTextOptional();
         CustomTextField lastNameField = registration.getLastnameText();
         CustomTextField emailField = registration.getEmailText();
-        CustomTextField refNumField = registration.getTransactionReferenceNumberText();
+        CustomTextField phoneField = registration.getPhoneNumberText();
+        CustomTextField streetField = registration.getStreetAddressText();
+        CustomTextField barangayField = registration.getBarangayAddressText();
+        CustomTextField cityField = registration.getCityText();
+        CustomTextField stateField = registration.getStateProvinceText();
+        CustomTextField zipField = registration.getZipPostalCodeTextField();
+        CustomTextField countryField = registration.getCountryText();
+        CustomTextField usernameField = registration.getUsernameText();
+        CustomTextField trnField = registration.getTransactionReferenceNumberText(); // TRN field
         CustomPasswordField passwordField = registration.getPasswordText();
         CustomPasswordField confirmPasswordField = registration.getConfirmPasswordText();
         CustomCheckBox termsCheckBox = registration.getTermsAndConditionCheckBox();
-        
+        component.CustomDatePicker.CustomDatePicker dobPicker = registration.getDateOfBirthcustomDatePicker();
+        component.DropdownButton.CustomDropdownButton genderDropdown = registration.getGenderDropdownButton();
+
+        // Get values
+        String firstName = firstNameField.getText().trim();
+        String middleName = middleNameField.getText().trim();
+        String lastName = lastNameField.getText().trim();
+        String email = emailField.getText().trim();
+        String phone = phoneField.getText().trim();
+        String streetAddress = streetField.getText().trim();
+        String barangay = barangayField.getText().trim();
+        String city = cityField.getText().trim();
+        String stateProvince = stateField.getText().trim();
+        String zipCode = zipField.getText().trim();
+        String country = countryField.getText().trim();
+        String username = usernameField.getText().trim();
+
+        // GET THE TRN VALUE FROM THE TEXT FIELD
+        String transactionRefNumber = trnField.getText().trim();
+
+        // Format the TRN before validation
+        if (!transactionRefNumber.isEmpty()) {
+            transactionRefNumber = Data.IDStatus.formatTransactionId(transactionRefNumber);
+            trnField.setText(transactionRefNumber); // Update UI with formatted version
+        }
+
+        String password = String.valueOf(passwordField.getPassword());
+        String confirmPassword = String.valueOf(confirmPasswordField.getPassword());
+        String selectedGender = genderDropdown.getText();
+        java.util.Date dob = dobPicker.getDate();
+
         // Validate required fields
-        if (firstNameField.getText().trim().isEmpty() ||
-            lastNameField.getText().trim().isEmpty() ||
-            emailField.getText().trim().isEmpty() ||
-            refNumField.getText().trim().isEmpty() ||
-            String.valueOf(passwordField.getPassword()).trim().isEmpty() ||
-            String.valueOf(confirmPasswordField.getPassword()).trim().isEmpty()) {
-            
+        if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || 
+            username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+
             JOptionPane.showMessageDialog(this,
                 "Please fill in all required fields marked with *",
                 "Validation Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
+        // Validate gender selection
+        if (selectedGender == null || selectedGender.isEmpty() || selectedGender.equals("Select Gender")) {
+            JOptionPane.showMessageDialog(this,
+                "Please select a gender",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            genderDropdown.requestFocus();
+            return;
+        }
+
         // Validate email format
-        String email = emailField.getText().trim();
-        if (!isValidEmail(email)) {
+        if (!AccountService.isValidEmail(email)) {
             JOptionPane.showMessageDialog(this,
                 "Please enter a valid email address",
                 "Validation Error", JOptionPane.WARNING_MESSAGE);
+            emailField.requestFocus();
             return;
         }
-        
+
+        // Validate username uniqueness
+        if (AccountService.usernameExists(username)) {
+            JOptionPane.showMessageDialog(this,
+                "Username already exists. Please choose a different one.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            usernameField.requestFocus();
+            return;
+        }
+
         // Validate password strength
-        String password = String.valueOf(passwordField.getPassword());
-        String passwordError = validatePassword(password);
+        String passwordError = AccountService.validatePassword(password);
         if (passwordError != null) {
             JOptionPane.showMessageDialog(this,
                 passwordError,
@@ -151,9 +232,8 @@ public class Landing extends javax.swing.JFrame {
             passwordField.requestFocus();
             return;
         }
-        
+
         // Validate password match
-        String confirmPassword = String.valueOf(confirmPasswordField.getPassword());
         if (!password.equals(confirmPassword)) {
             JOptionPane.showMessageDialog(this,
                 "Passwords do not match. Please ensure both password fields are identical.",
@@ -163,7 +243,7 @@ public class Landing extends javax.swing.JFrame {
             passwordField.requestFocus();
             return;
         }
-        
+
         // Validate terms and conditions
         if (!termsCheckBox.isSelected()) {
             JOptionPane.showMessageDialog(this,
@@ -174,130 +254,85 @@ public class Landing extends javax.swing.JFrame {
         } else {
             termsCheckBox.setError(false);
         }
-        
+
         try {
             // Check if email already exists
-            if (isEmailAlreadyRegistered(email)) {
+            if (AccountService.isEmailAlreadyUsed(email)) {
                 JOptionPane.showMessageDialog(this,
                     "This email address is already registered. Please use a different email or sign in.",
                     "Registration Error", JOptionPane.ERROR_MESSAGE);
+                emailField.requestFocus();
                 return;
             }
-            
-            // Check if transaction reference number exists
-            String transactionId = refNumField.getText().trim();
-            
-            // Format the transaction ID if needed
-            String formattedTransactionId = Data.IDStatus.formatTransactionId(transactionId);
-            Data.IDStatus status = Data.IDStatus.getStatusByTransactionId(formattedTransactionId);
-            
-            if (status == null) {
-                JOptionPane.showMessageDialog(this,
-                    "Invalid transaction reference number. Please check and try again.",
-                    "Registration Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            // Get citizen associated with this transaction
-            Data.Citizen citizen = Data.Citizen.getCitizenById(status.getCitizenId());
-            if (citizen == null) {
-                JOptionPane.showMessageDialog(this,
-                    "No application found for this transaction reference number.",
-                    "Registration Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            // Check if citizen already has a user account
-            if (citizen.getUserId() != null) {
-                JOptionPane.showMessageDialog(this,
-                    "An account already exists for this application. Please sign in instead.",
-                    "Registration Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            // Verify name match with citizen record
-            if (!firstNameField.getText().trim().equalsIgnoreCase(citizen.getFname()) || 
-                !lastNameField.getText().trim().equalsIgnoreCase(citizen.getLname())) {
-                
-                int response = JOptionPane.showConfirmDialog(this,
-                    "The name you entered doesn't match the application record.\n" +
-                    "Application is registered to: " + citizen.getFullName() + "\n\n" +
-                    "Do you want to continue with your entered name?",
-                    "Name Mismatch", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                
-                if (response != JOptionPane.YES_OPTION) {
+
+            // Validate TRN format if provided
+            if (!transactionRefNumber.isEmpty()) {
+                String trnValidation = AccountService.validateTransactionReferenceNumber(transactionRefNumber);
+                if (trnValidation != null) {
+                    JOptionPane.showMessageDialog(this,
+                        "Invalid Transaction Reference Number:\n" + trnValidation,
+                        "Invalid Format", JOptionPane.WARNING_MESSAGE);
+                    trnField.requestFocus();
+                    return;
+                }
+
+                // Check if TRN already exists in database
+                if (AccountService.isTransactionReferenceNumberAlreadyUsed(transactionRefNumber)) {
+                    JOptionPane.showMessageDialog(this,
+                        "This Transaction Reference Number is already linked to another account.",
+                        "TRN Already Used", JOptionPane.WARNING_MESSAGE);
+                    trnField.requestFocus();
                     return;
                 }
             }
-            
-            // Generate username (first name + last name initial)
-            String username = generateUsername(firstNameField.getText().trim(), lastNameField.getText().trim());
-            
-            // Create user data object with separate name fields
-            Data.User newUser = new Data.User();
-            newUser.setFname(firstNameField.getText().trim());
-            newUser.setMname(middleNameField.getText().trim());
-            newUser.setLname(lastNameField.getText().trim());
-            newUser.setUsername(username);
-            newUser.setPassword(password);
-            newUser.setRole("citizen");
-            newUser.setPhone(citizen.getPhone()); // Use phone from citizen record
-            newUser.setEmail(email);
-            newUser.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
-            
-            // Save user to database
-            boolean userSuccess = Data.User.addUser(newUser);
-            
-            if (userSuccess) {
-                // Get the newly created user ID
+
+            // Use AccountService to create the account with user-provided username and TRN
+            System.out.println("Calling AccountService.createAccount() with username: " + username + " and TRN: " + transactionRefNumber);
+            boolean success = AccountService.createAccount(
+                firstName, middleName, lastName, email, password, username,
+                selectedGender, phone, streetAddress, barangay, city, 
+                stateProvince, zipCode, country, dob,
+                transactionRefNumber
+            );
+
+            if (success) {
+                // Log activity
                 Data.User createdUser = Data.User.authenticate(username, password);
                 if (createdUser != null) {
-                    // Link citizen to user
-                    citizen.setUserId(createdUser.getUserId());
-                    boolean citizenSuccess = Data.Citizen.updateCitizen(citizen);
-                    
-                    if (citizenSuccess) {
-                        // Log activity
-                        Data.ActivityLog.logActivity(createdUser.getUserId(), 
-                            "Registered account and linked to citizen ID: " + citizen.getCitizenId());
-                        
-                        // Send notification
-                        Data.Notification.addNotification(citizen.getCitizenId(),
-                            "Welcome! Your account has been successfully created. " +
-                            "You can now track your ID application status.",
-                            "Account Created");
-                        
-                        JOptionPane.showMessageDialog(this,
-                            "Registration successful!\n\n" +
-                            "Account created for: " + createdUser.getFullName() + "\n" +
-                            "Username: " + username + "\n" +
-                            "Email: " + email + "\n" +
-                            "Linked to your PhilSys application\n\n" +
-                            "Please sign in with your credentials.",
-                            "Registration Successful", JOptionPane.INFORMATION_MESSAGE);
-                        
-                        // Clear form
-                        clearRegistrationForm();
-                        
-                        // Switch back to login tab
-                        BodyTabbedPane.setSelectedIndex(0);
-                        
-                        // Auto-fill login form with new credentials
-                        login.getUsernameText().setText(username);
-                        login.getPasswordText().setText("");
-                        login.getUsernameText().requestFocus();
-                    } else {
-                        JOptionPane.showMessageDialog(this,
-                            "Registration completed but could not link to your application. Please contact support.",
-                            "Partial Success", JOptionPane.WARNING_MESSAGE);
-                    }
+                    Data.ActivityLog.logActivity(createdUser.getUserId(), 
+                        "Registered new account and created citizen record" + 
+                        (transactionRefNumber.isEmpty() ? "" : " with Transaction Reference Number: " + transactionRefNumber));
                 }
+
+                JOptionPane.showMessageDialog(this,
+                    "✅ Registration successful!\n\n" +
+                    "Account created for: " + firstName + " " + lastName + "\n" +
+                    "Username: " + username + "\n" +
+                    "Email: " + email + "\n" +
+                    "Gender: " + selectedGender + "\n" +
+                    "Role: Citizen\n\n" +
+                    (transactionRefNumber.isEmpty() ? 
+                     "You can now sign in and add your transaction reference number\nin your profile to track your ID application status." :
+                     "Your Transaction Reference Number (" + transactionRefNumber + ") has been linked to your account."),
+                    "Registration Successful", JOptionPane.INFORMATION_MESSAGE);
+
+                // Clear form
+                clearRegistrationForm();
+
+                // Switch back to login tab
+                BodyTabbedPane.setSelectedIndex(0);
+
+                // Auto-fill login form with new credentials
+                login.getUsernameText().setText(username);
+                login.getPasswordText().setText("");
+                login.getUsernameText().requestFocus();
+
             } else {
                 JOptionPane.showMessageDialog(this,
                     "Registration failed. Please try again or contact support.",
                     "Registration Error", JOptionPane.ERROR_MESSAGE);
             }
-            
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                 "Error during registration: " + e.getMessage(),
@@ -329,29 +364,18 @@ public class Landing extends javax.swing.JFrame {
         return null; // Password is valid
     }
     
-    private boolean isEmailAlreadyRegistered(String email) {
-        // Check if email exists in database
-        java.util.List<Data.User> users = Data.User.getAllUsers();
-        for (Data.User user : users) {
-            if (user.getEmail() != null && user.getEmail().equalsIgnoreCase(email)) {
-                return true;
-            }
-            if (user.getUsername().equalsIgnoreCase(email)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     private String generateUsername(String firstName, String lastName) {
         String baseUsername = firstName.toLowerCase() + 
                             (lastName.length() > 0 ? lastName.substring(0, 1).toLowerCase() : "");
-        
-        // Check if username exists
+        return baseUsername;
+    }
+    
+    private String generateUniqueUsername(String firstName, String lastName) {
+        String baseUsername = generateUsername(firstName, lastName);
         String username = baseUsername;
         int counter = 1;
         
-        while (usernameExists(username)) {
+        while (Data.User.checkUsernameExists(username, null)) {
             username = baseUsername + counter;
             counter++;
         }
@@ -359,24 +383,22 @@ public class Landing extends javax.swing.JFrame {
         return username;
     }
     
-    private boolean usernameExists(String username) {
-        java.util.List<Data.User> allUsers = Data.User.getAllUsers();
-        for (Data.User user : allUsers) {
-            if (user.getUsername().equalsIgnoreCase(username)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     private void clearRegistrationForm() {
         registration.getFirstnameText().clear();
         registration.getMiddleNameTextOptional().clear();
         registration.getLastnameText().clear();
         registration.getEmailText().clear();
-        registration.getTransactionReferenceNumberText().clear();
+        registration.getPhoneNumberText().clear();
+        registration.getStreetAddressText().clear();
+        registration.getCityText().clear();
+        registration.getStateProvinceText().clear();
+        registration.getZipPostalCodeTextField().clear();
+        registration.getCountryText().clear();
+        registration.getUsernameText().clear();
         registration.getPasswordText().setText("");
         registration.getConfirmPasswordText().setText("");
+        registration.getDateOfBirthcustomDatePicker().setDate(null);
+        registration.getGenderDropdownButton().setText("Select Gender");
         registration.getTermsAndConditionCheckBox().setSelected(false);
         registration.getTermsAndConditionCheckBox().setError(false);
     }

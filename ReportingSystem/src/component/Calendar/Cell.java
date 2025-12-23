@@ -1,6 +1,7 @@
 package component.Calendar;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -30,14 +31,44 @@ public class Cell extends JButton {
         setBorder(null);
         setHorizontalAlignment(JLabel.CENTER);
         ToolTipManager.sharedInstance().registerComponent(this);
+        
+        // Set default cursor
+        setCursor(Cursor.getDefaultCursor());
 
-        // Add mouse listener for click events
+        // Add mouse listener for click events and cursor changes
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleCellClick();
             }
+            
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                updateCursor();
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                setCursor(Cursor.getDefaultCursor());
+            }
         });
+        
+        // Also add mouse motion listener for continuous cursor updates
+        addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                updateCursor();
+            }
+        });
+    }
+    
+    private void updateCursor() {
+        // Show hand cursor for available dates or selected dates
+        if ((isAvailable || isSelected) && !title && date != null) {
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        } else {
+            setCursor(Cursor.getDefaultCursor());
+        }
     }
     
     public void setParentPanel(PanelDate parent) {
@@ -93,6 +124,8 @@ public class Cell extends JButton {
 
     public void asTitle() {
         title = true;
+        // Titles should not have hand cursor
+        setCursor(Cursor.getDefaultCursor());
     }
 
     public boolean isTitle() {
@@ -109,26 +142,31 @@ public class Cell extends JButton {
 
     public void setSelected(boolean selected) {
         this.isSelected = selected;
+        updateCursor(); // Update cursor when selection changes
         repaint();
     }
     
     public void setAvailable(boolean available) {
         this.isAvailable = available;
+        updateCursor(); // Update cursor when availability changes
         repaint();
     }
     
     public void setBooked(boolean booked) {
         this.isBooked = booked;
+        updateCursor(); // Update cursor when booking status changes
         repaint();
     }
     
     public void setHoliday(boolean holiday) {
         this.isHoliday = holiday;
+        updateCursor(); // Update cursor when holiday status changes
         repaint();
     }
     
     public void setWeekend(boolean weekend) {
         this.isWeekend = weekend;
+        updateCursor(); // Update cursor when weekend status changes
         repaint();
     }
 
@@ -144,16 +182,19 @@ public class Cell extends JButton {
         } else {
             setForeground(new Color(169, 169, 169));
         }
+        updateCursor(); // Update cursor when month status changes
     }
 
     public void resetToday() {
         isToDay = false;
         setForeground(Color.BLACK); // Default foreground
+        updateCursor(); // Update cursor when today status changes
     }
     
     public void setAsToDay() {
         isToDay = true;
         setForeground(Color.WHITE);
+        updateCursor(); // Update cursor when today status changes
     }
     
     @Override
@@ -163,6 +204,7 @@ public class Cell extends JButton {
     
     public void setTooltipText(String text) {
         this.tooltipText = text;
+        updateCursor(); // Update cursor when tooltip changes
     }
 
     @Override
@@ -210,5 +252,10 @@ public class Cell extends JButton {
         }
         
         super.paintComponent(grphcs);
+    }
+    
+    // Helper method to check if cell should have hand cursor
+    public boolean shouldHaveHandCursor() {
+        return (isAvailable || isSelected) && !title && date != null;
     }
 }

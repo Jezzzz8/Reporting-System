@@ -33,6 +33,9 @@ public class PanelSlide extends javax.swing.JPanel {
                 animate();
             }
         });
+        
+        // Enable double buffering for smoother animations
+        setDoubleBuffered(true);
 
     }
 
@@ -46,24 +49,38 @@ public class PanelSlide extends javax.swing.JPanel {
         if (!timer.isRunning()) {
             this.animateType = animateType;
             this.comShow = com;
+            
+            // Ensure component is fully initialized
             com.setSize(getSize());
+            
+            // Force layout and painting before adding
+            com.validate();
+            com.repaint();
+            
             if (getComponentCount() == 0) {
                 add(com);
                 comExit = com;
-                repaint();
-                revalidate();
+                // Use invokeLater to ensure painting happens in EDT
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    repaint();
+                    revalidate();
+                });
             } else {
-
                 if (animateType == AnimateType.TO_RIGHT) {
                     comShow.setLocation(-comShow.getWidth(), 0);
                 } else {
                     comShow.setLocation(getWidth(), 0);
                 }
+                
+                // Add the new component
                 add(com);
-                repaint();
-                revalidate();
-                timer.start();
-
+                
+                // Force immediate update
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    repaint();
+                    revalidate();
+                    timer.start();
+                });
             }
         }
     }
@@ -73,22 +90,30 @@ public class PanelSlide extends javax.swing.JPanel {
             if (comShow.getLocation().x < 0) {
                 comShow.setLocation(comShow.getLocation().x + animate, 0);
                 comExit.setLocation(comExit.getLocation().x + animate, 0);
+                // Immediate repaint for smoother animation
+                repaint();
             } else {
-                //  Stop animate
+                // Stop animate
                 comShow.setLocation(0, 0);
                 timer.stop();
                 remove(comExit);
                 comExit = comShow;
+                // Final repaint
+                repaint();
             }
         } else {
             if (comShow.getLocation().x > 0) {
                 comShow.setLocation(comShow.getLocation().x - animate, 0);
                 comExit.setLocation(comExit.getLocation().x - animate, 0);
+                // Immediate repaint for smoother animation
+                repaint();
             } else {
                 comShow.setLocation(0, 0);
                 timer.stop();
                 remove(comExit);
                 comExit = comShow;
+                // Final repaint
+                repaint();
             }
         }
     }

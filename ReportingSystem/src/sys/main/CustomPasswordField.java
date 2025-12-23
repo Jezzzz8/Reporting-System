@@ -349,7 +349,7 @@ public class CustomPasswordField extends JPanel implements FocusListener {
         passwordField.setEnabled(enabled);
         toggleButton.setEnabled(enabled);
         if (!enabled) {
-            setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+            setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255), 1));
         } else {
             updateBorder(passwordField.hasFocus());
         }

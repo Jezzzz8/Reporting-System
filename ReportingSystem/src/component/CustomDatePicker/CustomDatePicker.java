@@ -283,8 +283,8 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         JPanel monthPanel = new JPanel(new BorderLayout(5, 0));
         monthPanel.setBackground(backgroundColor);
         
-        JButton prevMonth = createArrowButton("◀", "Previous month");
-        JButton nextMonth = createArrowButton("▶", "Next month");
+        JButton prevMonth = createArrowButton("<", "Previous month");
+        JButton nextMonth = createArrowButton(">", "Next month");
         
         monthLabel = new JLabel("", SwingConstants.CENTER);
         monthLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -294,8 +294,8 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         JPanel yearPanel = new JPanel(new BorderLayout(5, 0));
         yearPanel.setBackground(backgroundColor);
         
-        JButton prevYear = createArrowButton("◀", "Previous year");
-        JButton nextYear = createArrowButton("▶", "Next year");
+        JButton prevYear = createArrowButton("<", "Previous year");
+        JButton nextYear = createArrowButton(">", "Next year");
         
         yearLabel = new JLabel("", SwingConstants.CENTER);
         yearLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -373,7 +373,7 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         JButton clearButton = new JButton("Clear");
         clearButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         clearButton.setBackground(unfocusedBorderColor);
-        clearButton.setForeground(Color.WHITE);
+        clearButton.setForeground(Color.BLACK);
         clearButton.setFocusPainted(false);
         clearButton.setBorderPainted(false);
         clearButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -402,7 +402,7 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         JButton cancelButton = new JButton("Cancel");
         cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         cancelButton.setBackground(unfocusedBorderColor);
-        cancelButton.setForeground(Color.WHITE);
+        cancelButton.setForeground(Color.BLACK);
         cancelButton.setFocusPainted(false);
         cancelButton.setBorderPainted(false);
         cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));

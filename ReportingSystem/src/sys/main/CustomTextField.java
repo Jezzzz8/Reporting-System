@@ -11,6 +11,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 public class CustomTextField extends JPanel implements FocusListener {
     private JTextField textField;
@@ -62,21 +63,28 @@ public class CustomTextField extends JPanel implements FocusListener {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                
+
                 String currentText = getText();
                 boolean isEmpty = currentText.isEmpty();
-                
+
                 if (showFormatGuide && isFocused && !isFormatComplete(currentText)) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g2.setColor(formatGuideColor);
                     g2.setFont(getFont().deriveFont(Font.PLAIN));
-                    
+
                     FontMetrics fm = g2.getFontMetrics();
                     int textY = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-                    
+
+                    // Draw the format guide behind the text
                     String guideText = buildFormatGuide(currentText);
-                    g2.drawString(guideText, 5, textY);
+
+                    // IMPORTANT: The guide needs to be drawn at the same position as the text
+                    // Text in JTextField usually starts at insets.left
+                    java.awt.Insets insets = getInsets();
+                    int textX = insets.left;
+
+                    g2.drawString(guideText, textX, textY);
                     g2.dispose();
                 }
                 else if (!isFocused && isEmpty && placeholder != null && !placeholder.isEmpty()) {
@@ -84,16 +92,20 @@ public class CustomTextField extends JPanel implements FocusListener {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g2.setColor(placeholderColor);
                     g2.setFont(getFont().deriveFont(Font.PLAIN));
-                    
+
                     FontMetrics fm = g2.getFontMetrics();
                     int textY = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-                    
-                    g2.drawString(placeholder, 5, textY);
+
+                    // Draw placeholder
+                    java.awt.Insets insets = getInsets();
+                    int textX = insets.left;
+
+                    g2.drawString(placeholder, textX, textY);
                     g2.dispose();
                 }
             }
         };
-        
+
         textField.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         textField.setBackground(new Color(249, 241, 240));
         textField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -126,57 +138,94 @@ public class CustomTextField extends JPanel implements FocusListener {
         this.showFormatGuide = false;
         this.formatPattern = "";
         this.formatSegments = null;
+        this.formatDelimiter = "-"; // Reset to default
         textField.repaint();
     }
     
     private void parseFormatPattern(String pattern) {
-        String[] segments = pattern.split("[^X]");
-        formatSegments = new int[segments.length];
-        for (int i = 0; i < segments.length; i++) {
-            formatSegments[i] = segments[i].length();
+        if (pattern == null || pattern.isEmpty()) {
+            formatSegments = null;
+            return;
         }
-        
-        if (pattern.length() > 0 && !pattern.startsWith("X")) {
-            formatDelimiter = pattern.substring(0, 1);
+
+        // First, identify the delimiter (first non-X character)
+        char delimiterChar = '-'; // Default
+        for (int i = 0; i < pattern.length(); i++) {
+            if (pattern.charAt(i) != 'X') {
+                delimiterChar = pattern.charAt(i);
+                break;
+            }
         }
+        formatDelimiter = String.valueOf(delimiterChar);
+
+        // Split the pattern by the delimiter
+        String[] parts = pattern.split(java.util.regex.Pattern.quote(formatDelimiter));
+
+        // Count X's in each part
+        ArrayList<Integer> segmentsList = new ArrayList<>();
+        for (String part : parts) {
+            int xCount = 0;
+            for (char c : part.toCharArray()) {
+                if (c == 'X') {
+                    xCount++;
+                }
+            }
+            if (xCount > 0) {
+                segmentsList.add(xCount);
+            }
+        }
+
+        // Convert to array
+        formatSegments = new int[segmentsList.size()];
+        for (int i = 0; i < segmentsList.size(); i++) {
+            formatSegments[i] = segmentsList.get(i);
+        }
+
+        System.out.println("Parsed pattern: " + pattern);
+        System.out.println("Delimiter: '" + formatDelimiter + "'");
+        System.out.println("Segments: " + java.util.Arrays.toString(formatSegments));
     }
-    
+
     private String buildFormatGuide(String currentText) {
         if (formatSegments == null || formatPattern.isEmpty()) {
             return "";
         }
-        
+
         StringBuilder guide = new StringBuilder();
         int charIndex = 0;
+
+        // Get clean text without delimiters
         String cleanText = currentText.replace(formatDelimiter, "");
-        
+
         for (int i = 0; i < formatSegments.length; i++) {
             if (i > 0) {
                 guide.append(formatDelimiter);
             }
-            
+
             for (int j = 0; j < formatSegments[i]; j++) {
                 if (charIndex < cleanText.length()) {
+                    // User has entered a character here
                     guide.append(" ");
                 } else {
+                    // Show placeholder X
                     guide.append("X");
                 }
                 charIndex++;
             }
         }
-        
+
         return guide.toString();
     }
-    
+
     private boolean isFormatComplete(String text) {
-        if (formatSegments == null) return false;
-        
+        if (formatSegments == null) return true; // No format guide means always complete
+
         String cleanText = text.replace(formatDelimiter, "");
         int totalCharsNeeded = 0;
         for (int segment : formatSegments) {
             totalCharsNeeded += segment;
         }
-        
+
         return cleanText.length() >= totalCharsNeeded;
     }
     
@@ -184,41 +233,54 @@ public class CustomTextField extends JPanel implements FocusListener {
      * Document filter that handles auto-formatting, prevents delimiter input, and enforces length limits
      */
     private class FormatDocumentFilter extends DocumentFilter {
+        private boolean isProcessing = false; // Add flag to prevent recursion
+
         @Override
         public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) 
                 throws BadLocationException {
-            if (string == null || string.isEmpty()) return;
-            
-            String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
-            
-            // Handle format guide if enabled
-            if (showFormatGuide && formatSegments != null) {
-                handleFormatGuideInsert(fb, offset, string, attr, currentText);
-            } else {
-                // Handle regular text with length limit
-                handleRegularInsert(fb, offset, string, attr, currentText);
+            if (string == null || string.isEmpty() || isProcessing) return;
+
+            isProcessing = true;
+            try {
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+
+                if (showFormatGuide && formatSegments != null) {
+                    handleFormatGuideInsert(fb, offset, string, attr, currentText);
+                } else {
+                    handleRegularInsert(fb, offset, string, attr, currentText);
+                }
+            } finally {
+                isProcessing = false;
             }
         }
-        
+
         @Override
         public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) 
                 throws BadLocationException {
+            if (isProcessing) {
+                super.replace(fb, offset, length, text, attrs);
+                return;
+            }
+
             if (text == null) {
                 super.replace(fb, offset, length, text, attrs);
                 return;
             }
-            
-            String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
-            
-            // Handle format guide if enabled
-            if (showFormatGuide && formatSegments != null) {
-                handleFormatGuideReplace(fb, offset, length, text, attrs, currentText);
-            } else {
-                // Handle regular text with length limit
-                handleRegularReplace(fb, offset, length, text, attrs, currentText);
+
+            isProcessing = true;
+            try {
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+
+                if (showFormatGuide && formatSegments != null) {
+                    handleFormatGuideReplace(fb, offset, length, text, attrs, currentText);
+                } else {
+                    handleRegularReplace(fb, offset, length, text, attrs, currentText);
+                }
+            } finally {
+                isProcessing = false;
             }
         }
-        
+
         @Override
         public void remove(FilterBypass fb, int offset, int length) 
                 throws BadLocationException {
@@ -259,44 +321,44 @@ public class CustomTextField extends JPanel implements FocusListener {
             textField.setCaretPosition(newCursorPos);
         }
         
-        private void handleFormatGuideInsert(FilterBypass fb, int offset, String string, AttributeSet attr, String currentText) 
-                throws BadLocationException {
+        private void handleFormatGuideInsert(FilterBypass fb, int offset, String string, 
+                AttributeSet attr, String currentText) throws BadLocationException {
             // Only allow alphanumeric characters
             String filtered = string.replaceAll("[^A-Za-z0-9]", "");
             if (filtered.isEmpty()) return;
-            
+
             // Get clean text (without delimiters)
             String cleanText = currentText.replace(formatDelimiter, "");
-            
+
             // Calculate where to insert in clean text
             int insertPosition = getCharacterPosition(currentText, offset);
-            
+
             // Check max length for format guide
             int totalCharsNeeded = 0;
             for (int segment : formatSegments) {
                 totalCharsNeeded += segment;
             }
-            
+
             // Limit input to available slots
             int availableSlots = totalCharsNeeded - cleanText.length();
             if (availableSlots <= 0) return;
-            
+
             filtered = filtered.substring(0, Math.min(filtered.length(), availableSlots));
-            
+
             // Insert into clean text
             String newCleanText = cleanText.substring(0, insertPosition) + 
                                  filtered + 
-                                 cleanText.substring(insertPosition);
-            
+                                 cleanText.substring(Math.min(insertPosition, cleanText.length()));
+
             // Format the new text
             String formatted = formatText(newCleanText);
-            
+
             // Replace entire document
             fb.replace(0, currentText.length(), formatted, attr);
-            
+
             // Set cursor to appropriate position (after inserted characters)
             int newCursorPos = getFormattedPosition(formatted, insertPosition + filtered.length());
-            textField.setCaretPosition(newCursorPos);
+            textField.setCaretPosition(Math.min(newCursorPos, formatted.length()));
         }
         
         private void handleFormatGuideReplace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs, String currentText) 
@@ -416,29 +478,37 @@ public class CustomTextField extends JPanel implements FocusListener {
      * Format raw text according to the pattern (only adds delimiters when segments are complete)
      */
     private String formatText(String rawText) {
-        if (formatSegments == null || rawText == null) return rawText;
-        
+        if (formatSegments == null || rawText == null || rawText.isEmpty()) {
+            return rawText;
+        }
+
         StringBuilder formatted = new StringBuilder();
         int charIndex = 0;
-        
+        String cleanText = rawText.replace(formatDelimiter, ""); // Ensure no delimiters
+
         for (int i = 0; i < formatSegments.length; i++) {
             if (i > 0 && charIndex > 0) {
                 // Only add delimiter if we have characters in this segment
                 formatted.append(formatDelimiter);
             }
-            
+
             int segmentSize = formatSegments[i];
-            int endIndex = Math.min(charIndex + segmentSize, rawText.length());
-            
-            if (charIndex < rawText.length()) {
-                formatted.append(rawText.substring(charIndex, endIndex));
+            int endIndex = Math.min(charIndex + segmentSize, cleanText.length());
+
+            if (charIndex < cleanText.length()) {
+                formatted.append(cleanText.substring(charIndex, endIndex));
                 charIndex = endIndex;
             }
+
+            // Stop if we've used all characters
+            if (charIndex >= cleanText.length()) {
+                break;
+            }
         }
-        
+
         return formatted.toString();
     }
-    
+
     public String getRawText() {
         if (textField.getText() == null) return "";
         return textField.getText().replace(formatDelimiter, "");
@@ -646,7 +716,7 @@ public class CustomTextField extends JPanel implements FocusListener {
         super.setEnabled(enabled);
         textField.setEnabled(enabled);
         if (!enabled) {
-            setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+            setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255), 1));
         } else {
             updateBorder(textField.hasFocus());
         }

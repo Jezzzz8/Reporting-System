@@ -5,6 +5,7 @@ import component.Calendar.CalendarCustom.CalendarCustomListener;
 import backend.objects.Data.IDStatus;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.GridLayout;
 import java.util.Date;
 import java.text.SimpleDateFormat;
@@ -12,6 +13,7 @@ import java.util.Calendar;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class Scheduling extends javax.swing.JPanel {
 
@@ -22,35 +24,98 @@ public class Scheduling extends javax.swing.JPanel {
     private int currentStep = 1;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy");
     private SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE");
+    private SimpleDateFormat fullDayFormat = new SimpleDateFormat("EEEE"); // For lblSelectedDay
+    private boolean calendarInitialized = false;
     
     public Scheduling(User user) {
         this.currentUser = user;
         initComponents();
         configureProgressBar();
         initCitizenData();
-        initCalendar();
-        initTimeSlots();
         updateUIForStep(currentStep);
-        forceCalendarRefresh();
 
-        // Add tab change listener to ensure calendar is visible
+        // Add tab change listener FIRST - BEFORE any initialization
         SchedulingTabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {
             @Override
             public void stateChanged(javax.swing.event.ChangeEvent e) {
-                if (SchedulingTabbedPane.getSelectedIndex() == 0) { // Date selection tab
-                    System.out.println("Date tab selected - refreshing calendar");
-                    refreshCalendar();
+                int selectedIndex = SchedulingTabbedPane.getSelectedIndex();
+                System.out.println("Tab changed to index: " + selectedIndex + " (Step: " + (selectedIndex + 1) + ")");
+
+                // Update current step based on tab
+                currentStep = selectedIndex + 1;
+                updateUIForStep(currentStep);
+
+                // Initialize calendar when date tab is selected
+                if (selectedIndex == 0) {
+                    SwingUtilities.invokeLater(() -> {
+                        initCalendarIfNeeded();
+                    });
                 }
             }
         });
-
-        // Add component listener to handle when component becomes visible
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentShown(java.awt.event.ComponentEvent e) {
-                System.out.println("Scheduling component shown");
-                refreshCalendar();
+        
+        // Initialize time slots immediately (lightweight)
+        initTimeSlots();
+        
+        // Set initial tab to step 1
+        SchedulingTabbedPane.setSelectedIndex(0);
+        
+        // Initialize calendar immediately (not lazy) with proper timing
+        SwingUtilities.invokeLater(() -> {
+            initCalendar();
+            calendarInitialized = true;
+        });
+    }
+    
+    private void ensureCalendarVisible() {
+        if (calendarCustom != null) {
+            // Check if calendar is properly sized
+            if (calendarCustom.getWidth() == 0 || calendarCustom.getHeight() == 0) {
+                System.out.println("Calendar has zero size - resizing");
+                calendarCustom.setSize(SelectDatePanel.getSize());
             }
+
+            // Force component hierarchy update
+            calendarCustom.invalidate();
+            calendarCustom.validate();
+            calendarCustom.repaint();
+
+            // Force parent update
+            SelectDatePanel.invalidate();
+            SelectDatePanel.validate();
+            SelectDatePanel.repaint();
+
+            // Force tab update
+            SchedulingTabbedPane.invalidate();
+            SchedulingTabbedPane.validate();
+            SchedulingTabbedPane.repaint();
+            
+            System.out.println("Forced calendar visibility update");
+        }
+    }
+    
+    private void initCalendarIfNeeded() {
+        if (!calendarInitialized) {
+            System.out.println("Lazy initializing calendar...");
+            initCalendar();
+            calendarInitialized = true;
+        } else {
+            System.out.println("Calendar already initialized - just refreshing");
+            refreshCalendar();
+        }
+
+        // Force the calendar to become visible and properly sized
+        SwingUtilities.invokeLater(() -> {
+            calendarCustom.setVisible(true);
+            calendarCustom.setSize(SelectDatePanel.getSize());
+
+            // Force layout
+            calendarCustom.revalidate();
+            calendarCustom.repaint();
+            SelectDatePanel.revalidate();
+            SelectDatePanel.repaint();
+
+            System.out.println("Calendar forced to repaint");
         });
     }
     
@@ -95,86 +160,235 @@ public class Scheduling extends javax.swing.JPanel {
     }
 
     private void initCitizenData() {
-        // Get citizen data for the current user
-        this.citizen = Citizen.getCitizenByUserId(currentUser.getUserId());
-        if (citizen != null) {
-            // Get transaction ID from IDStatus
-            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-            if (idStatus != null) {
-                System.out.println("Transaction ID found: " + idStatus.getTransactionId());
+        try {
+            // Get citizen data for the current user
+            this.citizen = Citizen.getCitizenByUserId(currentUser.getUserId());
+            if (citizen != null) {
+                System.out.println("Found citizen: " + citizen.getFullName() + " (ID: " + citizen.getCitizenId() + ")");
+
+                // Try to get transaction ID from IDStatus
+                try {
+                    IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+                    if (idStatus != null) {
+                        String transactionId = idStatus.getTransactionId();
+                        if (transactionId != null && !transactionId.trim().isEmpty()) {
+                            System.out.println("Transaction ID found: " + transactionId);
+                            System.out.println("Formatted Transaction ID: " + IDStatus.formatTransactionId(transactionId));
+                        } else {
+                            System.out.println("No transaction ID found for citizen ID: " + citizen.getCitizenId());
+                        }
+                    } else {
+                        System.out.println("No ID status found for citizen ID: " + citizen.getCitizenId());
+                        // Try to create a default status if none exists
+                        createDefaultIDStatus();
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error getting ID status: " + e.getMessage());
+                    e.printStackTrace();
+                }
+
+                updateSummaryPanel();
+            } else {
+                System.err.println("ERROR: No citizen found for user ID: " + currentUser.getUserId());
+                // Try to create a default citizen
+                createDefaultCitizen();
             }
-            updateSummaryPanel();
-        } else {
-            System.err.println("ERROR: No citizen found for user ID: " + currentUser.getUserId());
+        } catch (Exception e) {
+            System.err.println("Error in initCitizenData: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
-        private void initCalendar() {
-        System.out.println("Initializing calendar...");
+    private void createDefaultIDStatus() {
+        try {
+            if (citizen == null) return;
 
-        // Make sure calendar is visible and properly sized
-        calendarCustom.setVisible(true);
-        calendarCustom.setSize(SelectDatePanel.getSize());
+            IDStatus defaultStatus = new IDStatus();
+            defaultStatus.setCitizenId(citizen.getCitizenId());
+            defaultStatus.setTransactionId(IDStatus.generateTransactionId(citizen.getCitizenId()));
 
-        // Initialize with a listener
-        calendarCustom.setListener(new CalendarCustomListener() {
-            @Override
-            public void dateSelected(Date date) {
-                System.out.println("Date selected: " + date);
-                selectedDate = date;
-                updateSummaryPanel();
-                updateProgress();
-                ContinueButton.setEnabled(isStepComplete(currentStep));
-                
-                // Check if date is available
-                if (!calendarCustom.isAvailableDate(date)) {
-                    JOptionPane.showMessageDialog(Scheduling.this, 
-                        "Selected date is not available. Please choose another date.", 
-                        "Date Not Available", JOptionPane.WARNING_MESSAGE);
+            // Set status_name_id to 1 for "Submitted" status (from your status_names table)
+            defaultStatus.setStatusNameId(1);
+            defaultStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
+            defaultStatus.setNotes("Initial application submitted");
+
+            boolean success = IDStatus.addStatus(defaultStatus);
+            if (success) {
+                System.out.println("Created default ID status for citizen ID: " + citizen.getCitizenId());
+            } else {
+                System.err.println("Failed to create default ID status");
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating default ID status: " + e.getMessage());
+        }
+    }
+
+    private void createDefaultCitizen() {
+        try {
+            // Create a new citizen record for the user
+            Citizen newCitizen = new Citizen();
+            newCitizen.setUserId(currentUser.getUserId());
+            newCitizen.setFname(currentUser.getFname() != null ? currentUser.getFname() : "Unknown");
+            newCitizen.setMname(currentUser.getMname());
+            newCitizen.setLname(currentUser.getLname() != null ? currentUser.getLname() : "User");
+            newCitizen.setGender("Not Specified");
+            newCitizen.setApplicationDate(new java.sql.Date(System.currentTimeMillis()));
+
+            // Add citizen
+            int citizenId = Citizen.addCitizenAndGetId(newCitizen);
+            if (citizenId > 0) {
+                this.citizen = Citizen.getCitizenByUserId(currentUser.getUserId());
+                System.out.println("Created default citizen with ID: " + citizenId);
+
+                // Create default ID status
+                createDefaultIDStatus();
+            }
+        } catch (Exception e) {
+            System.err.println("Error creating default citizen: " + e.getMessage());
+        }
+    }
+    
+    private void initCalendar() {
+        try {
+            System.out.println("Initializing calendar...");
+
+            // Make sure calendar is visible and properly sized
+            calendarCustom.setVisible(true);
+
+            // Set cursor for the entire calendar
+            calendarCustom.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+
+            // Initialize with a listener
+            calendarCustom.setListener(new CalendarCustomListener() {
+                @Override
+                public void dateSelected(Date date) {
+                    if (date == null) {
+                        System.out.println("Date selection cleared (null)");
+                        selectedDate = null;
+                        updateSummaryPanel();
+                        updateProgress();
+                        ContinueButton.setEnabled(isStepComplete(currentStep));
+                        return;
+                    }
+
+                    System.out.println("Date selected: " + date);
+                    selectedDate = date;
+
+                    // Update the summary panel with formatted date and day
+                    updateSummaryPanel();
+                    updateProgress();
+                    ContinueButton.setEnabled(isStepComplete(currentStep));
+
+                    // Check if date is available
+                    try {
+                        if (!calendarCustom.isAvailableDate(date)) {
+                            JOptionPane.showMessageDialog(Scheduling.this, 
+                                "Selected date is not available. Please choose another date.", 
+                                "Date Not Available", JOptionPane.WARNING_MESSAGE);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error checking date availability: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void monthChanged(int month, int year) {
+                    System.out.println("Month changed to: " + month + "/" + year);
+                    // Reload booked dates when month changes
+                    try {
+                        calendarCustom.reloadBookedDates();
+                        calendarCustom.repaint();
+                        SelectDatePanel.repaint();
+                    } catch (Exception e) {
+                        System.err.println("Error reloading booked dates: " + e.getMessage());
+                    }
+                }
+            });
+
+            // Load data and go to earliest available
+            try {
+                calendarCustom.reloadBookedDates();
+                calendarCustom.goToEarliestAvailable();
+            } catch (Exception e) {
+                System.err.println("Error loading calendar data: " + e.getMessage());
+                JOptionPane.showMessageDialog(this, 
+                    "Error loading calendar data. Please try again.", 
+                    "Calendar Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+            // Add a small delay to ensure PanelSlide is ready
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    // Force the PanelSlide to initialize its components
+                    java.awt.Component[] components = calendarCustom.getComponents();
+                    for (java.awt.Component comp : components) {
+                        if (comp instanceof component.Calendar.swing.PanelSlide) {
+                            System.out.println("Found PanelSlide component - forcing repaint");
+                            comp.revalidate();
+                            comp.repaint();
+                        }
+                    }
+
+                    // Force initial repaint
+                    calendarCustom.repaint();
+                    SelectDatePanel.repaint();
+
+                    System.out.println("Calendar initialization complete");
+                } catch (Exception e) {
+                    System.err.println("Error in calendar initialization: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Error initializing calendar: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, 
+                "Failed to initialize calendar. Please restart the application.", 
+                "Initialization Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void forceCalendarRefresh() {
+        if (calendarCustom != null) {
+            System.out.println("Forcing calendar refresh...");
+
+            // First ensure calendar is visible
+            ensureCalendarVisible();
+
+            // Reload booked dates
+            calendarCustom.reloadBookedDates();
+
+            // Force PanelSlide to reinitialize
+            java.awt.Component[] components = calendarCustom.getComponents();
+            for (java.awt.Component comp : components) {
+                if (comp instanceof component.Calendar.swing.PanelSlide) {
+                    System.out.println("Refreshing PanelSlide");
+                    comp.revalidate();
+                    comp.repaint();
+
+                    // Also refresh any PanelDate components inside PanelSlide
+                    java.awt.Component[] panelSlideComponents = ((java.awt.Container)comp).getComponents();
+                    for (java.awt.Component panelDateComp : panelSlideComponents) {
+                        panelDateComp.revalidate();
+                        panelDateComp.repaint();
+                    }
                 }
             }
 
-            @Override
-            public void monthChanged(int month, int year) {
-                System.out.println("Month changed to: " + month + "/" + year);
-                // Reload booked dates when month changes
-                calendarCustom.reloadBookedDates();
-                calendarCustom.repaint();
-                SelectDatePanel.repaint();
-            }
-        });
-
-        // Force initial repaint
-        calendarCustom.repaint();
-        SelectDatePanel.repaint();
-
-        System.out.println("Calendar initialized");
-    }
-    
-    public void forceCalendarRefresh() {
-        if (calendarCustom != null) {
-            // Reload booked dates from database
-            calendarCustom.reloadBookedDates();
-            
-            // Force the calendar to reinitialize
-            calendarCustom.revalidate();
-            calendarCustom.repaint();
-
-            // Update the selected date if there is one
+            // Update selected date if exists
             if (selectedDate != null) {
                 calendarCustom.setSelectedDate(selectedDate);
             }
 
-            // Force the parent containers to update
+            // Force repaints
+            calendarCustom.revalidate();
+            calendarCustom.repaint();
             SelectDatePanel.revalidate();
             SelectDatePanel.repaint();
-            revalidate();
-            repaint();
 
-            System.out.println("Calendar forcefully refreshed");
+            System.out.println("Calendar refresh complete");
         }
     }
-    
+
     private void updateUIForStep(int step) {
         System.out.println("Updating UI for step: " + step);
 
@@ -221,24 +435,34 @@ public class Scheduling extends javax.swing.JPanel {
     
     private void updateSummaryPanel() {
         if (citizen != null) {
-            // Get the transaction ID from IDStatus and format it
-            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-            String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
-                ? IDStatus.formatTransactionId(idStatus.getTransactionId())
-                : "Not assigned";
-
             // Update citizen info labels
             lblName.setText(citizen.getFullName());
-            // Show formatted Transaction ID
+            lblPhone.setText(citizen.getPhone() != null ? citizen.getPhone() : "Not provided");
+
+            // Get the transaction ID from IDStatus
+            String transactionId = "Not assigned";
+            try {
+                IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+                if (idStatus != null && idStatus.getTransactionId() != null && !idStatus.getTransactionId().trim().isEmpty()) {
+                    transactionId = IDStatus.formatTransactionId(idStatus.getTransactionId());
+                }
+            } catch (Exception e) {
+                System.err.println("Error getting transaction ID: " + e.getMessage());
+            }
             lblTransactionId.setText(transactionId);
-            lblPhone.setText(citizen.getPhone());
 
             if (selectedDate != null) {
-                lblSelectedDate.setText(dateFormat.format(selectedDate));
-                lblSelectedDay.setText(dayFormat.format(selectedDate));
+                // Format date and day properly
+                String formattedDate = dateFormat.format(selectedDate);
+                String formattedDay = fullDayFormat.format(selectedDate);
+
+                lblSelectedDate.setText(formattedDate);
+                lblSelectedDay.setText(formattedDay);
+
+                System.out.println("Selected date: " + formattedDate + " (" + formattedDay + ")");
             } else {
                 lblSelectedDate.setText("Not selected");
-                lblSelectedDay.setText("");
+                lblSelectedDay.setText(""); // Clear the day label
             }
 
             if (selectedTime != null) {
@@ -246,9 +470,17 @@ public class Scheduling extends javax.swing.JPanel {
             } else {
                 lblSelectedTime.setText("Not selected");
             }
+        } else {
+            System.out.println("Citizen is null - cannot update summary");
+            lblName.setText("No citizen data");
+            lblTransactionId.setText("Not assigned");
+            lblPhone.setText("Not available");
+            lblSelectedDate.setText("Not selected");
+            lblSelectedDay.setText("");
+            lblSelectedTime.setText("Not selected");
         }
     }
-
+    
     private void updateProgress() {
         // Remove the automatic calculation since we're setting fixed values
         // This method is called when date/time is selected, but we don't want it to change progress bar
@@ -258,7 +490,7 @@ public class Scheduling extends javax.swing.JPanel {
     private void updateConfirmDetailsPanel() {
         ConfirmDetailsPanel.removeAll();
         ConfirmDetailsPanel.setLayout(new java.awt.BorderLayout());
-        
+
         JButton confirmButton = new JButton("Confirm Appointment");
         confirmButton.setBackground(new Color(97, 49, 237));
         confirmButton.setForeground(Color.WHITE);
@@ -267,21 +499,39 @@ public class Scheduling extends javax.swing.JPanel {
         confirmButton.addActionListener(e -> {
             boolean success = saveAppointment();
             if (success) {
-                // Reset form
+                // Reset form WITHOUT calling resetTimeSlots()
                 selectedDate = null;
                 selectedTime = null;
                 currentStep = 1;
                 updateUIForStep(currentStep);
                 updateSummaryPanel();
-                resetTimeSlots();
+
+                // Clear time slots visually without triggering calendar
+                if (timeSlotsPanel != null) {
+                    for (java.awt.Component comp : timeSlotsPanel.getComponents()) {
+                        if (comp instanceof JButton) {
+                            JButton btn = (JButton) comp;
+                            btn.setBackground(new Color(240, 240, 240));
+                            btn.setForeground(Color.BLACK);
+                        }
+                    }
+                }
+
+                // Refresh calendar without setting selected date to null
+                if (calendarCustom != null) {
+                    calendarCustom.reloadBookedDates();
+                    calendarCustom.repaint();
+                }
+
+                customProgressBar.setCurrentStep(1);
             }
         });
-        
+
         ConfirmDetailsPanel.add(confirmButton, java.awt.BorderLayout.CENTER);
         ConfirmDetailsPanel.revalidate();
         ConfirmDetailsPanel.repaint();
     }
-    
+
     private void resetTimeSlots() {
         // Reset all time slot buttons
         if (timeSlotsPanel != null) {
@@ -293,15 +543,21 @@ public class Scheduling extends javax.swing.JPanel {
                 }
             }
         }
-        
-        // Also reset the calendar selection
-        if (calendarCustom != null) {
-            calendarCustom.setSelectedDate(null);
-            forceCalendarRefresh();
-        }
-        customProgressBar.setCurrentStep(1);
-    }
 
+        // Don't call this line - it causes the NPE
+        // if (calendarCustom != null) {
+        //     calendarCustom.setSelectedDate(null); // REMOVE THIS LINE
+        // }
+
+        // Just reset the date variable
+        selectedDate = null;
+        selectedTime = null;
+
+        customProgressBar.setCurrentStep(1);
+        updateSummaryPanel();
+        forceCalendarRefresh();
+    }
+    
     private boolean saveAppointment() {
         if (citizen == null || selectedDate == null || selectedTime == null) {
             JOptionPane.showMessageDialog(this, "Please complete all appointment details.", 
@@ -309,11 +565,16 @@ public class Scheduling extends javax.swing.JPanel {
             return false;
         }
 
-        // Get transaction ID
-        IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-        String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
-            ? idStatus.getTransactionId() 
-            : "Not assigned";
+        // Get transaction ID with error handling
+        String transactionId = "Not assigned";
+        try {
+            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+            if (idStatus != null && idStatus.getTransactionId() != null && !idStatus.getTransactionId().trim().isEmpty()) {
+                transactionId = idStatus.getTransactionId();
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting transaction ID: " + e.getMessage());
+        }
 
         // Additional validation: Check if date is in the past
         Calendar today = Calendar.getInstance();
@@ -371,27 +632,31 @@ public class Scheduling extends javax.swing.JPanel {
         boolean success = Appointment.addAppointment(appointment);
 
         if (success) {
+            // Format transaction ID for display
+            String formattedTransactionId = IDStatus.formatTransactionId(transactionId);
+
             // Log activity with transaction ID
             ActivityLog.logActivity(currentUser.getUserId(), 
-                "Scheduled appointment for Transaction ID: " + transactionId + 
+                "Scheduled appointment for " + citizen.getFullName() + 
                 " on " + dateFormat.format(selectedDate) + " at " + selectedTime);
 
             // Send notification to citizen with transaction ID
-            if (citizen.getUserId() != null) {
-                String message = "Your appointment for Transaction ID: " + transactionId + 
-                    " has been scheduled for " + dateFormat.format(selectedDate) + " at " + selectedTime;
-                Notification.addNotification(citizen.getCitizenId(), message, "Appointment");
+            String message = "Your appointment has been scheduled for " + 
+                dateFormat.format(selectedDate) + " at " + selectedTime;
+            if (!"Not assigned".equals(transactionId)) {
+                message += "\nTransaction ID: " + formattedTransactionId;
             }
+            Notification.addNotification(citizen.getCitizenId(), message, "Appointment");
 
             JOptionPane.showMessageDialog(this, 
                 "Appointment scheduled successfully!\n\n" +
-                "Transaction ID: " + transactionId + "\n" +
                 "Name: " + citizen.getFullName() + "\n" +
                 "Date: " + dateFormat.format(selectedDate) + "\n" +
                 "Time: " + selectedTime + "\n" +
+                (!"Not assigned".equals(transactionId) ? "Transaction ID: " + formattedTransactionId + "\n" : "") +
                 "Status: Scheduled\n\n" +
                 "Please arrive 15 minutes before your appointment time.\n" +
-                "Bring your Transaction ID: " + transactionId,
+                (!"Not assigned".equals(transactionId) ? "Bring your Transaction ID: " + formattedTransactionId + "\n" : ""),
                 "Appointment Confirmed", JOptionPane.INFORMATION_MESSAGE);
 
             // Refresh calendar to show the new booking
@@ -408,7 +673,7 @@ public class Scheduling extends javax.swing.JPanel {
             return false;
         }
     }
-    
+
     private void initTimeSlots() {
         // Remove existing components and set layout
         SelectTimePanel.removeAll();
@@ -597,21 +862,27 @@ public class Scheduling extends javax.swing.JPanel {
             .addGap(0, 35, Short.MAX_VALUE)
         );
 
+        JLabel.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         JLabel.setText("Name");
         JLabel.setPreferredSize(new java.awt.Dimension(100, 30));
 
+        JLabel1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         JLabel1.setText("Phone");
         JLabel1.setPreferredSize(new java.awt.Dimension(100, 30));
 
+        JLabel2.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         JLabel2.setText("TRN");
         JLabel2.setPreferredSize(new java.awt.Dimension(100, 30));
 
+        JLabel3.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         JLabel3.setText("Selected Time");
         JLabel3.setPreferredSize(new java.awt.Dimension(100, 30));
 
+        JLabel4.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         JLabel4.setText("Selected Date");
         JLabel4.setPreferredSize(new java.awt.Dimension(100, 30));
 
+        JLabel5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         JLabel5.setText("Selected Day");
         JLabel5.setPreferredSize(new java.awt.Dimension(100, 30));
 
@@ -629,10 +900,10 @@ public class Scheduling extends javax.swing.JPanel {
                     .addComponent(timeSlotsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 172, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
                         .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(JLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(JLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(JLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(JLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                            .addComponent(JLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(JLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(JLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(JLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblTransactionId, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
@@ -640,11 +911,11 @@ public class Scheduling extends javax.swing.JPanel {
                             .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
                             .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)))
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addComponent(JLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                        .addComponent(JLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addComponent(JLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                        .addComponent(JLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)))
                 .addContainerGap())
@@ -697,6 +968,7 @@ public class Scheduling extends javax.swing.JPanel {
         EarliestAvailableButton.setText("Earliest Available");
         EarliestAvailableButton.setBorder(null);
         EarliestAvailableButton.setBorderPainted(false);
+        EarliestAvailableButton.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         EarliestAvailableButton.setPreferredSize(new java.awt.Dimension(150, 45));
         EarliestAvailableButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -777,18 +1049,16 @@ public class Scheduling extends javax.swing.JPanel {
         SelectDatePanel.setLayout(SelectDatePanelLayout);
         SelectDatePanelLayout.setHorizontalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(SelectDatePanelLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
+                .addGap(122, 122, 122)
+                .addGroup(SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE))
+                .addGap(123, 123, 123))
         );
         SelectDatePanelLayout.setVerticalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -796,9 +1066,9 @@ public class Scheduling extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, 312, Short.MAX_VALUE)
+                .addGap(3, 3, 3)
+                .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 111, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -885,22 +1155,34 @@ public class Scheduling extends javax.swing.JPanel {
                     "Incomplete Step", JOptionPane.WARNING_MESSAGE);
             }
         } else {
-            // Get transaction ID
-            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-            String transactionId = (idStatus != null && idStatus.getTransactionId() != null) 
-                ? idStatus.getTransactionId() 
-                : "Not assigned";
-
             // Final confirmation step
+            // Get transaction ID with error handling
+            String transactionId = "Not assigned";
+            String formattedTransactionId = "Not assigned";
+            try {
+                IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+                if (idStatus != null && idStatus.getTransactionId() != null && !idStatus.getTransactionId().trim().isEmpty()) {
+                    transactionId = idStatus.getTransactionId();
+                    formattedTransactionId = IDStatus.formatTransactionId(transactionId);
+                }
+            } catch (Exception e) {
+                System.err.println("Error getting transaction ID for confirmation: " + e.getMessage());
+            }
+
+            StringBuilder confirmMessage = new StringBuilder();
+            confirmMessage.append("Confirm appointment details:\n\n");
+            if (!"Not assigned".equals(transactionId)) {
+                confirmMessage.append("Transaction ID: ").append(formattedTransactionId).append("\n");
+            }
+            confirmMessage.append("Date: ").append(dateFormat.format(selectedDate)).append("\n");
+            confirmMessage.append("Time: ").append(selectedTime).append("\n");
+            confirmMessage.append("Citizen: ").append(citizen.getFullName()).append("\n");
+            confirmMessage.append("First Name: ").append(citizen.getFname()).append("\n");
+            confirmMessage.append("Last Name: ").append(citizen.getLname()).append("\n\n");
+            confirmMessage.append("Are you sure you want to schedule this appointment?");
+
             int confirm = JOptionPane.showConfirmDialog(this,
-                "Confirm appointment details:\n\n" +
-                "Transaction ID: " + transactionId + "\n" +
-                "Date: " + dateFormat.format(selectedDate) + "\n" +
-                "Time: " + selectedTime + "\n" +
-                "Citizen: " + citizen.getFullName() + "\n" +
-                "First Name: " + citizen.getFname() + "\n" +
-                "Last Name: " + citizen.getLname() + "\n\n" +
-                "Are you sure you want to schedule this appointment?",
+                confirmMessage.toString(),
                 "Confirm Appointment", JOptionPane.YES_NO_OPTION);
 
             if (confirm == JOptionPane.YES_OPTION) {

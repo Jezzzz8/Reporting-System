@@ -100,10 +100,10 @@ public class PanelDate extends javax.swing.JLayeredPane {
                     int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
                     boolean isWeekend = (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY);
 
-                    // Check if holiday
+                    // Check if holiday (safe call)
                     boolean isHoliday = parentCalendar.isHolidayDate(cellDate);
 
-                    // Check if booked
+                    // Check if booked (safe call)
                     boolean isBooked = parentCalendar.isBookedDate(cellDate);
 
                     // Check if available (only for future dates that aren't weekend, holiday, or booked)
@@ -136,6 +136,15 @@ public class PanelDate extends javax.swing.JLayeredPane {
                     } else if (isAvailable) {
                         cell.setTooltipText("Available - Click to select");
                     }
+                } else {
+                    // If parentCalendar is null, set defaults
+                    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+                    boolean isWeekend = (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY);
+                    cell.setWeekend(isWeekend);
+                    cell.setHoliday(false);
+                    cell.setBooked(false);
+                    cell.setAvailable(false);
+                    cell.setTooltipText("Calendar not initialized");
                 }
 
                 // Check if today - ALWAYS check regardless of month
@@ -143,7 +152,6 @@ public class PanelDate extends javax.swing.JLayeredPane {
                     cell.setAsToDay();
                 } else {
                     // Reset today status if it's not today
-                    // We need to track this in the Cell class
                     cell.setForeground(Color.BLACK); // Reset foreground if not today
                 }
 
@@ -151,7 +159,7 @@ public class PanelDate extends javax.swing.JLayeredPane {
             }
         }
     }
-    
+
     private ToDay getToDay() {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());

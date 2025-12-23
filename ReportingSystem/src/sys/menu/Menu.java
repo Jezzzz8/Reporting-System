@@ -57,6 +57,80 @@ public class Menu extends JComponent {
         {"Help & Support", "FAQs", "Contact Us"},
         {"Logout"}
     };
+    
+    // For admin users:
+    private String[][] adminMenuItems = new String[][]{
+        {"Dashboard"},
+        {"User Management", "Manage Users", "Manage Roles"},
+        {"Citizen Records", "Add Citizen Record", "Update Citizen Record", "View Citizen Record"},
+        {"ID Status Management", "Update ID Status", "View Status History"},
+        {"Appointment Management", "View Appointments", "Update Appointment Status"},
+        {"System Settings", "System Configuration", "Activity Logs", "Backup & Restore"},
+        {"Logout"}
+    };
+
+    // For staff users:
+    private String[][] staffMenuItems = new String[][]{
+        {"Dashboard"},
+        {"Citizen Records", "Add Citizen Record", "Update Citizen Record", "View Citizen Record"},
+        {"ID Status Management", "Update ID Status", "View Status History"},
+        {"Appointment Management", "View Appointments", "Update Appointment Status"},
+        {"Logout"}
+    };
+
+    // For citizen users:
+    private String[][] citizenMenuItems = new String[][]{
+        {"Dashboard"},
+        {"My Profile"},
+        {"ID Status"},
+        {"Appointments", "Schedule New", "Upcoming", "Cancel/Reschedule"},
+        {"Documents", "Upload Documents", "View Documents", "Document History"},
+        {"Help & Support", "FAQs", "Contact Us"},
+        {"Logout"}
+    };
+    
+    // Icon mapping for admin menu items
+    private String[] adminIconNames = {
+        "dashboard", "profile", "citizen", "status", "appointment", "settings", "logout"
+    };
+    
+    // Icon mapping for staff menu items
+    private String[] staffIconNames = {
+        "dashboard", "citizen", "status", "appointment", "logout"
+    };
+    
+    // Icon mapping for citizen menu items
+    private String[] citizenIconNames = {
+        "dashboard", "profile", "status", "appointment", "documents", "help", "logout"
+    };
+    
+    // Current role
+    private String currentRole = "citizen"; // default
+    
+    public void setMenuForRole(String role) {
+        this.currentRole = role;
+        if (role.equals("admin")) {
+            menuItems = adminMenuItems;
+        } else if (role.equals("staff")) {
+            menuItems = staffMenuItems;
+        } else {
+            menuItems = citizenMenuItems;
+        }
+
+        // Clear existing menu items and rebuild
+        if (menuItemsPanel != null) {
+            menuItemsPanel.removeAll();
+            for (int i = 0; i < menuItems.length; i++) {
+                addMenu(menuItems[i][0], i);
+            }
+            menuItemsPanel.revalidate();
+            menuItemsPanel.repaint();
+        }
+    }
+    
+    public String getCurrentRole() {
+        return currentRole;
+    }
 
     // Custom panel with alpha support
     private class AlphaPanel extends JPanel {
@@ -341,20 +415,46 @@ public class Menu extends JComponent {
     }
 
     private Icon getIcon(int index) {
-        String[] iconNames = {
-            "dashboard", "profile", "status", "appointment", "documents", "help", "logout"
-        };
-        if (index < iconNames.length) {
-            URL url = getClass().getResource("/sys/menu/" + iconNames[index] + ".png");
-            if (url != null) {
-                return new ImageIcon(url);
+        String iconName;
+        
+        if (currentRole.equals("admin")) {
+            // Admin icons
+            if (index < adminIconNames.length) {
+                iconName = adminIconNames[index];
+            } else {
+                // Fallback: use the index if out of bounds
+                iconName = String.valueOf(index);
+            }
+        } else if (currentRole.equals("staff")) {
+            // Staff icons
+            if (index < staffIconNames.length) {
+                iconName = staffIconNames[index];
+            } else {
+                // Fallback: use the index if out of bounds
+                iconName = String.valueOf(index);
+            }
+        } else {
+            // Citizen icons
+            if (index < citizenIconNames.length) {
+                iconName = citizenIconNames[index];
+            } else {
+                // Fallback: use the index if out of bounds
+                iconName = String.valueOf(index);
             }
         }
-        URL url = getClass().getResource("/sys/menu/" + index + ".png");
+        
+        // Try to load the icon
+        URL url = getClass().getResource("/sys/menu/" + iconName + ".png");
         if (url != null) {
             return new ImageIcon(url);
         } else {
-            return null;
+            // Fallback: try with index
+            url = getClass().getResource("/sys/menu/" + index + ".png");
+            if (url != null) {
+                return new ImageIcon(url);
+            } else {
+                return null;
+            }
         }
     }
 

@@ -98,84 +98,146 @@ public class Profile extends javax.swing.JPanel {
     private void loadUserData() {
         // Load citizen data
         citizenInfo = Citizen.getCitizenByUserId(currentUser.getUserId());
-        
+
         if (citizenInfo != null) {
             // Load ID status
             idStatus = backend.objects.Data.IDStatus.getStatusByCitizenId(citizenInfo.getCitizenId());
-            
+
             // Load appointment
             appointment = Appointment.getAppointmentByCitizenId(citizenInfo.getCitizenId());
-            
-            // Load address information - NEW
+
+            // Load address information
             addressInfo = Address.getAddressByCitizenId(citizenInfo.getCitizenId());
-            
+
             // Populate personal details
             FirstnameTextField.setText(citizenInfo.getFname());
             MiddlenameTextField.setText(citizenInfo.getMname() != null ? citizenInfo.getMname() : "");
             LastnameTextField.setText(citizenInfo.getLname());
             NationalIDTextField.setText(citizenInfo.getNationalId() != null ? citizenInfo.getNationalId() : "");
-            
+
             // Set date of birth
             if (citizenInfo.getBirthDate() != null) {
                 DateofBirthPicker.setDate(citizenInfo.getBirthDate());
             }
-            
-            // Set gender - NEW
+
+            // Set gender
             if (citizenInfo.getGender() != null) {
                 GenderDropdownButton.setText(citizenInfo.getGender());
             } else {
                 GenderDropdownButton.setText("Select Gender");
             }
-            
+
             // Populate contact details
             EmailAddressTextField.setText(citizenInfo.getEmail() != null ? citizenInfo.getEmail() : "");
             PhoneNumberTextField.setText(citizenInfo.getPhone() != null ? citizenInfo.getPhone() : "");
-            
-            // Populate address details - UPDATED
+
+            // Populate address details
             if (addressInfo != null) {
                 StreetAddressTextField.setText(addressInfo.getStreetAddress() != null ? addressInfo.getStreetAddress() : "");
+                BarangayAddressTextField.setText(addressInfo.getBarangay() != null ? addressInfo.getBarangay() : "");
                 CityTextField.setText(addressInfo.getCity() != null ? addressInfo.getCity() : "");
                 StateProvinceTextField.setText(addressInfo.getStateProvince() != null ? addressInfo.getStateProvince() : "");
                 ZIPPostalCodeTextField.setText(addressInfo.getZipPostalCode() != null ? addressInfo.getZipPostalCode() : "");
                 CountryTextField.setText(addressInfo.getCountry() != null ? addressInfo.getCountry() : "");
+
+                // Build address line from components
+                StringBuilder addressLine = new StringBuilder();
+                if (addressInfo.getStreetAddress() != null && !addressInfo.getStreetAddress().isEmpty()) {
+                    addressLine.append(addressInfo.getStreetAddress());
+                }
+                if (addressInfo.getBarangay() != null && !addressInfo.getBarangay().isEmpty()) {
+                    if (addressLine.length() > 0) addressLine.append(", ");
+                    addressLine.append(addressInfo.getBarangay());
+                }
+                if (addressInfo.getCity() != null && !addressInfo.getCity().isEmpty()) {
+                    if (addressLine.length() > 0) addressLine.append(", ");
+                    addressLine.append(addressInfo.getCity());
+                }
+                if (addressInfo.getStateProvince() != null && !addressInfo.getStateProvince().isEmpty()) {
+                    if (addressLine.length() > 0) addressLine.append(", ");
+                    addressLine.append(addressInfo.getStateProvince());
+                }
+                if (addressInfo.getZipPostalCode() != null && !addressInfo.getZipPostalCode().isEmpty()) {
+                    if (addressLine.length() > 0) addressLine.append(" ");
+                    addressLine.append(addressInfo.getZipPostalCode());
+                }
+                if (addressInfo.getCountry() != null && !addressInfo.getCountry().isEmpty()) {
+                    if (addressLine.length() > 0) addressLine.append(", ");
+                    addressLine.append(addressInfo.getCountry());
+                }
+                AddressLineTextArea.setText(addressLine.toString());
             }
-            
+
             // Populate ID application status
             if (idStatus != null) {
-                TransactionIDTextField.setText(backend.objects.Data.IDStatus.formatTransactionId(idStatus.getTransactionId()));
-                StatusTextField.setText(idStatus.getStatus());
-                
+                // Get transaction ID directly from the IDStatus object
+                String transactionId = idStatus.getTransactionId();
+
+                if (transactionId != null && !transactionId.trim().isEmpty()) {
+                    // Format the transaction ID for display
+                    String formattedTransactionId = backend.objects.Data.IDStatus.formatTransactionId(transactionId);
+                    TransactionIDTextField.setText(formattedTransactionId);
+                } else {
+                    TransactionIDTextField.setText("No Transaction ID Assigned");
+                }
+
+                // Get status from the linked status_names table
+                if (idStatus.getStatus() != null) {
+                    StatusTextField.setText(idStatus.getStatus());
+                } else {
+                    StatusTextField.setText("No Status Available");
+                }
+
+                // Set applied date from citizen record
                 if (citizenInfo.getApplicationDate() != null) {
                     AppliedDateTextField.setText(dateFormat.format(citizenInfo.getApplicationDate()));
+                } else {
+                    AppliedDateTextField.setText("Not Available");
                 }
-                
-                // Set estimated date (application date + 45 days)
+
+                // Calculate estimated completion date (45 days after application)
                 if (citizenInfo.getApplicationDate() != null) {
                     Calendar estimatedCal = Calendar.getInstance();
                     estimatedCal.setTime(citizenInfo.getApplicationDate());
                     estimatedCal.add(Calendar.DAY_OF_MONTH, 45);
                     EstimatedDateTextField.setText(dateFormat.format(estimatedCal.getTime()));
+                } else {
+                    EstimatedDateTextField.setText("Not Available");
                 }
-                
-                // Set next step based on status
+
+                // Get next step based on current status
                 String nextStep = getNextStep(idStatus.getStatus());
                 NextStepTextField.setText(nextStep);
+            } else {
+                // If no status record exists, show default values
+                TransactionIDTextField.setText("No Application Submitted");
+                StatusTextField.setText("No Application");
+                AppliedDateTextField.setText("Not Available");
+                EstimatedDateTextField.setText("Not Available");
+                NextStepTextField.setText("Submit Application");
             }
-            
+
             // Populate appointment details
             if (appointment != null) {
-                String appointmentText = dateFormat.format(appointment.getAppDate());
-                if (appointment.getAppTime() != null) {
-                    appointmentText += ", " + appointment.getAppTime();
-                }
+                String appointmentText = dateFormat.format(appointment.getAppDate()) + ", " + appointment.getAppTime();
                 AppointmentDateTextField.setText(appointmentText);
+            } else {
+                AppointmentDateTextField.setText("No Appointment Scheduled");
             }
+        } else {
+            // If no citizen info exists, show default values
+            TransactionIDTextField.setText("No Citizen Record");
+            StatusTextField.setText("Not Available");
+            AppliedDateTextField.setText("Not Available");
+            EstimatedDateTextField.setText("Not Available");
+            NextStepTextField.setText("Complete Profile");
+            AppointmentDateTextField.setText("Not Available");
         }
-        
+
         // Set account details
         UsernameTextField.setText(currentUser.getUsername());
         PasswordField.setText(currentUser.getPassword());
-        
+
         // Set read-only password field appearance
         PasswordField.setEnabled(false);
         PasswordField.setPlaceholder("********");
@@ -206,7 +268,6 @@ public class Profile extends javax.swing.JPanel {
     
     private void setReadOnlyFields() {
         // Make these fields read-only
-        TransactionIDTextField.setEnabled(false);
         StatusTextField.setEnabled(false);
         AppliedDateTextField.setEnabled(false);
         EstimatedDateTextField.setEnabled(false);
@@ -216,8 +277,7 @@ public class Profile extends javax.swing.JPanel {
         PasswordField.setEnabled(false);
         
         // Style read-only fields
-        Color disabledBgColor = new Color(245, 245, 245);
-        TransactionIDTextField.setBackground(disabledBgColor);
+        Color disabledBgColor = new Color(255, 255, 255);
         StatusTextField.setBackground(disabledBgColor);
         AppliedDateTextField.setBackground(disabledBgColor);
         EstimatedDateTextField.setBackground(disabledBgColor);
@@ -262,28 +322,28 @@ public class Profile extends javax.swing.JPanel {
             EmailAddressTextField.requestFocus();
             return false;
         }
-        
+
         // Simple email validation
         if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             JOptionPane.showMessageDialog(this, "Please enter a valid email address.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             EmailAddressTextField.requestFocus();
             return false;
         }
-        
+
         String phone = PhoneNumberTextField.getText().trim();
         if (phone.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Phone number is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             PhoneNumberTextField.requestFocus();
             return false;
         }
-        
+
         // Basic phone number validation
         if (!phone.matches("^[0-9\\s\\-()+]*$")) {
             JOptionPane.showMessageDialog(this, "Please enter a valid phone number.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             PhoneNumberTextField.requestFocus();
             return false;
         }
-        
+
         // Validate address fields - UPDATED
         String streetAddress = StreetAddressTextField.getText().trim();
         if (streetAddress.isEmpty()) {
@@ -291,35 +351,42 @@ public class Profile extends javax.swing.JPanel {
             StreetAddressTextField.requestFocus();
             return false;
         }
-        
+
+        String barangay = BarangayAddressTextField.getText().trim(); // NEW
+        if (barangay.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Barangay is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            BarangayAddressTextField.requestFocus();
+            return false;
+        }
+
         String city = CityTextField.getText().trim();
         if (city.isEmpty()) {
             JOptionPane.showMessageDialog(this, "City is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             CityTextField.requestFocus();
             return false;
         }
-        
+
         String stateProvince = StateProvinceTextField.getText().trim();
         if (stateProvince.isEmpty()) {
             JOptionPane.showMessageDialog(this, "State/Province is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             StateProvinceTextField.requestFocus();
             return false;
         }
-        
+
         String zipCode = ZIPPostalCodeTextField.getText().trim();
         if (zipCode.isEmpty()) {
             JOptionPane.showMessageDialog(this, "ZIP/Postal Code is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             ZIPPostalCodeTextField.requestFocus();
             return false;
         }
-        
+
         String country = CountryTextField.getText().trim();
         if (country.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Country is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             CountryTextField.requestFocus();
             return false;
         }
-        
+
         return true;
     }
     
@@ -409,6 +476,8 @@ public class Profile extends javax.swing.JPanel {
         AddressLineTextArea = new component.CustomTextArea.CustomTextArea();
         jLabel16 = new javax.swing.JLabel();
         StreetAddressTextField = new sys.main.CustomTextField();
+        BarangayAddressTextField = new sys.main.CustomTextField();
+        jLabel20 = new javax.swing.JLabel();
         AccountSecurityCard = new javax.swing.JPanel();
         jLabel12 = new javax.swing.JLabel();
         jLabel18 = new javax.swing.JLabel();
@@ -568,9 +637,7 @@ public class Profile extends javax.swing.JPanel {
                             .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(DateofBirthPicker, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addGroup(PersonalInformationCardLayout.createSequentialGroup()
-                                .addGap(0, 0, 0)
-                                .addComponent(GenderDropdownButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))))
+                            .addComponent(GenderDropdownButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
                     .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
@@ -589,27 +656,27 @@ public class Profile extends javax.swing.JPanel {
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(FirstnameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(MiddlenameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(LastnameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(DateofBirthPicker, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(GenderDropdownButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(NationalIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(UpdatePersonalDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -690,6 +757,13 @@ public class Profile extends javax.swing.JPanel {
         StreetAddressTextField.setPlaceholder("Street");
         StreetAddressTextField.setPreferredSize(new java.awt.Dimension(250, 40));
 
+        BarangayAddressTextField.setPlaceholder("Barangay");
+        BarangayAddressTextField.setPreferredSize(new java.awt.Dimension(250, 40));
+
+        jLabel20.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        jLabel20.setText("Street:");
+        jLabel20.setPreferredSize(new java.awt.Dimension(120, 40));
+
         javax.swing.GroupLayout ContactInformationCardLayout = new javax.swing.GroupLayout(ContactInformationCard);
         ContactInformationCard.setLayout(ContactInformationCardLayout);
         ContactInformationCardLayout.setHorizontalGroup(
@@ -723,12 +797,14 @@ public class Profile extends javax.swing.JPanel {
                             .addComponent(jLabel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(PhoneNumberTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(EmailAddressTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(AddressLineTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(StreetAddressTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                            .addComponent(StreetAddressTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(BarangayAddressTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         ContactInformationCardLayout.setVerticalGroup(
@@ -750,8 +826,14 @@ public class Profile extends javax.swing.JPanel {
                     .addComponent(AddressLineTextArea, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(StreetAddressTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(ContactInformationCardLayout.createSequentialGroup()
+                        .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(ContactInformationCardLayout.createSequentialGroup()
+                        .addComponent(StreetAddressTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(BarangayAddressTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -945,6 +1027,7 @@ public class Profile extends javax.swing.JPanel {
             }
         });
 
+        TransactionIDTextField.setFocusable(false);
         TransactionIDTextField.setPlaceholder("Transaction ID");
         TransactionIDTextField.setPreferredSize(new java.awt.Dimension(250, 40));
 
@@ -1052,8 +1135,8 @@ public class Profile extends javax.swing.JPanel {
                 .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(PersonalInformationPanelLayout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 503, Short.MAX_VALUE))
-                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 509, Short.MAX_VALUE))
+                        .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 549, Short.MAX_VALUE))
+                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 555, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(IDApplicationStatusCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1216,78 +1299,88 @@ public class Profile extends javax.swing.JPanel {
         if (!validatePersonalDetails()) {
             return;
         }
-        
+
         try {
             Citizen citizen = new Citizen();
-            
+
             if (citizenInfo != null) {
                 citizen.setCitizenId(citizenInfo.getCitizenId());
                 citizen.setUserId(citizenInfo.getUserId());
             } else {
                 citizen.setUserId(currentUser.getUserId());
             }
-            
+
             citizen.setFname(FirstnameTextField.getText().trim());
             citizen.setMname(MiddlenameTextField.getText().trim());
             citizen.setLname(LastnameTextField.getText().trim());
             citizen.setNationalId(NationalIDTextField.getText().trim());
             citizen.setBirthDate(new java.sql.Date(DateofBirthPicker.getDate().getTime()));
-            citizen.setGender(GenderDropdownButton.getText()); // NEW: Set gender
-            
+            citizen.setGender(GenderDropdownButton.getText());
+
             if (citizenInfo != null && citizenInfo.getApplicationDate() != null) {
                 citizen.setApplicationDate(citizenInfo.getApplicationDate());
             } else {
                 citizen.setApplicationDate(new java.sql.Date(System.currentTimeMillis()));
             }
-            
+
             // Keep existing contact info
             if (citizenInfo != null) {
                 citizen.setPhone(citizenInfo.getPhone());
                 citizen.setEmail(citizenInfo.getEmail());
             }
-            
+
             boolean success;
             if (citizenInfo != null) {
                 success = Citizen.updateCitizen(citizen);
             } else {
                 success = Citizen.addCitizen(citizen);
             }
-            
+
             if (success) {
                 citizenInfo = citizen;
-                
+
                 // Create ID status if it doesn't exist
                 if (idStatus == null && citizenInfo != null) {
                     backend.objects.Data.IDStatus newStatus = new backend.objects.Data.IDStatus();
                     newStatus.setCitizenId(citizenInfo.getCitizenId());
-                    newStatus.setTransactionId(backend.objects.Data.IDStatus.generateTransactionId(citizenInfo.getCitizenId()));
-                    newStatus.setStatus("Submitted");
+
+                    // Generate and set transaction ID - FIXED
+                    String transactionId = backend.objects.Data.IDStatus.generateTransactionId(citizenInfo.getCitizenId());
+                    newStatus.setTransactionId(transactionId);
+
+                    // Set status name ID - assuming "Submitted" status has ID 1
+                    // You might need to adjust this based on your status_names table
+                    newStatus.setStatusNameId(1);
                     newStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
                     newStatus.setNotes("Initial application submitted");
-                    
+
                     if (backend.objects.Data.IDStatus.addStatus(newStatus)) {
                         idStatus = newStatus;
-                        TransactionIDTextField.setText(backend.objects.Data.IDStatus.formatTransactionId(idStatus.getTransactionId()));
-                        StatusTextField.setText(idStatus.getStatus());
-                        
+
+                        // Format and display transaction ID
+                        String formattedTransactionId = backend.objects.Data.IDStatus.formatTransactionId(idStatus.getTransactionId());
+                        TransactionIDTextField.setText(formattedTransactionId);
+
+                        StatusTextField.setText("Submitted");
+
                         if (citizenInfo.getApplicationDate() != null) {
                             AppliedDateTextField.setText(dateFormat.format(citizenInfo.getApplicationDate()));
                         }
-                        
+
                         Calendar estimatedCal = Calendar.getInstance();
                         estimatedCal.setTime(citizenInfo.getApplicationDate());
                         estimatedCal.add(Calendar.DAY_OF_MONTH, 45);
                         EstimatedDateTextField.setText(dateFormat.format(estimatedCal.getTime()));
-                        
-                        String nextStep = getNextStep(idStatus.getStatus());
+
+                        String nextStep = getNextStep("Submitted");
                         NextStepTextField.setText(nextStep);
                     }
                 }
-                
+
                 WelcomeLabel.setText("Welcome, " + citizenInfo.getFullName());
-                
+
                 ActivityLog.logActivity(currentUser.getUserId(), "Updated personal details");
-                
+
                 JOptionPane.showMessageDialog(this, "Personal details updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to update personal details. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1328,19 +1421,7 @@ public class Profile extends javax.swing.JPanel {
 
             boolean citizenSuccess = Citizen.updateCitizen(citizen);
 
-            // Parse the address string into separate components
-            String fullAddress = AddressLineTextArea.getText().trim();
-            String[] addressParts = fullAddress.split(",");
-
-            if (addressParts.length < 5) {
-                JOptionPane.showMessageDialog(this, 
-                    "Please enter address in correct format:\nStreet, City, State/Province, ZIP/Postal Code, Country\n\nExample: 123 Rizal Avenue, Manila, Metro Manila, 1000, Philippines", 
-                    "Invalid Address Format", 
-                    JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // Update or create address information
+            // Update address information with new fields
             Address address = new Address();
 
             if (addressInfo != null) {
@@ -1348,11 +1429,13 @@ public class Profile extends javax.swing.JPanel {
             }
 
             address.setCitizenId(citizenInfo.getCitizenId());
-            address.setStreetAddress(addressParts[0].trim());
-            address.setCity(addressParts[1].trim());
-            address.setStateProvince(addressParts[2].trim());
-            address.setZipPostalCode(addressParts[3].trim());
-            address.setCountry(addressParts[4].trim());
+            address.setStreetAddress(StreetAddressTextField.getText().trim());
+            address.setBarangay(BarangayAddressTextField.getText().trim()); // NEW
+            address.setAddressLine(AddressLineTextArea.getText().trim()); // Use from text area
+            address.setCity(CityTextField.getText().trim());
+            address.setStateProvince(StateProvinceTextField.getText().trim());
+            address.setZipPostalCode(ZIPPostalCodeTextField.getText().trim());
+            address.setCountry(CountryTextField.getText().trim());
 
             boolean addressSuccess;
             if (addressInfo != null) {
@@ -1364,13 +1447,6 @@ public class Profile extends javax.swing.JPanel {
             if (citizenSuccess && addressSuccess) {
                 citizenInfo = citizen;
                 addressInfo = address;
-
-                // Also update the separate address fields for display
-                StreetAddressTextField.setText(address.getStreetAddress());
-                CityTextField.setText(address.getCity());
-                StateProvinceTextField.setText(address.getStateProvince());
-                ZIPPostalCodeTextField.setText(address.getZipPostalCode());
-                CountryTextField.setText(address.getCountry());
 
                 ActivityLog.logActivity(currentUser.getUserId(), "Updated contact details");
 
@@ -1389,6 +1465,7 @@ public class Profile extends javax.swing.JPanel {
     private component.CustomTextArea.CustomTextArea AddressLineTextArea;
     private sys.main.CustomTextField AppliedDateTextField;
     private sys.main.CustomTextField AppointmentDateTextField;
+    private sys.main.CustomTextField BarangayAddressTextField;
     private sys.main.CustomTextField CityTextField;
     private sys.main.CustomPasswordField ConfirmPasswordField;
     private javax.swing.JPanel ContactInformationCard;
@@ -1437,6 +1514,7 @@ public class Profile extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel20;
     private javax.swing.JLabel jLabel21;
     private javax.swing.JLabel jLabel22;
     private javax.swing.JLabel jLabel23;

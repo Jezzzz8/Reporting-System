@@ -7,6 +7,462 @@ import java.util.List;
 
 public class Data {
     
+    public static class Role {
+        private int roleId;
+        private String roleName;
+        private String roleCode;
+        private String description;
+        private Date createdDate;
+        private boolean isActive;
+        
+        public Role() {}
+        
+        public Role(int roleId, String roleName, String roleCode, String description, 
+                   Date createdDate, boolean isActive) {
+            this.roleId = roleId;
+            this.roleName = roleName;
+            this.roleCode = roleCode;
+            this.description = description;
+            this.createdDate = createdDate;
+            this.isActive = isActive;
+        }
+        
+        // Getters and Setters
+        public int getRoleId() { return roleId; }
+        public void setRoleId(int roleId) { this.roleId = roleId; }
+        
+        public String getRoleName() { return roleName; }
+        public void setRoleName(String roleName) { this.roleName = roleName; }
+        
+        public String getRoleCode() { return roleCode; }
+        public void setRoleCode(String roleCode) { this.roleCode = roleCode; }
+        
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+        
+        public Date getCreatedDate() { return createdDate; }
+        public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
+        
+        public boolean isActive() { return isActive; }
+        public void setActive(boolean active) { isActive = active; }
+        
+        // Database Functions
+        public static List<Role> getAllRoles() {
+            List<Role> roles = new ArrayList<>();
+            String query = "SELECT * FROM roles WHERE is_active = 1 ORDER BY role_name";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+                
+                while (rs.next()) {
+                    Role role = new Role(
+                        rs.getInt("role_id"),
+                        rs.getString("role_name"),
+                        rs.getString("role_code"),
+                        rs.getString("description"),
+                        rs.getDate("created_date"),
+                        rs.getBoolean("is_active")
+                    );
+                    roles.add(role);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting all roles: " + e.getMessage());
+            }
+            return roles;
+        }
+        
+        public static Role getRoleById(int roleId) {
+            String query = "SELECT * FROM roles WHERE role_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, roleId);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    return new Role(
+                        rs.getInt("role_id"),
+                        rs.getString("role_name"),
+                        rs.getString("role_code"),
+                        rs.getString("description"),
+                        rs.getDate("created_date"),
+                        rs.getBoolean("is_active")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting role: " + e.getMessage());
+            }
+            return null;
+        }
+        
+        public static Role getRoleByCode(String roleCode) {
+            String query = "SELECT * FROM roles WHERE role_code = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, roleCode);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    return new Role(
+                        rs.getInt("role_id"),
+                        rs.getString("role_name"),
+                        rs.getString("role_code"),
+                        rs.getString("description"),
+                        rs.getDate("created_date"),
+                        rs.getBoolean("is_active")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting role by code: " + e.getMessage());
+            }
+            return null;
+        }
+        
+        public static boolean addRole(Role role) {
+            String query = "INSERT INTO roles (role_name, role_code, description, created_date, is_active) " +
+                          "VALUES (?, ?, ?, ?, ?)";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, role.getRoleName());
+                stmt.setString(2, role.getRoleCode());
+                stmt.setString(3, role.getDescription());
+                stmt.setDate(4, role.getCreatedDate());
+                stmt.setBoolean(5, role.isActive());
+                
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error adding role: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean updateRole(Role role) {
+            String query = "UPDATE roles SET role_name = ?, role_code = ?, description = ?, " +
+                          "created_date = ?, is_active = ? WHERE role_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, role.getRoleName());
+                stmt.setString(2, role.getRoleCode());
+                stmt.setString(3, role.getDescription());
+                stmt.setDate(4, role.getCreatedDate());
+                stmt.setBoolean(5, role.isActive());
+                stmt.setInt(6, role.getRoleId());
+                
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error updating role: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean deleteRole(int roleId) {
+            String query = "UPDATE roles SET is_active = 0 WHERE role_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, roleId);
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error deleting role: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static List<Role> searchRoles(String searchTerm) {
+            List<Role> roles = new ArrayList<>();
+            String query = "SELECT * FROM roles WHERE role_name LIKE ? OR role_code LIKE ? OR description LIKE ? " +
+                          "ORDER BY role_name";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                String likeTerm = "%" + searchTerm + "%";
+                stmt.setString(1, likeTerm);
+                stmt.setString(2, likeTerm);
+                stmt.setString(3, likeTerm);
+                
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    Role role = new Role(
+                        rs.getInt("role_id"),
+                        rs.getString("role_name"),
+                        rs.getString("role_code"),
+                        rs.getString("description"),
+                        rs.getDate("created_date"),
+                        rs.getBoolean("is_active")
+                    );
+                    roles.add(role);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error searching roles: " + e.getMessage());
+            }
+            return roles;
+        }
+    }
+    
+    public static class UserRole {
+        private int userRoleId;
+        private int userId;
+        private int roleId;
+        private Date assignedDate;
+        
+        private Role role; // Reference to role details
+        private User user; // Reference to user details
+        
+        public UserRole() {}
+        
+        public UserRole(int userRoleId, int userId, int roleId, Date assignedDate) {
+            this.userRoleId = userRoleId;
+            this.userId = userId;
+            this.roleId = roleId;
+            this.assignedDate = assignedDate;
+        }
+        
+        // Getters and Setters
+        public int getUserRoleId() { return userRoleId; }
+        public void setUserRoleId(int userRoleId) { this.userRoleId = userRoleId; }
+        
+        public int getUserId() { return userId; }
+        public void setUserId(int userId) { this.userId = userId; }
+        
+        public int getRoleId() { return roleId; }
+        public void setRoleId(int roleId) { this.roleId = roleId; }
+        
+        public Date getAssignedDate() { return assignedDate; }
+        public void setAssignedDate(Date assignedDate) { this.assignedDate = assignedDate; }
+        
+        public Role getRole() { return role; }
+        public void setRole(Role role) { this.role = role; }
+        
+        public User getUser() { return user; }
+        public void setUser(User user) { this.user = user; }
+        
+        // Database Functions
+        public static List<UserRole> getUserRolesByUserId(int userId) {
+            List<UserRole> userRoles = new ArrayList<>();
+            String query = "SELECT ur.*, r.role_name, r.role_code FROM user_roles ur " +
+                          "JOIN roles r ON ur.role_id = r.role_id " +
+                          "WHERE ur.user_id = ? AND r.is_active = 1";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, userId);
+                ResultSet rs = stmt.executeQuery();
+                
+                while (rs.next()) {
+                    UserRole userRole = new UserRole(
+                        rs.getInt("user_role_id"),
+                        rs.getInt("user_id"),
+                        rs.getInt("role_id"),
+                        rs.getDate("assigned_date")
+                    );
+                    
+                    // Create role object
+                    Role role = new Role();
+                    role.setRoleId(rs.getInt("role_id"));
+                    role.setRoleName(rs.getString("role_name"));
+                    role.setRoleCode(rs.getString("role_code"));
+                    userRole.setRole(role);
+                    
+                    userRoles.add(userRole);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting user roles: " + e.getMessage());
+            }
+            return userRoles;
+        }
+        
+        public static List<UserRole> getUsersByRoleId(int roleId) {
+            List<UserRole> userRoles = new ArrayList<>();
+            String query = "SELECT ur.*, u.username, u.fname, u.lname FROM user_roles ur " +
+                          "JOIN users u ON ur.user_id = u.user_id " +
+                          "WHERE ur.role_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, roleId);
+                ResultSet rs = stmt.executeQuery();
+                
+                while (rs.next()) {
+                    UserRole userRole = new UserRole(
+                        rs.getInt("user_role_id"),
+                        rs.getInt("user_id"),
+                        rs.getInt("role_id"),
+                        rs.getDate("assigned_date")
+                    );
+                    
+                    // Create user object
+                    User user = new User();
+                    user.setUserId(rs.getInt("user_id"));
+                    user.setUsername(rs.getString("username"));
+                    user.setFname(rs.getString("fname"));
+                    user.setLname(rs.getString("lname"));
+                    userRole.setUser(user);
+                    
+                    userRoles.add(userRole);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting users by role: " + e.getMessage());
+            }
+            return userRoles;
+        }
+        
+        public static boolean assignRoleToUser(int userId, int roleId) {
+            // Check if role already assigned
+            String checkQuery = "SELECT COUNT(*) FROM user_roles WHERE user_id = ? AND role_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
+                
+                checkStmt.setInt(1, userId);
+                checkStmt.setInt(2, roleId);
+                ResultSet rs = checkStmt.executeQuery();
+                
+                if (rs.next() && rs.getInt(1) > 0) {
+                    // Role already assigned
+                    return true;
+                }
+                
+                // Assign role
+                String insertQuery = "INSERT INTO user_roles (user_id, role_id, assigned_date) VALUES (?, ?, ?)";
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                    insertStmt.setInt(1, userId);
+                    insertStmt.setInt(2, roleId);
+                    insertStmt.setDate(3, new Date(System.currentTimeMillis()));
+                    
+                    return insertStmt.executeUpdate() > 0;
+                }
+            } catch (SQLException e) {
+                System.err.println("Error assigning role to user: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean removeRoleFromUser(int userId, int roleId) {
+            String query = "DELETE FROM user_roles WHERE user_id = ? AND role_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, userId);
+                stmt.setInt(2, roleId);
+                
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error removing role from user: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean updateUserRoles(int userId, List<Integer> roleIds) {
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                conn.setAutoCommit(false);
+                
+                // Remove existing roles
+                String deleteQuery = "DELETE FROM user_roles WHERE user_id = ?";
+                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery)) {
+                    deleteStmt.setInt(1, userId);
+                    deleteStmt.executeUpdate();
+                }
+                
+                // Add new roles
+                if (roleIds != null && !roleIds.isEmpty()) {
+                    String insertQuery = "INSERT INTO user_roles (user_id, role_id, assigned_date) VALUES (?, ?, ?)";
+                    try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                        Date currentDate = new Date(System.currentTimeMillis());
+                        for (int roleId : roleIds) {
+                            insertStmt.setInt(1, userId);
+                            insertStmt.setInt(2, roleId);
+                            insertStmt.setDate(3, currentDate);
+                            insertStmt.addBatch();
+                        }
+                        insertStmt.executeBatch();
+                    }
+                }
+                
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                System.err.println("Error updating user roles: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean hasRole(int userId, String roleCode) {
+            String query = "SELECT COUNT(*) FROM user_roles ur " +
+                          "JOIN roles r ON ur.role_id = r.role_id " +
+                          "WHERE ur.user_id = ? AND r.role_code = ? AND r.is_active = 1";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, userId);
+                stmt.setString(2, roleCode);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            } catch (SQLException e) {
+                System.err.println("Error checking user role: " + e.getMessage());
+            }
+            return false;
+        }
+        
+        public static List<String> getUserRoleNames(int userId) {
+            List<String> roleNames = new ArrayList<>();
+            String query = "SELECT r.role_name FROM user_roles ur " +
+                          "JOIN roles r ON ur.role_id = r.role_id " +
+                          "WHERE ur.user_id = ? AND r.is_active = 1";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, userId);
+                ResultSet rs = stmt.executeQuery();
+                
+                while (rs.next()) {
+                    roleNames.add(rs.getString("role_name"));
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting user role names: " + e.getMessage());
+            }
+            return roleNames;
+        }
+        
+        public static List<String> getUserRoleCodes(int userId) {
+            List<String> roleCodes = new ArrayList<>();
+            String query = "SELECT r.role_code FROM user_roles ur " +
+                          "JOIN roles r ON ur.role_id = r.role_id " +
+                          "WHERE ur.user_id = ? AND r.is_active = 1";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, userId);
+                ResultSet rs = stmt.executeQuery();
+                
+                while (rs.next()) {
+                    roleCodes.add(rs.getString("role_code"));
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting user role codes: " + e.getMessage());
+            }
+            return roleCodes;
+        }
+    }
+    
     // User class for users table (unchanged)
     public static class User {
         private int userId;
@@ -14,29 +470,36 @@ public class Data {
         private String mname;
         private String lname;
         private String username;
-        private String password;
-        private String role;
+        private String password; // Changed to String for hashed passwords
         private String phone;
         private String email;
         private Date createdDate;
+        private Date lastLogin;
+        private boolean isActive;
+        
+        // For backward compatibility - stores primary role name
+        private String role;
+        private List<String> roles; // NEW: List of all role names
+        private List<String> roleCodes; // NEW: List of all role codes
         
         public User() {}
         
         public User(int userId, String fname, String mname, String lname, String username, String password, 
-                   String role, String phone, String email, Date createdDate) {
+                   String phone, String email, Date createdDate, Date lastLogin, boolean isActive) {
             this.userId = userId;
             this.fname = fname;
             this.mname = mname;
             this.lname = lname;
             this.username = username;
             this.password = password;
-            this.role = role;
             this.phone = phone;
             this.email = email;
             this.createdDate = createdDate;
+            this.lastLogin = lastLogin;
+            this.isActive = isActive;
         }
         
-        // Getters and Setters (unchanged)
+        // Getters and Setters
         public int getUserId() { return userId; }
         public void setUserId(int userId) { this.userId = userId; }
         
@@ -59,8 +522,20 @@ public class Data {
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
         
-        public String getRole() { return role; }
+        // For backward compatibility
+        public String getRole() { 
+            if (role == null && roles != null && !roles.isEmpty()) {
+                return roles.get(0); // Return first role as primary
+            }
+            return role; 
+        }
         public void setRole(String role) { this.role = role; }
+        
+        public List<String> getRoles() { return roles; }
+        public void setRoles(List<String> roles) { this.roles = roles; }
+        
+        public List<String> getRoleCodes() { return roleCodes; }
+        public void setRoleCodes(List<String> roleCodes) { this.roleCodes = roleCodes; }
         
         public String getPhone() { return phone; }
         public void setPhone(String phone) { this.phone = phone; }
@@ -71,35 +546,63 @@ public class Data {
         public Date getCreatedDate() { return createdDate; }
         public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
         
-        // Database Functions (unchanged)
+        public Date getLastLogin() { return lastLogin; }
+        public void setLastLogin(Date lastLogin) { this.lastLogin = lastLogin; }
+        
+        public boolean isActive() { return isActive; }
+        public void setActive(boolean active) { isActive = active; }
+        
+        // Database Functions (UPDATED)
         public static User authenticate(String username, String password) {
-            String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+            String query = "SELECT * FROM users WHERE username = ? AND password = ? AND is_active = 1";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
                 
                 stmt.setString(1, username);
-                stmt.setString(2, password);
+                stmt.setString(2, password); // In production, use password hashing
                 ResultSet rs = stmt.executeQuery();
                 
                 if (rs.next()) {
-                    return new User(
+                    User user = new User(
                         rs.getInt("user_id"),
                         rs.getString("fname"),
                         rs.getString("mname"),
                         rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("role"),
                         rs.getString("phone"),
                         rs.getString("email"),
-                        rs.getDate("created_date")
+                        rs.getDate("created_date"),
+                        rs.getDate("last_login"),
+                        rs.getBoolean("is_active")
                     );
+                    
+                    // Load user roles
+                    loadUserRoles(user);
+                    
+                    return user;
                 }
             } catch (SQLException e) {
                 System.err.println("Error authenticating user: " + e.getMessage());
             }
             return null;
+        }
+        
+        // Helper method to load user roles
+        private static void loadUserRoles(User user) {
+            if (user == null) return;
+            
+            List<String> roleNames = UserRole.getUserRoleNames(user.getUserId());
+            List<String> roleCodes = UserRole.getUserRoleCodes(user.getUserId());
+            
+            user.setRoles(roleNames);
+            user.setRoleCodes(roleCodes);
+            
+            // Set primary role for backward compatibility
+            if (!roleNames.isEmpty()) {
+                user.setRole(roleNames.get(0));
+            }
         }
         
         public static List<User> getAllUsers() {
@@ -118,11 +621,15 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("role"),
                         rs.getString("phone"),
                         rs.getString("email"),
-                        rs.getDate("created_date")
+                        rs.getDate("created_date"),
+                        rs.getDate("last_login"),
+                        rs.getBoolean("is_active")
                     );
+                    
+                    // Load user roles
+                    loadUserRoles(user);
                     users.add(user);
                 }
             } catch (SQLException e) {
@@ -132,23 +639,42 @@ public class Data {
         }
         
         public static boolean addUser(User user) {
-            String query = "INSERT INTO users (fname, mname, lname, username, password, role, phone, email, created_date) " +
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO users (fname, mname, lname, username, password, phone, email, " +
+                          "created_date, last_login, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                 PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
                 
                 stmt.setString(1, user.getFname());
                 stmt.setString(2, user.getMname());
                 stmt.setString(3, user.getLname());
                 stmt.setString(4, user.getUsername());
-                stmt.setString(5, user.getPassword());
-                stmt.setString(6, user.getRole());
-                stmt.setString(7, user.getPhone());
-                stmt.setString(8, user.getEmail());
-                stmt.setDate(9, user.getCreatedDate());
+                stmt.setString(5, user.getPassword()); // Should be hashed
+                stmt.setString(6, user.getPhone());
+                stmt.setString(7, user.getEmail());
+                stmt.setDate(8, user.getCreatedDate());
+                stmt.setDate(9, user.getLastLogin());
+                stmt.setBoolean(10, user.isActive());
                 
-                return stmt.executeUpdate() > 0;
+                int affectedRows = stmt.executeUpdate();
+                if (affectedRows > 0) {
+                    // Get the generated user ID
+                    try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            int userId = generatedKeys.getInt(1);
+                            
+                            // If role was specified in old way, assign default role
+                            if (user.getRole() != null && !user.getRole().isEmpty()) {
+                                Role role = Role.getRoleByCode(user.getRole());
+                                if (role != null) {
+                                    UserRole.assignRoleToUser(userId, role.getRoleId());
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                }
+                return false;
             } catch (SQLException e) {
                 System.err.println("Error adding user: " + e.getMessage());
                 return false;
@@ -157,7 +683,7 @@ public class Data {
         
         public static boolean updateUser(User user) {
             String query = "UPDATE users SET fname = ?, mname = ?, lname = ?, username = ?, password = ?, " +
-                          "role = ?, phone = ?, email = ? WHERE user_id = ?";
+                          "phone = ?, email = ?, last_login = ?, is_active = ? WHERE user_id = ?";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -167,10 +693,11 @@ public class Data {
                 stmt.setString(3, user.getLname());
                 stmt.setString(4, user.getUsername());
                 stmt.setString(5, user.getPassword());
-                stmt.setString(6, user.getRole());
-                stmt.setString(7, user.getPhone());
-                stmt.setString(8, user.getEmail());
-                stmt.setInt(9, user.getUserId());
+                stmt.setString(6, user.getPhone());
+                stmt.setString(7, user.getEmail());
+                stmt.setDate(8, user.getLastLogin());
+                stmt.setBoolean(9, user.isActive());
+                stmt.setInt(10, user.getUserId());
                 
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -189,18 +716,23 @@ public class Data {
                 ResultSet rs = stmt.executeQuery();
                 
                 if (rs.next()) {
-                    return new User(
+                    User user = new User(
                         rs.getInt("user_id"),
                         rs.getString("fname"),
                         rs.getString("mname"),
                         rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("role"),
                         rs.getString("phone"),
                         rs.getString("email"),
-                        rs.getDate("created_date")
+                        rs.getDate("created_date"),
+                        rs.getDate("last_login"),
+                        rs.getBoolean("is_active")
                     );
+                    
+                    // Load user roles
+                    loadUserRoles(user);
+                    return user;
                 }
             } catch (SQLException e) {
                 System.err.println("Error getting user: " + e.getMessage());
@@ -209,7 +741,7 @@ public class Data {
         }
         
         public static int getTotalUsers() {
-            String query = "SELECT COUNT(*) as total FROM users";
+            String query = "SELECT COUNT(*) as total FROM users WHERE is_active = 1";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query);
@@ -224,14 +756,19 @@ public class Data {
             return 0;
         }
         
-        public static List<User> getUsersByRole(String role) {
+        // Updated to use roles system
+        public static List<User> getUsersByRole(String roleName) {
             List<User> users = new ArrayList<>();
-            String query = "SELECT * FROM users WHERE role = ? ORDER BY lname, fname";
+            String query = "SELECT u.* FROM users u " +
+                          "JOIN user_roles ur ON u.user_id = ur.user_id " +
+                          "JOIN roles r ON ur.role_id = r.role_id " +
+                          "WHERE r.role_name = ? AND u.is_active = 1 AND r.is_active = 1 " +
+                          "ORDER BY u.lname, u.fname";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
                 
-                stmt.setString(1, role);
+                stmt.setString(1, roleName);
                 ResultSet rs = stmt.executeQuery();
                 
                 while (rs.next()) {
@@ -242,11 +779,15 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("role"),
                         rs.getString("phone"),
                         rs.getString("email"),
-                        rs.getDate("created_date")
+                        rs.getDate("created_date"),
+                        rs.getDate("last_login"),
+                        rs.getBoolean("is_active")
                     );
+                    
+                    // Load user roles
+                    loadUserRoles(user);
                     users.add(user);
                 }
             } catch (SQLException e) {
@@ -257,8 +798,9 @@ public class Data {
         
         public static List<User> searchUsers(String searchTerm) {
             List<User> users = new ArrayList<>();
-            String query = "SELECT * FROM users WHERE fname LIKE ? OR mname LIKE ? OR lname LIKE ? " +
-                          "OR username LIKE ? OR email LIKE ? OR phone LIKE ? ORDER BY lname, fname";
+            String query = "SELECT * FROM users WHERE (fname LIKE ? OR mname LIKE ? OR lname LIKE ? " +
+                          "OR username LIKE ? OR email LIKE ? OR phone LIKE ?) AND is_active = 1 " +
+                          "ORDER BY lname, fname";
             
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -280,11 +822,15 @@ public class Data {
                         rs.getString("lname"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("role"),
                         rs.getString("phone"),
                         rs.getString("email"),
-                        rs.getDate("created_date")
+                        rs.getDate("created_date"),
+                        rs.getDate("last_login"),
+                        rs.getBoolean("is_active")
                     );
+                    
+                    // Load user roles
+                    loadUserRoles(user);
                     users.add(user);
                 }
             } catch (SQLException e) {
@@ -292,73 +838,229 @@ public class Data {
             }
             return users;
         }
+        
+        public static boolean updateLastLogin(int userId) {
+            String query = "UPDATE users SET last_login = ? WHERE user_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setDate(1, new Date(System.currentTimeMillis()));
+                stmt.setInt(2, userId);
+                
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error updating last login: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean deactivateUser(int userId) {
+            String query = "UPDATE users SET is_active = 0 WHERE user_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, userId);
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error deactivating user: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean activateUser(int userId) {
+            String query = "UPDATE users SET is_active = 1 WHERE user_id = ?";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setInt(1, userId);
+                return stmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                System.err.println("Error activating user: " + e.getMessage());
+                return false;
+            }
+        }
+        
+        public static boolean checkUsernameExists(String username, Integer excludeUserId) {
+            String query = "SELECT COUNT(*) FROM users WHERE username = ?";
+            if (excludeUserId != null) {
+                query += " AND user_id != ?";
+            }
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, username);
+                if (excludeUserId != null) {
+                    stmt.setInt(2, excludeUserId);
+                }
+                
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            } catch (SQLException e) {
+                System.err.println("Error checking username: " + e.getMessage());
+            }
+            return false;
+        }
+        
+        public static boolean checkEmailExists(String email, Integer excludeUserId) {
+            String query = "SELECT COUNT(*) FROM users WHERE email = ?";
+            if (excludeUserId != null) {
+                query += " AND user_id != ?";
+            }
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+                
+                stmt.setString(1, email);
+                if (excludeUserId != null) {
+                    stmt.setInt(2, excludeUserId);
+                }
+                
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            } catch (SQLException e) {
+                System.err.println("Error checking email: " + e.getMessage());
+            }
+            return false;
+        }
     }
     
-    // Address class for addresses table (NEW)
+    // Address class for addresses table (UPDATED with barangay and address_line)
     public static class Address {
         private int addressId;
         private int citizenId;
         private String streetAddress;
+        private String barangay; // NEW FIELD
+        private String addressLine; // NEW FIELD
         private String city;
         private String stateProvince;
         private String zipPostalCode;
         private String country;
-        
+
         public Address() {}
-        
-        public Address(int addressId, int citizenId, String streetAddress, String city, 
-                      String stateProvince, String zipPostalCode, String country) {
+
+        public Address(int addressId, int citizenId, String streetAddress, String barangay, 
+                      String addressLine, String city, String stateProvince, 
+                      String zipPostalCode, String country) {
             this.addressId = addressId;
             this.citizenId = citizenId;
             this.streetAddress = streetAddress;
+            this.barangay = barangay;
+            this.addressLine = addressLine;
             this.city = city;
             this.stateProvince = stateProvince;
             this.zipPostalCode = zipPostalCode;
             this.country = country;
         }
-        
+
         // Getters and Setters
         public int getAddressId() { return addressId; }
         public void setAddressId(int addressId) { this.addressId = addressId; }
-        
+
         public int getCitizenId() { return citizenId; }
         public void setCitizenId(int citizenId) { this.citizenId = citizenId; }
-        
+
         public String getStreetAddress() { return streetAddress; }
         public void setStreetAddress(String streetAddress) { this.streetAddress = streetAddress; }
-        
+
+        public String getBarangay() { return barangay; } // NEW GETTER
+        public void setBarangay(String barangay) { this.barangay = barangay; } // NEW SETTER
+
+        public String getAddressLine() { return addressLine; } // NEW GETTER
+        public void setAddressLine(String addressLine) { this.addressLine = addressLine; } // NEW SETTER
+
         public String getCity() { return city; }
         public void setCity(String city) { this.city = city; }
-        
+
         public String getStateProvince() { return stateProvince; }
         public void setStateProvince(String stateProvince) { this.stateProvince = stateProvince; }
-        
+
         public String getZipPostalCode() { return zipPostalCode; }
         public void setZipPostalCode(String zipPostalCode) { this.zipPostalCode = zipPostalCode; }
-        
+
         public String getCountry() { return country; }
         public void setCountry(String country) { this.country = country; }
-        
+
         public String getFullAddress() {
-            return String.format("%s, %s, %s %s, %s", 
-                streetAddress, city, stateProvince, zipPostalCode, country);
+            StringBuilder address = new StringBuilder();
+
+            if (streetAddress != null && !streetAddress.isEmpty()) {
+                address.append(streetAddress);
+            }
+
+            if (addressLine != null && !addressLine.isEmpty()) {
+                if (address.length() > 0) address.append(", ");
+                address.append(addressLine);
+            }
+
+            if (barangay != null && !barangay.isEmpty()) {
+                if (address.length() > 0) address.append(", ");
+                address.append("Brgy. ").append(barangay);
+            }
+
+            if (city != null && !city.isEmpty()) {
+                if (address.length() > 0) address.append(", ");
+                address.append(city);
+            }
+
+            if (stateProvince != null && !stateProvince.isEmpty()) {
+                if (address.length() > 0) address.append(", ");
+                address.append(stateProvince);
+            }
+
+            if (zipPostalCode != null && !zipPostalCode.isEmpty()) {
+                if (address.length() > 0) address.append(" ");
+                address.append(zipPostalCode);
+            }
+
+            if (country != null && !country.isEmpty()) {
+                if (address.length() > 0) address.append(", ");
+                address.append(country);
+            }
+
+            return address.toString();
         }
-        
-        // Database Functions
+
+        public String getConciseAddress() {
+            // Returns a shorter version of the address
+            StringBuilder address = new StringBuilder();
+
+            if (barangay != null && !barangay.isEmpty()) {
+                address.append("Brgy. ").append(barangay);
+            }
+
+            if (city != null && !city.isEmpty()) {
+                if (address.length() > 0) address.append(", ");
+                address.append(city);
+            }
+
+            return address.toString();
+        }
+
+        // Database Functions (UPDATED)
         public static Address getAddressByCitizenId(int citizenId) {
             String query = "SELECT * FROM addresses WHERE citizen_id = ?";
-            
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, citizenId);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 if (rs.next()) {
                     return new Address(
                         rs.getInt("address_id"),
                         rs.getInt("citizen_id"),
                         rs.getString("street_address"),
+                        rs.getString("barangay"), // NEW FIELD
+                        rs.getString("address_line"), // NEW FIELD
                         rs.getString("city"),
                         rs.getString("state_province"),
                         rs.getString("zip_postal_code"),
@@ -370,21 +1072,23 @@ public class Data {
             }
             return null;
         }
-        
+
         public static Address getAddressById(int addressId) {
             String query = "SELECT * FROM addresses WHERE address_id = ?";
-            
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, addressId);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 if (rs.next()) {
                     return new Address(
                         rs.getInt("address_id"),
                         rs.getInt("citizen_id"),
                         rs.getString("street_address"),
+                        rs.getString("barangay"), // NEW FIELD
+                        rs.getString("address_line"), // NEW FIELD
                         rs.getString("city"),
                         rs.getString("state_province"),
                         rs.getString("zip_postal_code"),
@@ -396,76 +1100,83 @@ public class Data {
             }
             return null;
         }
-        
+
         public static boolean addAddress(Address address) {
-            String query = "INSERT INTO addresses (citizen_id, street_address, city, state_province, zip_postal_code, country) " +
-                          "VALUES (?, ?, ?, ?, ?, ?)";
-            
+            String query = "INSERT INTO addresses (citizen_id, street_address, barangay, address_line, " +
+                          "city, state_province, zip_postal_code, country) " +
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, address.getCitizenId());
                 stmt.setString(2, address.getStreetAddress());
-                stmt.setString(3, address.getCity());
-                stmt.setString(4, address.getStateProvince());
-                stmt.setString(5, address.getZipPostalCode());
-                stmt.setString(6, address.getCountry());
-                
+                stmt.setString(3, address.getBarangay()); // NEW FIELD
+                stmt.setString(4, address.getAddressLine()); // NEW FIELD
+                stmt.setString(5, address.getCity());
+                stmt.setString(6, address.getStateProvince());
+                stmt.setString(7, address.getZipPostalCode());
+                stmt.setString(8, address.getCountry());
+
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
                 System.err.println("Error adding address: " + e.getMessage());
                 return false;
             }
         }
-        
+
         public static boolean updateAddress(Address address) {
-            String query = "UPDATE addresses SET street_address = ?, city = ?, state_province = ?, " +
-                          "zip_postal_code = ?, country = ? WHERE address_id = ?";
-            
+            String query = "UPDATE addresses SET street_address = ?, barangay = ?, address_line = ?, " +
+                          "city = ?, state_province = ?, zip_postal_code = ?, country = ? WHERE address_id = ?";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setString(1, address.getStreetAddress());
-                stmt.setString(2, address.getCity());
-                stmt.setString(3, address.getStateProvince());
-                stmt.setString(4, address.getZipPostalCode());
-                stmt.setString(5, address.getCountry());
-                stmt.setInt(6, address.getAddressId());
-                
+                stmt.setString(2, address.getBarangay()); // NEW FIELD
+                stmt.setString(3, address.getAddressLine()); // NEW FIELD
+                stmt.setString(4, address.getCity());
+                stmt.setString(5, address.getStateProvince());
+                stmt.setString(6, address.getZipPostalCode());
+                stmt.setString(7, address.getCountry());
+                stmt.setInt(8, address.getAddressId());
+
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
                 System.err.println("Error updating address: " + e.getMessage());
                 return false;
             }
         }
-        
+
         public static boolean updateAddressByCitizenId(int citizenId, Address address) {
-            String query = "UPDATE addresses SET street_address = ?, city = ?, state_province = ?, " +
-                          "zip_postal_code = ?, country = ? WHERE citizen_id = ?";
-            
+            String query = "UPDATE addresses SET street_address = ?, barangay = ?, address_line = ?, " +
+                          "city = ?, state_province = ?, zip_postal_code = ?, country = ? WHERE citizen_id = ?";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setString(1, address.getStreetAddress());
-                stmt.setString(2, address.getCity());
-                stmt.setString(3, address.getStateProvince());
-                stmt.setString(4, address.getZipPostalCode());
-                stmt.setString(5, address.getCountry());
-                stmt.setInt(6, citizenId);
-                
+                stmt.setString(2, address.getBarangay()); // NEW FIELD
+                stmt.setString(3, address.getAddressLine()); // NEW FIELD
+                stmt.setString(4, address.getCity());
+                stmt.setString(5, address.getStateProvince());
+                stmt.setString(6, address.getZipPostalCode());
+                stmt.setString(7, address.getCountry());
+                stmt.setInt(8, citizenId);
+
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
                 System.err.println("Error updating address by citizen ID: " + e.getMessage());
                 return false;
             }
         }
-        
+
         public static boolean deleteAddress(int addressId) {
             String query = "DELETE FROM addresses WHERE address_id = ?";
-            
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, addressId);
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
@@ -473,19 +1184,81 @@ public class Data {
                 return false;
             }
         }
-        
+
         public static boolean deleteAddressByCitizenId(int citizenId) {
             String query = "DELETE FROM addresses WHERE citizen_id = ?";
-            
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, citizenId);
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
                 System.err.println("Error deleting address by citizen ID: " + e.getMessage());
                 return false;
             }
+        }
+
+        // NEW: Search addresses by barangay
+        public static List<Address> getAddressesByBarangay(String barangay) {
+            List<Address> addresses = new ArrayList<>();
+            String query = "SELECT * FROM addresses WHERE barangay LIKE ? ORDER BY city, street_address";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setString(1, "%" + barangay + "%");
+                ResultSet rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    Address address = new Address(
+                        rs.getInt("address_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getString("street_address"),
+                        rs.getString("barangay"),
+                        rs.getString("address_line"),
+                        rs.getString("city"),
+                        rs.getString("state_province"),
+                        rs.getString("zip_postal_code"),
+                        rs.getString("country")
+                    );
+                    addresses.add(address);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting addresses by barangay: " + e.getMessage());
+            }
+            return addresses;
+        }
+
+        // NEW: Search addresses by city
+        public static List<Address> getAddressesByCity(String city) {
+            List<Address> addresses = new ArrayList<>();
+            String query = "SELECT * FROM addresses WHERE city LIKE ? ORDER BY barangay, street_address";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setString(1, "%" + city + "%");
+                ResultSet rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    Address address = new Address(
+                        rs.getInt("address_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getString("street_address"),
+                        rs.getString("barangay"),
+                        rs.getString("address_line"),
+                        rs.getString("city"),
+                        rs.getString("state_province"),
+                        rs.getString("zip_postal_code"),
+                        rs.getString("country")
+                    );
+                    addresses.add(address);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting addresses by city: " + e.getMessage());
+            }
+            return addresses;
         }
     }
     
@@ -680,12 +1453,16 @@ public class Data {
         }
         
         public static boolean addCitizen(Citizen citizen) {
+            return addCitizenAndGetId(citizen) > 0;
+        }
+
+        public static int addCitizenAndGetId(Citizen citizen) {
             String query = "INSERT INTO citizens (user_id, fname, mname, lname, national_id, birth_date, gender, phone, email, application_date) " +
-                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // UPDATED with gender
-            
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+                 PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+
                 if (citizen.getUserId() != null) {
                     stmt.setInt(1, citizen.getUserId());
                 } else {
@@ -696,18 +1473,26 @@ public class Data {
                 stmt.setString(4, citizen.getLname());
                 stmt.setString(5, citizen.getNationalId());
                 stmt.setDate(6, citizen.getBirthDate());
-                stmt.setString(7, citizen.getGender()); // NEW FIELD
+                stmt.setString(7, citizen.getGender());
                 stmt.setString(8, citizen.getPhone());
                 stmt.setString(9, citizen.getEmail());
                 stmt.setDate(10, citizen.getApplicationDate());
-                
-                return stmt.executeUpdate() > 0;
+
+                int affectedRows = stmt.executeUpdate();
+                if (affectedRows > 0) {
+                    try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            return generatedKeys.getInt(1);
+                        }
+                    }
+                }
+                return -1;
             } catch (SQLException e) {
                 System.err.println("Error adding citizen: " + e.getMessage());
-                return false;
+                return -1;
             }
         }
-        
+
         public static boolean updateCitizen(Citizen citizen) {
             String query = "UPDATE citizens SET user_id = ?, fname = ?, mname = ?, lname = ?, national_id = ?, " +
                           "birth_date = ?, gender = ?, phone = ?, email = ?, application_date = ? WHERE citizen_id = ?"; // UPDATED with gender
@@ -845,64 +1630,88 @@ public class Data {
     
     // IDStatus class for id_status table (UNCHANGED)
     public static class IDStatus {
-        // ... (all IDStatus code remains exactly the same as in the original file)
-        // No changes needed for this class
         private int statusId;
         private String transactionId;
         private int citizenId;
-        private String status;
+        private int statusNameId; // CHANGED: from status to statusNameId
+        private String status; // ADDED: For backward compatibility
         private Date updateDate;
         private String notes;
-        
+
+        // Reference to status_names table
+        private StatusName statusName; // NEW: Reference to status details
+
         public IDStatus() {}
-        
-        public IDStatus(int statusId, String transactionId, int citizenId, String status, Date updateDate, String notes) {
+
+        public IDStatus(int statusId, String transactionId, int citizenId, int statusNameId, 
+                        Date updateDate, String notes) {
             this.statusId = statusId;
             this.transactionId = transactionId;
             this.citizenId = citizenId;
-            this.status = status;
+            this.statusNameId = statusNameId;
             this.updateDate = updateDate;
             this.notes = notes;
         }
-        
+
         // Getters and Setters
         public int getStatusId() { return statusId; }
         public void setStatusId(int statusId) { this.statusId = statusId; }
-        
+
         public String getTransactionId() { return transactionId; }
         public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
-        
+
         public int getCitizenId() { return citizenId; }
         public void setCitizenId(int citizenId) { this.citizenId = citizenId; }
-        
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-        
+
+        public int getStatusNameId() { return statusNameId; }
+        public void setStatusNameId(int statusNameId) { this.statusNameId = statusNameId; }
+
+        // For backward compatibility
+        public String getStatus() { 
+            if (statusName != null) {
+                return statusName.getStatusName();
+            }
+            return status;
+        }
+
+        public void setStatus(String status) { 
+            this.status = status;
+        }
+
         public Date getUpdateDate() { return updateDate; }
         public void setUpdateDate(Date updateDate) { this.updateDate = updateDate; }
-        
+
         public String getNotes() { return notes; }
         public void setNotes(String notes) { this.notes = notes; }
-        
-        // Database Functions (unchanged)
+
+        public StatusName getStatusName() { return statusName; } // NEW
+        public void setStatusName(StatusName statusName) { this.statusName = statusName; } // NEW
+
+        // Database Functions (UPDATED)
         public static IDStatus getStatusByCitizenId(int citizenId) {
-            String query = "SELECT * FROM id_status WHERE citizen_id = ?";
-            
+            String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
+                          "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                          "WHERE ist.citizen_id = ?";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, citizenId);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 if (rs.next()) {
-                    return new IDStatus(
+                    IDStatus idStatus = new IDStatus(
                         rs.getInt("status_id"),
-                        rs.getString("transaction_id"),
+                        rs.getString("transaction_id"),  // This should get the transaction_id
                         rs.getInt("citizen_id"),
-                        rs.getString("status"),
+                        rs.getInt("status_name_id"),
                         rs.getDate("update_date"),
                         rs.getString("notes")
                     );
+
+                    // Set status from joined table
+                    idStatus.setStatus(rs.getString("status_name"));
+                    return idStatus;
                 }
             } catch (SQLException e) {
                 System.err.println("Error getting status by citizen ID: " + e.getMessage());
@@ -924,8 +1733,8 @@ public class Data {
             if (rawTransactionId.startsWith("TXN")) {
                 try {
                     String numbers = rawTransactionId.replace("TXN", "").trim();
-                    // Pad with zeros to get 28 digits total
-                    String padded = String.format("%028d", Long.parseLong(numbers));
+                    // Pad with zeros to get 26 digits total
+                    String padded = String.format("%026d", Long.parseLong(numbers));
 
                     // Format: 1234-5678-9012-3456-7890-1234-56
                     return padded.replaceFirst("(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{2})", 
@@ -937,36 +1746,42 @@ public class Data {
 
             // For any other format, try to extract numbers and format
             String numbersOnly = rawTransactionId.replaceAll("[^0-9]", "");
-            if (numbersOnly.length() >= 28) {
-                String padded = numbersOnly.substring(0, 28);
+            if (numbersOnly.length() >= 26) {
+                String padded = numbersOnly.substring(0, 26);
                 return padded.replaceFirst("(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{2})", 
                     "$1-$2-$3-$4-$5-$6-$7");
             }
 
             // Pad with zeros if too short
-            String padded = String.format("%-28s", numbersOnly).replace(' ', '0');
+            String padded = String.format("%-26s", numbersOnly).replace(' ', '0');
             return padded.replaceFirst("(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{4})(\\d{2})", 
                 "$1-$2-$3-$4-$5-$6-$7");
         }
         
         public static IDStatus getStatusByTransactionId(String transactionId) {
-            String query = "SELECT * FROM id_status WHERE transaction_id = ?";
-            
+            String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
+                          "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                          "WHERE ist.transaction_id = ?";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setString(1, transactionId);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 if (rs.next()) {
-                    return new IDStatus(
+                    IDStatus idStatus = new IDStatus(
                         rs.getInt("status_id"),
                         rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("status"),
+                        rs.getInt("status_name_id"),
                         rs.getDate("update_date"),
                         rs.getString("notes")
                     );
+
+                    // Set status from joined table
+                    idStatus.setStatus(rs.getString("status_name"));
+                    return idStatus;
                 }
             } catch (SQLException e) {
                 System.err.println("Error getting status by transaction ID: " + e.getMessage());
@@ -974,21 +1789,54 @@ public class Data {
             return null;
         }
         
+        public static java.util.List<IDStatus> getAllStatuses() {
+            java.util.List<IDStatus> statuses = new java.util.ArrayList<>();
+            String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
+                          "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                          "LIMIT 10";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    IDStatus status = new IDStatus(
+                        rs.getInt("status_id"),
+                        rs.getString("transaction_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getInt("status_name_id"),
+                        rs.getDate("update_date"),
+                        rs.getString("notes")
+                    );
+
+                    // Set status from joined table
+                    status.setStatus(rs.getString("status_name"));
+                    statuses.add(status);
+                }
+
+            } catch (SQLException e) {
+                System.err.println("Error getting all statuses: " + e.getMessage());
+            }
+            return statuses;
+        }
+
         public static IDStatus getStatusById(int statusId) {
-            String query = "SELECT * FROM id_status WHERE status_id = ?";
-            
+            String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
+                          "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                          "WHERE ist.status_id = ?";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, statusId);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 if (rs.next()) {
                     return new IDStatus(
                         rs.getInt("status_id"),
                         rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("status"),
+                        rs.getInt("status_name_id"),
                         rs.getDate("update_date"),
                         rs.getString("notes")
                     );
@@ -1001,21 +1849,26 @@ public class Data {
         
         public static List<IDStatus> getAllStatus() {
             List<IDStatus> statuses = new ArrayList<>();
-            String query = "SELECT * FROM id_status ORDER BY update_date DESC";
-            
+            String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
+                          "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                          "ORDER BY ist.update_date DESC";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query);
                  ResultSet rs = stmt.executeQuery()) {
-                
+
                 while (rs.next()) {
                     IDStatus idStatus = new IDStatus(
                         rs.getInt("status_id"),
                         rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("status"),
+                        rs.getInt("status_name_id"),
                         rs.getDate("update_date"),
                         rs.getString("notes")
                     );
+
+                    // Set status from joined table
+                    idStatus.setStatus(rs.getString("status_name"));
                     statuses.add(idStatus);
                 }
             } catch (SQLException e) {
@@ -1023,26 +1876,31 @@ public class Data {
             }
             return statuses;
         }
-        
-        public static List<IDStatus> getStatusByStatus(String status) {
+
+        public static List<IDStatus> getStatusByStatus(String statusName) {
             List<IDStatus> statuses = new ArrayList<>();
-            String query = "SELECT * FROM id_status WHERE status = ? ORDER BY update_date DESC";
-            
+            String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
+                          "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                          "WHERE sn.status_name = ? ORDER BY ist.update_date DESC";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
-                stmt.setString(1, status);
+
+                stmt.setString(1, statusName);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 while (rs.next()) {
                     IDStatus idStatus = new IDStatus(
                         rs.getInt("status_id"),
                         rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("status"),
+                        rs.getInt("status_name_id"),
                         rs.getDate("update_date"),
                         rs.getString("notes")
                     );
+
+                    // Set status from joined table
+                    idStatus.setStatus(rs.getString("status_name"));
                     statuses.add(idStatus);
                 }
             } catch (SQLException e) {
@@ -1051,19 +1909,51 @@ public class Data {
             return statuses;
         }
         
-        public static boolean addStatus(IDStatus idStatus) {
-            String query = "INSERT INTO id_status (transaction_id, citizen_id, status, update_date, notes) " +
-                          "VALUES (?, ?, ?, ?, ?)";
-            
+        public static List<IDStatus> getStatusHistoryByCitizenId(int citizenId) {
+            List<IDStatus> statuses = new ArrayList<>();
+            String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
+                          "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                          "WHERE ist.citizen_id = ? ORDER BY ist.update_date ASC";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
+                stmt.setInt(1, citizenId);
+                ResultSet rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    IDStatus idStatus = new IDStatus(
+                        rs.getInt("status_id"),
+                        rs.getString("transaction_id"),
+                        rs.getInt("citizen_id"),
+                        rs.getInt("status_name_id"),
+                        rs.getDate("update_date"),
+                        rs.getString("notes")
+                    );
+
+                    // Set status from joined table
+                    idStatus.setStatus(rs.getString("status_name"));
+                    statuses.add(idStatus);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting status history by citizen ID: " + e.getMessage());
+            }
+            return statuses;
+        }
+        
+        public static boolean addStatus(IDStatus idStatus) {
+            String query = "INSERT INTO id_status (transaction_id, citizen_id, status_name_id, update_date, notes) " +
+                          "VALUES (?, ?, ?, ?, ?)";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
                 stmt.setString(1, idStatus.getTransactionId());
                 stmt.setInt(2, idStatus.getCitizenId());
-                stmt.setString(3, idStatus.getStatus());
+                stmt.setInt(3, idStatus.getStatusNameId());
                 stmt.setDate(4, idStatus.getUpdateDate());
                 stmt.setString(5, idStatus.getNotes());
-                
+
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
                 System.err.println("Error adding status: " + e.getMessage());
@@ -1145,6 +2035,147 @@ public class Data {
             // Format: 1234-5678-9012-3456-7890-1234-56
             return String.format("%04d-%04d-%04d-%04d-%04d-%04d-%02d", 
                 segment1, segment2, segment3, segment4, segment5, segment6, segment7);
+        }
+    }
+    
+    public static class StatusName {
+        private int statusNameId;
+        private String statusName;
+        private String statusCode;
+        private String description;
+        private int stepOrder;
+        private boolean isActive;
+
+        public StatusName() {}
+
+        public StatusName(int statusNameId, String statusName, String statusCode, 
+                         String description, int stepOrder, boolean isActive) {
+            this.statusNameId = statusNameId;
+            this.statusName = statusName;
+            this.statusCode = statusCode;
+            this.description = description;
+            this.stepOrder = stepOrder;
+            this.isActive = isActive;
+        }
+
+        // Getters and Setters
+        public int getStatusNameId() { return statusNameId; }
+        public void setStatusNameId(int statusNameId) { this.statusNameId = statusNameId; }
+
+        public String getStatusName() { return statusName; }
+        public void setStatusName(String statusName) { this.statusName = statusName; }
+
+        public String getStatusCode() { return statusCode; }
+        public void setStatusCode(String statusCode) { this.statusCode = statusCode; }
+
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+
+        public int getStepOrder() { return stepOrder; }
+        public void setStepOrder(int stepOrder) { this.stepOrder = stepOrder; }
+
+        public boolean isActive() { return isActive; }
+        public void setActive(boolean active) { isActive = active; }
+
+        // Database Functions
+        public static List<StatusName> getAllStatusNames() {
+            List<StatusName> statuses = new ArrayList<>();
+            String query = "SELECT * FROM status_names WHERE is_active = 1 ORDER BY step_order";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    StatusName status = new StatusName(
+                        rs.getInt("status_name_id"),
+                        rs.getString("status_name"),
+                        rs.getString("status_code"),
+                        rs.getString("description"),
+                        rs.getInt("step_order"),
+                        rs.getBoolean("is_active")
+                    );
+                    statuses.add(status);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting all status names: " + e.getMessage());
+            }
+            return statuses;
+        }
+
+        public static StatusName getStatusNameById(int statusNameId) {
+            String query = "SELECT * FROM status_names WHERE status_name_id = ?";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setInt(1, statusNameId);
+                ResultSet rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    return new StatusName(
+                        rs.getInt("status_name_id"),
+                        rs.getString("status_name"),
+                        rs.getString("status_code"),
+                        rs.getString("description"),
+                        rs.getInt("step_order"),
+                        rs.getBoolean("is_active")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting status name: " + e.getMessage());
+            }
+            return null;
+        }
+
+        public static StatusName getStatusNameByCode(String statusCode) {
+            String query = "SELECT * FROM status_names WHERE status_code = ?";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setString(1, statusCode);
+                ResultSet rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    return new StatusName(
+                        rs.getInt("status_name_id"),
+                        rs.getString("status_name"),
+                        rs.getString("status_code"),
+                        rs.getString("description"),
+                        rs.getInt("step_order"),
+                        rs.getBoolean("is_active")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting status name by code: " + e.getMessage());
+            }
+            return null;
+        }
+
+        public static StatusName getNextStatus(int currentStepOrder) {
+            String query = "SELECT * FROM status_names WHERE step_order > ? AND is_active = 1 ORDER BY step_order LIMIT 1";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setInt(1, currentStepOrder);
+                ResultSet rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    return new StatusName(
+                        rs.getInt("status_name_id"),
+                        rs.getString("status_name"),
+                        rs.getString("status_code"),
+                        rs.getString("description"),
+                        rs.getInt("step_order"),
+                        rs.getBoolean("is_active")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting next status: " + e.getMessage());
+            }
+            return null;
         }
     }
     
@@ -1714,78 +2745,99 @@ public class Data {
     
     // Document class for documents table (UNCHANGED)
     public static class Document {
-        // ... (all Document code remains exactly the same as in the original file)
-        // No changes needed for this class
         private int documentId;
         private int citizenId;
-        private String documentName;
+        private int formId; // CHANGED: from documentName to formId
+        private String documentName; // ADDED: For backward compatibility
         private String status;
         private String submitted;
         private String requiredBy;
         private String filePath;
         private Date uploadDate;
         
+        private DocForm docForm;
+        
         public Document() {}
         
-        public Document(int documentId, int citizenId, String documentName, String status,
-                       String submitted, String requiredBy, String filePath, Date uploadDate) {
-            this.documentId = documentId;
-            this.citizenId = citizenId;
-            this.documentName = documentName;
-            this.status = status;
-            this.submitted = submitted;
-            this.requiredBy = requiredBy;
-            this.filePath = filePath;
-            this.uploadDate = uploadDate;
-        }
+        public Document(int documentId, int citizenId, int formId, String status,
+                           String submitted, String requiredBy, String filePath, Date uploadDate) {
+                this.documentId = documentId;
+                this.citizenId = citizenId;
+                this.formId = formId;
+                this.status = status;
+                this.submitted = submitted;
+                this.requiredBy = requiredBy;
+                this.filePath = filePath;
+                this.uploadDate = uploadDate;
+            }
         
-        // Getters and Setters (unchanged)
+        // Getters and Setters
         public int getDocumentId() { return documentId; }
         public void setDocumentId(int documentId) { this.documentId = documentId; }
-        
+
         public int getCitizenId() { return citizenId; }
         public void setCitizenId(int citizenId) { this.citizenId = citizenId; }
-        
-        public String getDocumentName() { return documentName; }
-        public void setDocumentName(String documentName) { this.documentName = documentName; }
-        
+
+        public int getFormId() { return formId; }
+        public void setFormId(int formId) { this.formId = formId; }
+
+        // For backward compatibility
+        public String getDocumentName() { 
+            if (docForm != null) {
+                return docForm.getFormName();
+            }
+            return documentName;
+        }
+
+        public void setDocumentName(String documentName) { 
+            this.documentName = documentName;
+        }
+
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
-        
+
         public String getSubmitted() { return submitted; }
         public void setSubmitted(String submitted) { this.submitted = submitted; }
-        
+
         public String getRequiredBy() { return requiredBy; }
         public void setRequiredBy(String requiredBy) { this.requiredBy = requiredBy; }
-        
+
         public String getFilePath() { return filePath; }
         public void setFilePath(String filePath) { this.filePath = filePath; }
-        
+
         public Date getUploadDate() { return uploadDate; }
         public void setUploadDate(Date uploadDate) { this.uploadDate = uploadDate; }
-        
-        // Database Functions (unchanged)
+
+        public DocForm getDocForm() { return docForm; } // NEW
+        public void setDocForm(DocForm docForm) { this.docForm = docForm; } // NEW
+
+        // Database Functions (UPDATED)
         public static List<Document> getDocumentsByCitizenId(int citizenId) {
             List<Document> documents = new ArrayList<>();
-            String query = "SELECT * FROM documents WHERE citizen_id = ? ORDER BY required_by, document_name";
-            
+            String query = "SELECT d.*, df.form_name FROM documents d " +
+                          "LEFT JOIN doc_forms df ON d.form_id = df.form_id " +
+                          "WHERE d.citizen_id = ? ORDER BY d.required_by, df.form_name";
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, citizenId);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 while (rs.next()) {
                     Document document = new Document(
                         rs.getInt("document_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("document_name"),
+                        rs.getInt("form_id"),
                         rs.getString("status"),
                         rs.getString("submitted"),
                         rs.getString("required_by"),
                         rs.getString("file_path"),
                         rs.getDate("upload_date")
                     );
+
+                    // Set document name from joined table
+                    document.setDocumentName(rs.getString("form_name"));
                     documents.add(document);
                 }
             } catch (SQLException e) {
@@ -1807,7 +2859,7 @@ public class Data {
                     return new Document(
                         rs.getInt("document_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("document_name"),
+                        rs.getInt("form_id"),
                         rs.getString("status"),
                         rs.getString("submitted"),
                         rs.getString("required_by"),
@@ -1833,7 +2885,7 @@ public class Data {
                     Document document = new Document(
                         rs.getInt("document_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("document_name"),
+                        rs.getInt("form_id"),
                         rs.getString("status"),
                         rs.getString("submitted"),
                         rs.getString("required_by"),
@@ -1862,7 +2914,7 @@ public class Data {
                     Document document = new Document(
                         rs.getInt("document_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("document_name"),
+                        rs.getInt("form_id"),
                         rs.getString("status"),
                         rs.getString("submitted"),
                         rs.getString("required_by"),
@@ -1878,27 +2930,27 @@ public class Data {
         }
         
         public static boolean addDocument(Document document) {
-            String query = "INSERT INTO documents (citizen_id, document_name, status, submitted, required_by, file_path, upload_date) " +
+            String query = "INSERT INTO documents (citizen_id, form_id, status, submitted, required_by, file_path, upload_date) " +
                           "VALUES (?, ?, ?, ?, ?, ?, ?)";
-            
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setInt(1, document.getCitizenId());
-                stmt.setString(2, document.getDocumentName());
+                stmt.setInt(2, document.getFormId()); // Changed from document_name to form_id
                 stmt.setString(3, document.getStatus());
                 stmt.setString(4, document.getSubmitted());
                 stmt.setString(5, document.getRequiredBy());
                 stmt.setString(6, document.getFilePath());
                 stmt.setDate(7, document.getUploadDate());
-                
+
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
                 System.err.println("Error adding document: " + e.getMessage());
                 return false;
             }
         }
-        
+
         public static boolean updateDocument(Document document) {
             String query = "UPDATE documents SET citizen_id = ?, document_name = ?, status = ?, " +
                           "submitted = ?, required_by = ?, file_path = ?, upload_date = ? WHERE document_id = ?";
@@ -1990,7 +3042,7 @@ public class Data {
                     Document document = new Document(
                         rs.getInt("document_id"),
                         rs.getInt("citizen_id"),
-                        rs.getString("document_name"),
+                        rs.getInt("form_id"),
                         rs.getString("status"),
                         rs.getString("submitted"),
                         rs.getString("required_by"),
@@ -2003,6 +3055,122 @@ public class Data {
                 System.err.println("Error searching documents: " + e.getMessage());
             }
             return documents;
+        }
+    }
+    
+    public static class DocForm {
+        private int formId;
+        private String formName;
+        private String formCode;
+        private String description;
+        private boolean isRequired;
+        private String status;
+
+        public DocForm() {}
+
+        public DocForm(int formId, String formName, String formCode, String description, 
+                       boolean isRequired, String status) {
+            this.formId = formId;
+            this.formName = formName;
+            this.formCode = formCode;
+            this.description = description;
+            this.isRequired = isRequired;
+            this.status = status;
+        }
+
+        // Getters and Setters
+        public int getFormId() { return formId; }
+        public void setFormId(int formId) { this.formId = formId; }
+
+        public String getFormName() { return formName; }
+        public void setFormName(String formName) { this.formName = formName; }
+
+        public String getFormCode() { return formCode; }
+        public void setFormCode(String formCode) { this.formCode = formCode; }
+
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+
+        public boolean isRequired() { return isRequired; }
+        public void setRequired(boolean required) { isRequired = required; }
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+
+        // Database Functions
+        public static List<DocForm> getAllDocForms() {
+            List<DocForm> forms = new ArrayList<>();
+            String query = "SELECT * FROM doc_forms WHERE status = 'Active' ORDER BY form_name";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    DocForm form = new DocForm(
+                        rs.getInt("form_id"),
+                        rs.getString("form_name"),
+                        rs.getString("form_code"),
+                        rs.getString("description"),
+                        rs.getBoolean("is_required"),
+                        rs.getString("status")
+                    );
+                    forms.add(form);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting all doc forms: " + e.getMessage());
+            }
+            return forms;
+        }
+
+        public static DocForm getDocFormById(int formId) {
+            String query = "SELECT * FROM doc_forms WHERE form_id = ?";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setInt(1, formId);
+                ResultSet rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    return new DocForm(
+                        rs.getInt("form_id"),
+                        rs.getString("form_name"),
+                        rs.getString("form_code"),
+                        rs.getString("description"),
+                        rs.getBoolean("is_required"),
+                        rs.getString("status")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting doc form: " + e.getMessage());
+            }
+            return null;
+        }
+
+        public static DocForm getDocFormByCode(String formCode) {
+            String query = "SELECT * FROM doc_forms WHERE form_code = ?";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setString(1, formCode);
+                ResultSet rs = stmt.executeQuery();
+
+                if (rs.next()) {
+                    return new DocForm(
+                        rs.getInt("form_id"),
+                        rs.getString("form_name"),
+                        rs.getString("form_code"),
+                        rs.getString("description"),
+                        rs.getBoolean("is_required"),
+                        rs.getString("status")
+                    );
+                }
+            } catch (SQLException e) {
+                System.err.println("Error getting doc form by code: " + e.getMessage());
+            }
+            return null;
         }
     }
     

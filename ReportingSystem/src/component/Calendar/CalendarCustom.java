@@ -30,18 +30,27 @@ public class CalendarCustom extends javax.swing.JPanel {
         thisMonth();
         System.out.println("CalendarCustom created - PanelDate will be shown");
 
-        // Create PanelDate and set parent
-        PanelDate panelDate = new PanelDate(month, year);
-        panelDate.setParentCalendar(this);
-        panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_RIGHT);
-
-        showMonthYear();
+        // INITIALIZE COLLECTIONS FIRST
         bookedDates = new HashSet<>();
         availableDates = new HashSet<>();
-        holidayDates = new HashSet<>();
+        holidayDates = new HashSet<>();  // MUST initialize this before creating PanelDate
+
+        // Initialize holidays and load data
         initHolidays();
         loadBookedDates();
         updateAvailableDates();
+
+        // Create PanelDate and set parent
+        PanelDate panelDate = new PanelDate(month, year);
+        panelDate.setParentCalendar(this);
+
+        // Initialize the panel AFTER collections are initialized
+        panelDate.init();
+        initializePanelDateCells(panelDate);  // Pre-initialize cells
+
+        panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_RIGHT);
+
+        showMonthYear();
     }
     
     private void loadBookedDates() {
@@ -67,6 +76,10 @@ public class CalendarCustom extends javax.swing.JPanel {
     }
     
     public boolean isHolidayDate(Date date) {
+        if (holidayDates == null) {
+            return false;  // Return false if holidayDates is not initialized
+        }
+
         for (Date holiday : holidayDates) {
             if (isSameDay(holiday, date)) {
                 return true;
@@ -74,8 +87,12 @@ public class CalendarCustom extends javax.swing.JPanel {
         }
         return false;
     }
-    
+
     public boolean isBookedDate(Date date) {
+        if (bookedDates == null) {
+            return false;  // Return false if bookedDates is not initialized
+        }
+
         for (Date booked : bookedDates) {
             if (isSameDay(booked, date)) {
                 return true;
@@ -83,7 +100,7 @@ public class CalendarCustom extends javax.swing.JPanel {
         }
         return false;
     }
-    
+
     public void setListener(CalendarCustomListener listener) {
         this.listener = listener;
     }
@@ -367,11 +384,17 @@ public class CalendarCustom extends javax.swing.JPanel {
 
         // Create new PanelDate with parent reference
         PanelDate panelDate = createPanelDate();
+
+        // Initialize IMMEDIATELY before showing
+        panelDate.init();
+        initializePanelDateCells(panelDate);
+
+        // Show the fully initialized panel
         panelSlide1.show(panelDate, animateType);
 
         showMonthYear();
 
-        // Set selected date and highlight it - IMPORTANT: This will highlight in the new month
+        // Set selected date and highlight it
         setSelectedDate(date);
 
         // Notify listener if exists
@@ -379,7 +402,7 @@ public class CalendarCustom extends javax.swing.JPanel {
             listener.monthChanged(month, year);
         }
     }
-    
+
     private PanelDate createPanelDate() {
         PanelDate panelDate = new PanelDate(month, year);
         panelDate.setParentCalendar(this);
@@ -532,22 +555,20 @@ public class CalendarCustom extends javax.swing.JPanel {
         );
 
         panelSlide1.setBackground(new java.awt.Color(255, 255, 255));
-        panelSlide1.setPreferredSize(new java.awt.Dimension(500, 350));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
-            .addComponent(jLayeredPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, 244, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -559,12 +580,16 @@ public class CalendarCustom extends javax.swing.JPanel {
             month--;
         }
 
-        // Pre-initialize the new panel before showing it
+        // Create the panel
         PanelDate panelDate = createPanelDate();
+
+        // Initialize IMMEDIATELY (this will call init() and set dates)
+        panelDate.init();
 
         // Force initialization of all cells BEFORE showing the panel
         initializePanelDateCells(panelDate);
 
+        // Show the already-initialized panel
         panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_RIGHT);
 
         showMonthYear();
@@ -583,12 +608,16 @@ public class CalendarCustom extends javax.swing.JPanel {
             month++;
         }
 
-        // Pre-initialize the new panel before showing it
+        // Create the panel
         PanelDate panelDate = createPanelDate();
+
+        // Initialize IMMEDIATELY
+        panelDate.init();
 
         // Force initialization of all cells BEFORE showing the panel
         initializePanelDateCells(panelDate);
 
+        // Show the already-initialized panel
         panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_LEFT);
 
         showMonthYear();

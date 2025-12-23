@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 17, 2025 at 06:22 PM
+-- Generation Time: Dec 23, 2025 at 02:17 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -35,44 +35,6 @@ CREATE TABLE `activity_log` (
   `action_time` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `activity_log`
---
-
-INSERT INTO `activity_log` (`log_id`, `user_id`, `action`, `action_date`, `action_time`) VALUES
-(1, 1, 'Login', '2024-01-25', '10:30 AM'),
-(2, 3, 'Update Status', '2024-01-25', '11:00 AM'),
-(3, 2, 'Book Appointment', '2024-01-25', '11:15 AM'),
-(4, 4, 'Verify Document', '2024-01-26', '09:45 AM'),
-(5, 1, 'View Status', '2024-01-26', '02:30 PM'),
-(6, 3, 'Send Notification', '2024-01-26', '03:15 PM'),
-(7, 2, 'Update Profile', '2024-01-27', '10:00 AM'),
-(8, 5, 'Register Account', '2024-01-27', '11:30 AM'),
-(9, 6, 'Register', '2024-01-19', '09:00 AM'),
-(10, 7, 'Login', '2024-01-20', '10:30 AM'),
-(11, 3, 'Update Status', '2024-01-21', '11:15 AM'),
-(12, 4, 'Verify Document', '2024-01-22', '02:45 PM'),
-(459, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:27 PM'),
-(460, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:38 PM'),
-(461, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:39 PM'),
-(462, 1, 'Logged in successfully from Landing page', '2025-12-17', '11:52 PM'),
-(463, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:09 AM'),
-(464, 1, 'Updated personal details', '2025-12-18', '12:11 AM'),
-(465, 2, 'Logged in successfully from Landing page', '2025-12-18', '12:11 AM'),
-(466, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:13 AM'),
-(467, 2, 'Logged in successfully from Landing page', '2025-12-18', '12:14 AM'),
-(468, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:18 AM'),
-(469, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:19 AM'),
-(470, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:25 AM'),
-(471, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:55 AM'),
-(472, 1, 'Logged in from Login panel', '2025-12-18', '12:55 AM'),
-(473, 1, 'Logged in successfully from Landing page', '2025-12-18', '12:56 AM'),
-(474, 1, 'Logged in from Login panel', '2025-12-18', '12:56 AM'),
-(475, 1, 'Logged in successfully from Landing page', '2025-12-18', '01:09 AM'),
-(476, 1, 'Logged in from Login panel', '2025-12-18', '01:09 AM'),
-(477, 1, 'Logged in successfully from Landing page', '2025-12-18', '01:19 AM'),
-(478, 1, 'Logged in from Login panel', '2025-12-18', '01:19 AM');
-
 -- --------------------------------------------------------
 
 --
@@ -83,24 +45,13 @@ CREATE TABLE `addresses` (
   `address_id` int(11) NOT NULL,
   `citizen_id` int(11) DEFAULT NULL,
   `street_address` varchar(200) DEFAULT NULL,
+  `barangay` varchar(100) DEFAULT NULL,
+  `address_line` varchar(200) DEFAULT NULL,
   `city` varchar(100) DEFAULT NULL,
   `state_province` varchar(100) DEFAULT NULL,
   `zip_postal_code` varchar(20) DEFAULT NULL,
   `country` varchar(100) DEFAULT 'Philippines'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `addresses`
---
-
-INSERT INTO `addresses` (`address_id`, `citizen_id`, `street_address`, `city`, `state_province`, `zip_postal_code`, `country`) VALUES
-(1, 1, '123 Rizal Avenue', 'Manila', 'Metro Manila', '1000', 'Philippines'),
-(2, 2, '456 Commonwealth Avenue', 'Quezon City', 'Metro Manila', '1100', 'Philippines'),
-(3, 3, '789 Ayala Avenue', 'Makati', 'Metro Manila', '1200', 'Philippines'),
-(4, 4, '321 Osmeña Boulevard', 'Cebu City', 'Cebu', '6000', 'Philippines'),
-(5, 5, '654 Roxas Avenue', 'Davao City', 'Davao del Sur', '8000', 'Philippines'),
-(6, 6, '987 Ledesma Street', 'Iloilo City', 'Iloilo', '5000', 'Philippines'),
-(7, 7, '159 Session Road', 'Baguio City', 'Benguet', '2600', 'Philippines');
 
 -- --------------------------------------------------------
 
@@ -116,19 +67,6 @@ CREATE TABLE `appointments` (
   `status` varchar(20) DEFAULT NULL,
   `created_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `appointments`
---
-
-INSERT INTO `appointments` (`appointment_id`, `citizen_id`, `app_date`, `app_time`, `status`, `created_date`) VALUES
-(1, 2, '2024-01-30', '09:00 AM', 'Scheduled', '2024-01-25'),
-(2, 3, '2024-02-01', '10:30 AM', 'Scheduled', '2024-01-26'),
-(3, 1, '2024-01-28', '02:00 PM', 'Completed', '2024-01-20'),
-(4, 4, '2024-02-05', '11:00 AM', 'Pending', '2024-01-27'),
-(5, 5, '2024-02-10', '09:30 AM', 'Scheduled', '2024-01-28'),
-(6, 6, '2024-02-12', '11:00 AM', 'Pending', '2024-01-29'),
-(7, 7, '2024-02-08', '10:00 AM', 'Completed', '2024-01-27');
 
 -- --------------------------------------------------------
 
@@ -150,19 +88,6 @@ CREATE TABLE `citizens` (
   `application_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `citizens`
---
-
-INSERT INTO `citizens` (`citizen_id`, `user_id`, `fname`, `mname`, `lname`, `national_id`, `birth_date`, `gender`, `phone`, `email`, `application_date`) VALUES
-(1, 1, 'Juan', 'Santos', 'Dela Cruz', 'NID001', '2004-08-24', 'Male', '09123456789', 'juan.delacruz@gmail.com', '2024-01-15'),
-(2, 2, 'Maria', 'Gonzales', 'Santos', 'NID002', '1985-08-22', 'Female', '09234567890', 'maria.santos@gmail.com', '2024-01-16'),
-(3, 5, 'Pedro', 'Manuel', 'Reyes', NULL, '1978-11-30', 'Male', '09345678901', 'pedro.reyes@gmail.com', '2024-01-17'),
-(4, NULL, 'Ana', 'Marie', 'Lopez', NULL, '1995-02-14', 'Female', '09456789012', 'ana.lopez@gmail.com', '2024-01-18'),
-(5, 6, 'John', 'Paul', 'Smith', NULL, '1988-07-12', 'Male', '09567890123', 'john.smith@gmail.com', '2024-01-19'),
-(6, 7, 'Sarah', 'Jane', 'Tan', NULL, '1992-11-05', 'Female', '09678901234', 'sarah.tan@gmail.com', '2024-01-20'),
-(7, NULL, 'Michael', 'James', 'Lim', 'NID005', '1980-03-25', 'Male', '09789012345', 'michael.lim@gmail.com', '2024-01-21');
-
 -- --------------------------------------------------------
 
 --
@@ -172,7 +97,7 @@ INSERT INTO `citizens` (`citizen_id`, `user_id`, `fname`, `mname`, `lname`, `nat
 CREATE TABLE `documents` (
   `document_id` int(11) NOT NULL,
   `citizen_id` int(11) DEFAULT NULL,
-  `document_name` varchar(100) DEFAULT NULL,
+  `form_id` int(11) DEFAULT NULL,
   `status` varchar(50) DEFAULT NULL,
   `submitted` varchar(3) DEFAULT NULL,
   `required_by` varchar(50) DEFAULT NULL,
@@ -180,29 +105,36 @@ CREATE TABLE `documents` (
   `upload_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
 --
--- Dumping data for table `documents`
+-- Table structure for table `doc_forms`
 --
 
-INSERT INTO `documents` (`document_id`, `citizen_id`, `document_name`, `status`, `submitted`, `required_by`, `file_path`, `upload_date`) VALUES
-(1, 1, 'Birth Certificate', 'Verified', 'Yes', 'Philippine Statistics Authority', '/uploads/birth_cert_1.pdf', '2024-01-15'),
-(2, 1, 'Proof of Address', 'Pending', 'Yes', 'Local Government Unit', '/uploads/address_proof_1.pdf', '2024-01-16'),
-(3, 2, 'Birth Certificate', 'Verified', 'Yes', 'Philippine Statistics Authority', '/uploads/birth_cert_2.pdf', '2024-01-16'),
-(4, 2, 'Proof of Address', 'Verified', 'Yes', 'Local Government Unit', '/uploads/address_proof_2.pdf', '2024-01-17'),
-(5, 3, 'Birth Certificate', 'Missing', 'No', 'Philippine Statistics Authority', NULL, NULL),
-(6, 3, 'Proof of Address', 'Submitted', 'Yes', 'Local Government Unit', '/uploads/address_proof_3.pdf', '2024-01-17'),
-(7, 4, 'Birth Certificate', 'Submitted', 'Yes', 'Philippine Statistics Authority', '/uploads/birth_cert_4.pdf', '2024-01-18'),
-(8, 4, 'Proof of Address', 'Submitted', 'Yes', 'Local Government Unit', '/uploads/address_proof_4.pdf', '2024-01-18'),
-(9, 1, 'Marriage Certificate', 'Not Required', 'No', 'Philippine Statistics Authority', NULL, NULL),
-(10, 2, 'Valid ID', 'Verified', 'Yes', 'Government Office', '/uploads/valid_id_2.pdf', '2024-01-17'),
-(11, 3, 'Valid ID', 'Submitted', 'Yes', 'Government Office', '/uploads/valid_id_3.pdf', '2024-01-18'),
-(12, 4, 'Valid ID', 'Missing', 'No', 'Government Office', NULL, NULL),
-(13, 5, 'Birth Certificate', 'Submitted', 'Yes', 'Philippine Statistics Authority', '/uploads/birth_cert_5.pdf', '2024-01-19'),
-(14, 5, 'Proof of Address', 'Verified', 'Yes', 'Local Government Unit', '/uploads/address_proof_5.pdf', '2024-01-20'),
-(15, 6, 'Birth Certificate', 'Submitted', 'Yes', 'Philippine Statistics Authority', '/uploads/birth_cert_6.pdf', '2024-01-20'),
-(16, 6, 'Proof of Address', 'Pending', 'Yes', 'Local Government Unit', '/uploads/address_proof_6.pdf', '2024-01-21'),
-(17, 7, 'Birth Certificate', 'Verified', 'Yes', 'Philippine Statistics Authority', '/uploads/birth_cert_7.pdf', '2024-01-21'),
-(18, 7, 'Proof of Address', 'Verified', 'Yes', 'Local Government Unit', '/uploads/address_proof_7.pdf', '2024-01-22');
+CREATE TABLE `doc_forms` (
+  `form_id` int(11) NOT NULL,
+  `form_name` varchar(100) NOT NULL,
+  `form_code` varchar(20) NOT NULL,
+  `description` text DEFAULT NULL,
+  `is_required` tinyint(1) DEFAULT 1,
+  `status` varchar(20) DEFAULT 'Active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `doc_forms`
+--
+
+INSERT INTO `doc_forms` (`form_id`, `form_name`, `form_code`, `description`, `is_required`, `status`) VALUES
+(1, 'Birth Certificate', 'BC-001', 'PSA/NSO issued birth certificate', 1, 'Active'),
+(2, 'Marriage Certificate', 'MC-001', 'PSA/NSO issued marriage certificate (if married)', 0, 'Active'),
+(3, 'Valid ID', 'VID-001', 'Any government-issued valid ID (Passport, Driver\'s License, etc.)', 1, 'Active'),
+(4, 'Barangay Clearance', 'BCL-001', 'Issued by barangay of residence', 1, 'Active'),
+(5, 'Proof of Address', 'POA-001', 'Utility bill, lease agreement, or barangay certification', 1, 'Active'),
+(6, 'Passport-sized Photo', 'PSP-001', '2x2 recent passport-sized photo with white background', 1, 'Active'),
+(7, 'Certificate of Indigency', 'COI-001', 'For indigent applicants only', 0, 'Active'),
+(8, 'Senior Citizen ID', 'SCID-001', 'For senior citizen applicants', 0, 'Active'),
+(9, 'PWD ID', 'PWDID-001', 'For persons with disability applicants', 0, 'Active'),
+(10, 'Proof of Income', 'POI-001', 'Latest payslip, BIR form, or certificate of employment', 0, 'Active');
 
 -- --------------------------------------------------------
 
@@ -214,23 +146,10 @@ CREATE TABLE `id_status` (
   `status_id` int(11) NOT NULL,
   `transaction_id` varchar(50) DEFAULT NULL,
   `citizen_id` int(11) DEFAULT NULL,
-  `status` varchar(50) DEFAULT NULL,
+  `status_name_id` int(11) DEFAULT NULL,
   `update_date` date DEFAULT NULL,
   `notes` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `id_status`
---
-
-INSERT INTO `id_status` (`status_id`, `transaction_id`, `citizen_id`, `status`, `update_date`, `notes`) VALUES
-(1, '1234-5678-9012-3456-7890-1234-01', 1, 'Processing', '2024-01-20', 'Being processed at Manila office'),
-(2, '1234-5678-9012-3456-7890-1234-02', 2, 'Ready for Pickup', '2024-01-25', 'Ready at Quezon City office'),
-(3, '1234-5678-9012-3456-7890-1234-03', 3, 'Pending Documents', '2024-01-18', 'Waiting for birth certificate'),
-(4, '1234-5678-9012-3456-7890-1234-04', 4, 'Submitted', '2024-01-19', 'Application submitted online'),
-(5, '1234-5678-9012-3456-7890-1234-05', 5, 'Processing', '2024-01-20', 'New application received'),
-(6, '1234-5678-9012-3456-7890-1234-06', 6, 'Verification', '2024-01-21', 'Documents under verification'),
-(7, '1234-5678-9012-3456-7890-1234-07', 7, 'Ready', '2024-01-22', 'ID printed and ready');
 
 -- --------------------------------------------------------
 
@@ -248,22 +167,61 @@ CREATE TABLE `notifications` (
   `read_status` varchar(20) DEFAULT 'Unread'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
 --
--- Dumping data for table `notifications`
+-- Table structure for table `roles`
 --
 
-INSERT INTO `notifications` (`notification_id`, `citizen_id`, `notification_date`, `notification_time`, `message`, `type`, `read_status`) VALUES
-(1, 1, '2024-01-20', '10:30 AM', 'Your application is now being processed.', 'Status Update', 'Read'),
-(2, 2, '2024-01-25', '09:15 AM', 'Your PhilSys ID is ready for pickup at Quezon City Office.', 'ID Ready', 'Unread'),
-(3, 2, '2024-01-25', '02:00 PM', 'Your appointment is confirmed for January 30, 2024 at 9:00 AM.', 'Appointment', 'Read'),
-(4, 3, '2024-01-18', '11:00 AM', 'Please submit your birth certificate to complete your application.', 'Document Request', 'Unread'),
-(5, 4, '2024-01-19', '03:45 PM', 'Your application has been submitted successfully.', 'Confirmation', 'Read'),
-(6, 1, '2024-01-22', '01:20 PM', 'Your proof of address document is pending verification.', 'Document Status', 'Unread'),
-(7, 3, '2024-01-26', '10:00 AM', 'Your appointment is scheduled for February 1, 2024 at 10:30 AM.', 'Appointment', 'Read'),
-(8, 4, '2024-01-27', '04:30 PM', 'Please bring valid ID for your appointment on February 5.', 'Reminder', 'Unread'),
-(9, 5, '2024-01-28', '02:30 PM', 'Your appointment is scheduled for February 10, 2024.', 'Appointment', 'Unread'),
-(10, 6, '2024-01-29', '10:45 AM', 'Please verify your proof of address document.', 'Document Request', 'Unread'),
-(11, 7, '2024-01-27', '03:00 PM', 'Your PhilSys ID has been successfully printed.', 'Status Update', 'Read');
+CREATE TABLE `roles` (
+  `role_id` int(11) NOT NULL,
+  `role_name` varchar(50) NOT NULL,
+  `role_code` varchar(20) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_date` date DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `roles`
+--
+
+INSERT INTO `roles` (`role_id`, `role_name`, `role_code`, `description`, `created_date`, `is_active`) VALUES
+(1, 'Administrator', 'ADMIN', 'System administrator with full access', '2025-12-23', 1),
+(2, 'Staff', 'STAFF', 'System staff with limited administrative access', '2025-12-23', 1),
+(3, 'Citizen', 'CITIZEN', 'Regular citizen user', '2025-12-23', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `status_names`
+--
+
+CREATE TABLE `status_names` (
+  `status_name_id` int(11) NOT NULL,
+  `status_name` varchar(50) NOT NULL,
+  `status_code` varchar(20) NOT NULL,
+  `description` text DEFAULT NULL,
+  `step_order` int(11) DEFAULT 0,
+  `is_active` tinyint(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `status_names`
+--
+
+INSERT INTO `status_names` (`status_name_id`, `status_name`, `status_code`, `description`, `step_order`, `is_active`) VALUES
+(1, 'Submitted', 'STAT-001', 'Application has been submitted', 1, 1),
+(2, 'Processing', 'STAT-002', 'Application is being processed', 2, 1),
+(3, 'Document Verification', 'STAT-003', 'Documents are being verified', 3, 1),
+(4, 'Biometrics Appointment', 'STAT-004', 'Waiting for biometrics appointment', 4, 1),
+(5, 'Biometrics Completed', 'STAT-005', 'Biometrics data has been captured', 5, 1),
+(6, 'Background Check', 'STAT-006', 'Background investigation in progress', 6, 1),
+(7, 'Background Check Completed', 'STAT-007', 'Background check completed', 7, 1),
+(8, 'ID Card Production', 'STAT-008', 'ID card is being produced', 8, 1),
+(9, 'Ready for Pickup', 'STAT-009', 'ID card is ready for pickup', 9, 1),
+(10, 'Completed', 'STAT-010', 'ID card has been received', 10, 1),
+(11, 'Rejected', 'STAT-011', 'Application has been rejected', 0, 1);
 
 -- --------------------------------------------------------
 
@@ -277,25 +235,42 @@ CREATE TABLE `users` (
   `mname` varchar(50) DEFAULT NULL,
   `lname` varchar(50) DEFAULT NULL,
   `username` varchar(50) DEFAULT NULL,
-  `password` varchar(50) DEFAULT NULL,
-  `role` varchar(20) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
-  `created_date` date DEFAULT NULL
+  `created_date` date DEFAULT NULL,
+  `last_login` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `fname`, `mname`, `lname`, `username`, `password`, `role`, `phone`, `email`, `created_date`) VALUES
-(1, 'Juan', 'Santos', 'Dela Cruz', 'juan', 'password123', 'citizen', '09123456789', 'juan.delacruz@philsys.gov.ph', '2024-01-15'),
-(2, 'Maria', 'Gonzales', 'Santos', 'maria', 'password456', 'citizen', '09234567890', 'maria.santos@philsys.gov.ph', '2024-01-16'),
-(3, 'Admin', 'User', 'System', 'admin', 'admin123', 'admin', '0287654321', 'admin@philsys.gov.ph', '2024-01-10'),
-(4, 'Staff', 'Member', 'One', 'staff1', 'staff123', 'staff', '0287654322', 'staff1@philsys.gov.ph', '2024-01-10'),
-(5, 'Pedro', 'Manuel', 'Reyes', 'pedro', 'password789', 'citizen', '09345678901', 'pedro.reyes@philsys.gov.ph', '2024-01-17'),
-(6, 'John', 'Paul', 'Smith', 'johnsmith', 'password101', 'citizen', '09567890123', 'john.smith@philsys.gov.ph', '2024-01-19'),
-(7, 'Sarah', 'Jane', 'Tan', 'sarahtan', 'password202', 'citizen', '09678901234', 'sarah.tan@philsys.gov.ph', '2024-01-20');
+INSERT INTO `users` (`user_id`, `fname`, `mname`, `lname`, `username`, `password`, `phone`, `email`, `created_date`, `last_login`, `is_active`) VALUES
+(10, 'System', 'M', 'Administrator', 'admin', 'admin123', '+639123456789', 'admin@philsys.gov.ph', '2025-12-23', NULL, 1),
+(11, 'System', 'A', 'Staff', 'staff', 'staff123', '+639123456780', 'staff@philsys.gov.ph', '2025-12-23', NULL, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_roles`
+--
+
+CREATE TABLE `user_roles` (
+  `user_role_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `role_id` int(11) NOT NULL,
+  `assigned_date` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_roles`
+--
+
+INSERT INTO `user_roles` (`user_role_id`, `user_id`, `role_id`, `assigned_date`) VALUES
+(1, 10, 1, '2025-12-23'),
+(2, 11, 2, '2025-12-23');
 
 --
 -- Indexes for dumped tables
@@ -335,7 +310,15 @@ ALTER TABLE `citizens`
 --
 ALTER TABLE `documents`
   ADD PRIMARY KEY (`document_id`),
-  ADD KEY `citizen_id` (`citizen_id`);
+  ADD KEY `citizen_id` (`citizen_id`),
+  ADD KEY `form_id` (`form_id`);
+
+--
+-- Indexes for table `doc_forms`
+--
+ALTER TABLE `doc_forms`
+  ADD PRIMARY KEY (`form_id`),
+  ADD UNIQUE KEY `form_code` (`form_code`);
 
 --
 -- Indexes for table `id_status`
@@ -343,7 +326,8 @@ ALTER TABLE `documents`
 ALTER TABLE `id_status`
   ADD PRIMARY KEY (`status_id`),
   ADD KEY `citizen_id` (`citizen_id`),
-  ADD KEY `transaction_id_idx` (`transaction_id`);
+  ADD KEY `transaction_id_idx` (`transaction_id`),
+  ADD KEY `status_name_id` (`status_name_id`);
 
 --
 -- Indexes for table `notifications`
@@ -353,11 +337,34 @@ ALTER TABLE `notifications`
   ADD KEY `citizen_id` (`citizen_id`);
 
 --
+-- Indexes for table `roles`
+--
+ALTER TABLE `roles`
+  ADD PRIMARY KEY (`role_id`),
+  ADD UNIQUE KEY `role_code` (`role_code`);
+
+--
+-- Indexes for table `status_names`
+--
+ALTER TABLE `status_names`
+  ADD PRIMARY KEY (`status_name_id`),
+  ADD UNIQUE KEY `status_code` (`status_code`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
-  ADD UNIQUE KEY `username` (`username`);
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indexes for table `user_roles`
+--
+ALTER TABLE `user_roles`
+  ADD PRIMARY KEY (`user_role_id`),
+  ADD UNIQUE KEY `unique_user_role` (`user_id`,`role_id`),
+  ADD KEY `role_id` (`role_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -367,7 +374,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `activity_log`
 --
 ALTER TABLE `activity_log`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=479;
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=517;
 
 --
 -- AUTO_INCREMENT for table `addresses`
@@ -385,31 +392,55 @@ ALTER TABLE `appointments`
 -- AUTO_INCREMENT for table `citizens`
 --
 ALTER TABLE `citizens`
-  MODIFY `citizen_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `citizen_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `document_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `document_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+
+--
+-- AUTO_INCREMENT for table `doc_forms`
+--
+ALTER TABLE `doc_forms`
+  MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `id_status`
 --
 ALTER TABLE `id_status`
-  MODIFY `status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+
+--
+-- AUTO_INCREMENT for table `roles`
+--
+ALTER TABLE `roles`
+  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `status_names`
+--
+ALTER TABLE `status_names`
+  MODIFY `status_name_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT for table `user_roles`
+--
+ALTER TABLE `user_roles`
+  MODIFY `user_role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables
@@ -443,19 +474,28 @@ ALTER TABLE `citizens`
 -- Constraints for table `documents`
 --
 ALTER TABLE `documents`
-  ADD CONSTRAINT `documents_ibfk_1` FOREIGN KEY (`citizen_id`) REFERENCES `citizens` (`citizen_id`);
+  ADD CONSTRAINT `documents_ibfk_1` FOREIGN KEY (`citizen_id`) REFERENCES `citizens` (`citizen_id`),
+  ADD CONSTRAINT `documents_ibfk_2` FOREIGN KEY (`form_id`) REFERENCES `doc_forms` (`form_id`);
 
 --
 -- Constraints for table `id_status`
 --
 ALTER TABLE `id_status`
-  ADD CONSTRAINT `id_status_ibfk_1` FOREIGN KEY (`citizen_id`) REFERENCES `citizens` (`citizen_id`);
+  ADD CONSTRAINT `id_status_ibfk_1` FOREIGN KEY (`citizen_id`) REFERENCES `citizens` (`citizen_id`),
+  ADD CONSTRAINT `id_status_ibfk_2` FOREIGN KEY (`status_name_id`) REFERENCES `status_names` (`status_name_id`);
 
 --
 -- Constraints for table `notifications`
 --
 ALTER TABLE `notifications`
   ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`citizen_id`) REFERENCES `citizens` (`citizen_id`);
+
+--
+-- Constraints for table `user_roles`
+--
+ALTER TABLE `user_roles`
+  ADD CONSTRAINT `user_roles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+  ADD CONSTRAINT `user_roles_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`role_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

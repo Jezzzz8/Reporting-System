@@ -55,35 +55,43 @@ public class Main extends javax.swing.JFrame {
     private void showLoginForm() {
         loginFrame = new Landing();
         loginFrame.setVisible(true);
-        
+
         loginFrame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosed(java.awt.event.WindowEvent e) {
                 System.out.println("Login window closed");
-                
+
                 // Check if login was successful
                 if (loginFrame.isLoginSuccessful()) {
                     currentUser = loginFrame.getLoggedInUser();
                     if (currentUser != null) {
-                        // Check if user is citizen
-                        if (!currentUser.getRole().equals("citizen")) {
+                        System.out.println("Login successful for: " + currentUser.getFullName());
+                        System.out.println("Roles: " + currentUser.getRoles());
+                        
+                        // Check user roles to determine access level
+                        String primaryRole = determinePrimaryRole(currentUser);
+                        
+                        if (primaryRole != null) {
+                            // Show main application
+                            setVisible(true);
+
+                            // Setup menu based on role
+                            setupMenuBasedOnRole(primaryRole);
+                            
+                            // Show appropriate dashboard
+                            if (primaryRole.equals("ADMIN")) {
+                                showAdminDashboard();
+                            }else if(primaryRole.equals("STAFF")){
+                                showStaffDashboard();
+                            }else {
+                                showCitizenDashboard();
+                            }
+                        } else {
                             JOptionPane.showMessageDialog(Main.this, 
-                                "Access denied. Citizen portal only.", 
+                                "User has no valid roles assigned. Access denied.", 
                                 "Access Denied", JOptionPane.ERROR_MESSAGE);
                             System.exit(0);
                         }
-                        
-                        System.out.println("Login successful for: " + currentUser.getFullName());
-                        System.out.println("Role: " + currentUser.getRole());
-                        
-                        // Show main application
-                        setVisible(true);
-                        
-                        // Show citizen dashboard
-                        showDashboard();
-                        
-                        // Setup menu events
-                        setupMenu();
                     }
                 } else {
                     // Landing was cancelled or failed
@@ -91,20 +99,73 @@ public class Main extends javax.swing.JFrame {
                 }
             }
         });
-        
+
         // Hiding the main window while login is showing
         setVisible(false);
     }
     
-    private void setupMenu() {
+    private String determinePrimaryRole(User user) {
+        if (user == null || user.getRoleCodes() == null || user.getRoleCodes().isEmpty()) {
+            return null;
+        }
+        
+        // Check for admin role first
+        for (String roleCode : user.getRoleCodes()) {
+            if (roleCode.equals("ADMIN")) {
+                return "ADMIN";
+            }
+        }
+        
+        // Check for staff role
+        for (String roleCode : user.getRoleCodes()) {
+            if (roleCode.equals("STAFF")) {
+                return "STAFF";
+            }
+        }
+        
+        // Check for citizen role
+        for (String roleCode : user.getRoleCodes()) {
+            if (roleCode.equals("CITIZEN")) {
+                return "CITIZEN";
+            }
+        }
+        
+        return null;
+    }
+    
+    private void setupMenuBasedOnRole(String primaryRole) {
+        System.out.println("Setting up menu for role: " + primaryRole);
+
+        switch (primaryRole.toUpperCase()) {
+            case "ADMIN":
+                menu.setMenuForRole("admin");
+                setupAdminMenu();
+                break;
+            case "STAFF":
+                menu.setMenuForRole("staff");
+                setupStaffMenu();
+                break;
+            case "CITIZEN":
+                menu.setMenuForRole("citizen");
+                setupCitizenMenu();
+                break;
+            default:
+                System.err.println("Unknown role: " + primaryRole);
+                menu.setMenuForRole("citizen");
+                setupCitizenMenu();
+                break;
+        }
+    }
+    
+    private void setupCitizenMenu() {
         menu.setEvent(new sys.menu.MenuEvent() {
             @Override
             public void selected(int index, int subIndex) {
-                System.out.println("Menu clicked: index=" + index + ", subIndex=" + subIndex);
+                System.out.println("Citizen Menu clicked: index=" + index + ", subIndex=" + subIndex);
                 
                 switch (index) {
                     case 0: // Dashboard
-                        showDashboard();
+                        showCitizenDashboard();
                         break;
                         
                     case 1: // Profile
@@ -129,10 +190,140 @@ public class Main extends javax.swing.JFrame {
                     case 6: // Logout
                         logout();
                         break;
-
                 }
             }
         });
+    }
+    
+    private void setupStaffMenu() {
+        menu.setEvent(new sys.menu.MenuEvent() {
+            @Override
+            public void selected(int index, int subIndex) {
+                System.out.println("Staff Menu clicked: index=" + index + ", subIndex=" + subIndex);
+                
+                switch (index) {
+                    case 0: // Dashboard
+                        showStaffDashboard();
+                        break;
+                        
+                    case 1: // Citizen Records
+                        showCitizenRecordsMenu(subIndex);
+                        break;
+                        
+                    case 2: // ID Status Management
+                        showIDStatusManagementMenu(subIndex);
+                        break;
+                        
+                    case 3: // Appointment Management
+                        showAppointmentManagementMenu(subIndex);
+                        break;
+                        
+                    case 4: // Logout
+                        logout();
+                        break;
+                }
+            }
+        });
+    }
+    
+    private void setupAdminMenu() {
+        menu.setEvent(new sys.menu.MenuEvent() {
+            @Override
+            public void selected(int index, int subIndex) {
+                System.out.println("Admin Menu clicked: index=" + index + ", subIndex=" + subIndex);
+
+                switch (index) {
+                    case 0: // Dashboard
+                        showAdminDashboard();
+                        break;
+
+                    case 1: // User Management
+                        showUserManagementMenu(subIndex);
+                        break;
+
+                    case 2: // Citizen Records
+                        showCitizenRecordsMenu(subIndex);
+                        break;
+
+                    case 3: // ID Status Management
+                        showIDStatusManagementMenu(subIndex);
+                        break;
+
+                    case 4: // Appointment Management
+                        showAppointmentManagementMenu(subIndex);
+                        break;
+
+                    case 5: // System Settings
+                        showSystemSettingsMenu(subIndex);
+                        break;
+
+                    case 6: // Logout
+                        logout();
+                        break;
+                }
+            }
+        });
+    }
+    
+    private void showUserManagementMenu(int subIndex) {
+        switch (subIndex) {
+            case 1: // Manage Users
+                showForm(new DefaultForm("User Management - Admin Panel"));
+                break;
+            case 2: // Manage Roles
+                showForm(new DefaultForm("Role Management - Admin Panel"));
+                break;
+        }
+    }
+    
+    private void showCitizenRecordsMenu(int subIndex) {
+        switch (subIndex) {
+            case 1: // Add Citizen Record
+                showForm(new DefaultForm("Add Citizen Record - Admin Panel"));
+                break;
+            case 2: // Update Citizen Record
+                showForm(new DefaultForm("Update Citizen Record - Admin Panel"));
+                break;
+            case 3: // View Citizen Record
+                showForm(new DefaultForm("View Citizen Record - Admin Panel"));
+                break;
+        }
+    }
+    
+    private void showIDStatusManagementMenu(int subIndex) {
+        switch (subIndex) {
+            case 1: // Update ID Status
+                showForm(new DefaultForm("Update ID Status - Admin Panel"));
+                break;
+            case 2: // View Status History
+                showForm(new DefaultForm("View Status History - Admin Panel"));
+                break;
+        }
+    }
+    
+    private void showAppointmentManagementMenu(int subIndex) {
+        switch (subIndex) {
+            case 1: // View Appointments
+                showForm(new DefaultForm("View Appointments - Admin Panel"));
+                break;
+            case 2: // Update Appointment Status
+                showForm(new DefaultForm("Update Appointment Status - Admin Panel"));
+                break;
+        }
+    }
+    
+    private void showSystemSettingsMenu(int subIndex) {
+        switch (subIndex) {
+            case 1: // System Configuration
+                showForm(new DefaultForm("System Configuration - Admin Panel"));
+                break;
+            case 2: // Activity Logs
+                showForm(new DefaultForm("Activity Logs - Admin Panel"));
+                break;
+            case 3: // Backup & Restore
+                showForm(new DefaultForm("Backup & Restore - Admin Panel"));
+                break;
+        }
     }
     
     private void showAppointmentsMenu(int subIndex) {
@@ -187,7 +378,7 @@ public class Main extends javax.swing.JFrame {
         repaint();
     }
     
-    private void showDashboard() {
+    private void showCitizenDashboard() {
         System.out.println("showDashboard() called");
         
         SwingUtilities.invokeLater(() -> {
@@ -207,44 +398,66 @@ public class Main extends javax.swing.JFrame {
         });
     }
     
-    private void showProfile() {
-        System.out.println("showDashboard() called");
+    private void showAdminDashboard() {
+        System.out.println("showAdminDashboard() called");
         
         SwingUtilities.invokeLater(() -> {
             try {
-                System.out.println("Creating Dashboard for user: " + currentUser.getFullName());
-                Profile profile = new Profile(currentUser);
-                System.out.println("Dashboard created successfully");
+                System.out.println("Creating Admin Dashboard for user: " + currentUser.getFullName());
+                // Create a special admin dashboard or use the regular one with admin view
+                Dashboard dashboard = new Dashboard(currentUser);
+                System.out.println("Admin Dashboard created successfully");
                 
                 // Show the dashboard
-                showForm(profile);
+                showForm(new DefaultForm("Upcoming Admin Dashboard - Coming Soon"));
                 
             } catch (Exception e) {
-                System.err.println("Error creating dashboard: " + e.getMessage());
+                System.err.println("Error creating admin dashboard: " + e.getMessage());
                 e.printStackTrace();
-                showError("Failed to load dashboard: " + e.getMessage());
+                showError("Failed to load admin dashboard: " + e.getMessage());
             }
         });
     }
     
-    private void showIDStatus() {
-        System.out.println("showIDStatus() called");
+    private void showStaffDashboard() {
+        System.out.println("showStaffDashboard() called");
         
         SwingUtilities.invokeLater(() -> {
             try {
-                System.out.println("Creating ID Status for user: " + currentUser.getFullName());
-                IDStatus idstatus = new IDStatus(currentUser);
-                System.out.println("ID Status created successfully");
+                System.out.println("Creating Staff Dashboard for user: " + currentUser.getFullName());
+                // Create a special admin dashboard or use the regular one with admin view
+                Dashboard dashboard = new Dashboard(currentUser);
+                System.out.println("Staff Dashboard created successfully");
                 
-                // Show the id status
-                showForm(idstatus);
+                // Show the dashboard
+                showForm(new DefaultForm("Upcoming Staff Dashboard - Coming Soon"));
                 
             } catch (Exception e) {
-                System.err.println("Error creating dashboard: " + e.getMessage());
+                System.err.println("Error creating staff dashboard: " + e.getMessage());
                 e.printStackTrace();
-                showError("Failed to load dashboard: " + e.getMessage());
+                showError("Failed to load staff dashboard: " + e.getMessage());
             }
         });
+    }
+    
+    private void showProfile() {
+        System.out.println("showProfile() called");
+        System.out.println("Creating Profile for user: " + currentUser.getFullName());
+        Profile profile = new Profile(currentUser);
+        System.out.println("Profile created successfully");
+
+        // Show the profile
+        showForm(profile);
+    }
+    
+    private void showIDStatus() {
+        System.out.println("showIDStatus() called");
+        System.out.println("Creating ID Status for user: " + currentUser.getFullName());
+        IDStatus idstatus = new IDStatus(currentUser);
+        System.out.println("ID Status created successfully");
+        
+        // Show the id status
+        showForm(idstatus);
     }
     
     private void showForm(Component com) {
@@ -329,6 +542,7 @@ public class Main extends javax.swing.JFrame {
             JOptionPane.YES_NO_OPTION);
         
         if (confirm == JOptionPane.YES_OPTION) {
+            
             currentUser = null;
             setVisible(false);
             showLoginForm();
