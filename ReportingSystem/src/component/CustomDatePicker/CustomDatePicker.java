@@ -9,6 +9,9 @@ import java.util.Calendar;
 import java.util.Date;
 import javax.swing.Timer;
 
+// Import your FlatButton
+import component.Button.FlatButton;
+
 public class CustomDatePicker extends JPanel implements FocusListener {
     private JButton dropdownButton;
     private JPopupMenu calendarPopup;
@@ -82,7 +85,7 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         titledBorder.setTitleFont(new Font("Segoe UI", Font.PLAIN, 10));
         setBorder(titledBorder);
         
-        // Create dropdown button
+        // Create dropdown button - Changed to JButton (not FlatButton for the main dropdown)
         dropdownButton = new JButton() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -283,8 +286,9 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         JPanel monthPanel = new JPanel(new BorderLayout(5, 0));
         monthPanel.setBackground(backgroundColor);
         
-        JButton prevMonth = createArrowButton("<", "Previous month");
-        JButton nextMonth = createArrowButton(">", "Next month");
+        // Using FlatButton for navigation buttons
+        FlatButton prevMonth = new FlatButton("<");
+        FlatButton nextMonth = new FlatButton(">");
         
         monthLabel = new JLabel("", SwingConstants.CENTER);
         monthLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -294,8 +298,8 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         JPanel yearPanel = new JPanel(new BorderLayout(5, 0));
         yearPanel.setBackground(backgroundColor);
         
-        JButton prevYear = createArrowButton("<", "Previous year");
-        JButton nextYear = createArrowButton(">", "Next year");
+        FlatButton prevYear = new FlatButton("<");
+        FlatButton nextYear = new FlatButton(">");
         
         yearLabel = new JLabel("", SwingConstants.CENTER);
         yearLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -303,6 +307,17 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         
         // Update labels
         updateMonthYearLabels();
+        
+        // Configure FlatButton appearance for navigation
+        configureNavigationButton(prevMonth);
+        configureNavigationButton(nextMonth);
+        configureNavigationButton(prevYear);
+        configureNavigationButton(nextYear);
+        
+        prevMonth.setToolTipText("Previous month");
+        nextMonth.setToolTipText("Next month");
+        prevYear.setToolTipText("Previous year");
+        nextYear.setToolTipText("Next year");
         
         // Add action listeners
         prevMonth.addActionListener(e -> {
@@ -356,40 +371,42 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         buttonPanel.setBackground(backgroundColor);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         
-        // Today button
-        JButton todayButton = new JButton("Today");
+        // Using FlatButton for action buttons
+        FlatButton todayButton = new FlatButton("Today");
+        FlatButton clearButton = new FlatButton("Clear");
+        FlatButton okButton = new FlatButton("OK");
+        FlatButton cancelButton = new FlatButton("Cancel");
+        
+        // Configure FlatButton appearance
+        todayButton.setAsInfo();
         todayButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        todayButton.setBackground(todayColor);
-        todayButton.setForeground(Color.WHITE);
-        todayButton.setFocusPainted(false);
-        todayButton.setBorderPainted(false);
-        todayButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        todayButton.setPreferredSize(new Dimension(70, 30));
+        
+        clearButton.setNormalColor(unfocusedBorderColor);
+        clearButton.setTextColor(Color.BLACK);
+        clearButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        clearButton.setPreferredSize(new Dimension(70, 30));
+        
+        okButton.setAsPrimary();
+        okButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        okButton.setPreferredSize(new Dimension(70, 30));
+        
+        cancelButton.setNormalColor(unfocusedBorderColor);
+        cancelButton.setTextColor(Color.BLACK);
+        cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cancelButton.setPreferredSize(new Dimension(70, 30));
+        
+        // Add action listeners
         todayButton.addActionListener(e -> {
             setDate(new Date());
             closeCalendar();
         });
         
-        // Clear button
-        JButton clearButton = new JButton("Clear");
-        clearButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        clearButton.setBackground(unfocusedBorderColor);
-        clearButton.setForeground(Color.BLACK);
-        clearButton.setFocusPainted(false);
-        clearButton.setBorderPainted(false);
-        clearButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         clearButton.addActionListener(e -> {
             setDate(null);
             closeCalendar();
         });
         
-        // OK button
-        JButton okButton = new JButton("OK");
-        okButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        okButton.setBackground(focusedBorderColor);
-        okButton.setForeground(Color.WHITE);
-        okButton.setFocusPainted(false);
-        okButton.setBorderPainted(false);
-        okButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         okButton.addActionListener(e -> {
             if (selectedDate == null) {
                 // If no date is selected, select current day in displayed month
@@ -398,14 +415,6 @@ public class CustomDatePicker extends JPanel implements FocusListener {
             closeCalendar();
         });
         
-        // Cancel button
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        cancelButton.setBackground(unfocusedBorderColor);
-        cancelButton.setForeground(Color.BLACK);
-        cancelButton.setFocusPainted(false);
-        cancelButton.setBorderPainted(false);
-        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         cancelButton.addActionListener(e -> closeCalendar());
         
         buttonPanel.add(todayButton);
@@ -419,32 +428,17 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         calendarPanel.add(buttonPanel, BorderLayout.SOUTH);
     }
     
-    private JButton createArrowButton(String text, String tooltip) {
-        JButton button = new JButton(text);
+    private void configureNavigationButton(FlatButton button) {
+        button.setNormalColor(backgroundColor);
+        button.setTextColor(focusedBorderColor);
+        button.setHoverColor(new Color(focusedBorderColor.getRed(), 
+            focusedBorderColor.getGreen(), 
+            focusedBorderColor.getBlue(), 30));
+        button.setPressedColor(new Color(focusedBorderColor.getRed(), 
+            focusedBorderColor.getGreen(), 
+            focusedBorderColor.getBlue(), 60));
         button.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        button.setForeground(focusedBorderColor);
-        button.setBackground(backgroundColor);
-        button.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setToolTipText(tooltip);
-        
-        // Add hover effect
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(focusedBorderColor.getRed(), 
-                    focusedBorderColor.getGreen(), 
-                    focusedBorderColor.getBlue(), 30));
-            }
-            
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(backgroundColor);
-            }
-        });
-        
-        return button;
+        button.setPreferredSize(new Dimension(40, 30));
     }
     
     private void updateMonthYearLabels() {
@@ -489,14 +483,13 @@ public class CustomDatePicker extends JPanel implements FocusListener {
         // Today's date
         Calendar today = Calendar.getInstance();
         
-        // Create day buttons
+        // Create day buttons using FlatButton
         for (int day = 1; day <= daysInMonth; day++) {
             final int currentDay = day;
-            JButton dayButton = new JButton(String.valueOf(day));
+            
+            // Create FlatButton instead of JButton
+            FlatButton dayButton = new FlatButton(String.valueOf(day));
             dayButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            dayButton.setFocusPainted(false);
-            dayButton.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            dayButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
             
             // Create a calendar instance for this specific day
             Calendar dayCal = (Calendar) calendar.clone();
@@ -508,39 +501,28 @@ public class CustomDatePicker extends JPanel implements FocusListener {
             // Check if this is selected date
             boolean isSelected = (selectedDate != null && isSameDay(dayCal.getTime(), selectedDate));
             
-            // Set button appearance
+            // Set button appearance using FlatButton methods
             if (isSelected) {
-                dayButton.setBackground(selectedColor);
-                dayButton.setForeground(Color.WHITE);
+                dayButton.setNormalColor(selectedColor);
+                dayButton.setTextColor(Color.WHITE);
             } else if (isToday) {
-                dayButton.setBackground(todayColor);
-                dayButton.setForeground(Color.WHITE);
+                dayButton.setNormalColor(todayColor);
+                dayButton.setTextColor(Color.WHITE);
             } else {
-                dayButton.setBackground(backgroundColor);
-                dayButton.setForeground(normalColor);
+                dayButton.setNormalColor(backgroundColor);
+                dayButton.setTextColor(normalColor);
                 
                 // Gray out days from other months
                 if (dayCal.get(Calendar.MONTH) != calendar.get(Calendar.MONTH)) {
-                    dayButton.setForeground(disabledColor);
+                    dayButton.setTextColor(disabledColor);
                 }
             }
             
-            // Add hover effect
-            dayButton.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    if (!isSelected && !isToday) {
-                        dayButton.setBackground(hoverColor);
-                    }
-                }
-                
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    if (!isSelected && !isToday) {
-                        dayButton.setBackground(backgroundColor);
-                    }
-                }
-            });
+            // Set hover color for better UX
+            if (!isSelected && !isToday) {
+                dayButton.setHoverColor(hoverColor);
+                dayButton.setPressedColor(hoverColor.darker());
+            }
             
             // Add action listener
             dayButton.addActionListener(e -> {

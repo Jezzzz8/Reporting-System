@@ -1,32 +1,39 @@
 package component;
 
 import backend.objects.Data;
-import backend.objects.Data.Address; // NEW: Import Address class
+import component.Button.FlatButton;
+import java.awt.Font;
 import java.util.ArrayList;
 import javax.swing.table.DefaultTableModel;
 import java.util.List;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 
 public class IDStatus extends javax.swing.JPanel {
     
     private Data.User user;
     private Data.Citizen citizen;
     private Data.IDStatus idStatus;
-    private Data.Address address; // NEW: Store address separately
+    private Data.Address address;
+    private javax.swing.Timer refreshTimer;
     
     public IDStatus(Data.User user) {
         this.user = user;
         initComponents();
 
-        // component listener to debug
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentShown(java.awt.event.ComponentEvent e) {
-                System.out.println("IDStatus component shown - refreshing data");
-                loadCitizenData();
-            }
-        });
+        System.out.println("IDStatus created successfully");
+        
+        // Initialize components before using them
+        initializeComponents();
+        
+        loadCitizenData();
+        
+        // Set up auto-refresh timer (every 30 seconds)
+        setupRefreshTimer();
+    }
 
-        customStepProgressBar1.setTotalSteps(5);
+    private void initializeComponents() {
+        customStepProgressBar1.setTotalSteps(5); // Updated to 5 simplified steps
         String[] stepLabels = {
             "Application Submitted",
             "Processing & Validation", 
@@ -35,10 +42,18 @@ public class IDStatus extends javax.swing.JPanel {
             "ID Claimed"
         };
         customStepProgressBar1.setStepLabels(stepLabels);
-
-        loadCitizenData();
+        
+        // Initialize the table model
+        DefaultTableModel model = (DefaultTableModel) FullStatusHistoryTable.getModel();
+        model.setColumnIdentifiers(new String[]{"Date", "Status", "Description", "Notes / Updated By"});
     }
 
+    private void setupRefreshTimer() {
+        refreshTimer = new javax.swing.Timer(30000, e -> refreshData()); // Refresh every 30 seconds
+        refreshTimer.setRepeats(true);
+        refreshTimer.start();
+        System.out.println("Auto-refresh timer started (every 30 seconds)");
+    }
 
     private void loadCitizenData() {
         System.out.println("Loading citizen data for user ID: " + user.getUserId());
@@ -48,47 +63,14 @@ public class IDStatus extends javax.swing.JPanel {
         if (citizen != null) {
             System.out.println("Citizen found: " + citizen.getFullName() + " (ID: " + citizen.getCitizenId() + ")");
 
-            // Load address information - NEW
+            // Load address information
             address = Data.Address.getAddressByCitizenId(citizen.getCitizenId());
 
-            idStatus = Data.IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-
+            // IMPORTANT: Always get fresh status from database
+            refreshIDStatus();
+            
             // Update labels with actual data
-            if (citizen.getApplicationDate() != null) {
-                String appDateStr = citizen.getApplicationDate().toString();
-                String transactionId = "No Transaction ID";
-
-                // Get and format transaction ID
-                if (idStatus != null) {
-                    String rawTransactionId = idStatus.getTransactionId();
-                    if (rawTransactionId != null && !rawTransactionId.trim().isEmpty()) {
-                        transactionId = Data.IDStatus.formatTransactionId(rawTransactionId);
-                        System.out.println("Raw Transaction ID: " + rawTransactionId);
-                        System.out.println("Formatted Transaction ID: " + transactionId);
-                    }
-                }
-
-                // Show full information including application date and transaction ID
-                jLabel4.setText("Application Date: " + appDateStr + " | Transaction ID: " + transactionId);
-            }
-
-            // Set step labels for 5-step progress
-            String[] stepLabels = {
-                "Application Submitted",
-                "Processing & Validation", 
-                "Printing & Packaging",
-                "Ready for Pickup",
-                "ID Claimed"
-            };
-
-            customStepProgressBar1.setTotalSteps(5);
-            customStepProgressBar1.setStepLabels(stepLabels);
-
-            System.out.println("Progress bar initialized with 5 steps");
-
-            checkIDStatus();
-
-            loadLiveTimeline();
+            updateDisplayData();
 
         } else {
             // If no citizen data found
@@ -99,13 +81,77 @@ public class IDStatus extends javax.swing.JPanel {
         }
     }
     
-    private void checkIDStatus() {
+    // NEW METHOD: Get fresh status from database
+    private void refreshIDStatus() {
+        if (citizen == null) {
+            System.out.println("refreshIDStatus: citizen is null");
+            return;
+        }
+
+        System.out.println("refreshIDStatus: Getting status for citizen ID: " + citizen.getCitizenId());
+
+        // Get current status from database
+        idStatus = Data.IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+
         if (idStatus != null) {
-            System.out.println("ID Status found: " + idStatus.getStatus());
+            System.out.println("refreshIDStatus: Current status found:");
+            System.out.println("  - Status ID: " + idStatus.getStatusId());
+            System.out.println("  - Status: " + idStatus.getStatus());
+            System.out.println("  - Status Name ID: " + idStatus.getStatusNameId());
+            System.out.println("  - Transaction ID: " + idStatus.getTransactionId());
+            System.out.println("  - Update Date: " + idStatus.getUpdateDate());
+            System.out.println("  - Notes: " + (idStatus.getNotes() != null ? idStatus.getNotes().substring(0, Math.min(50, idStatus.getNotes().length())) + "..." : "null"));
+
+            // Debug: Also check what status name this ID maps to
+            Data.StatusName statusName = Data.StatusName.getStatusNameById(idStatus.getStatusNameId());
+            if (statusName != null) {
+                System.out.println("  - Mapped Status Name: " + statusName.getStatusName());
+            } else {
+                System.out.println("  - ERROR: No status name found for ID: " + idStatus.getStatusNameId());
+            }
+        } else {
+            System.out.println("refreshIDStatus: No status found for citizen ID: " + citizen.getCitizenId());
+        }
+    }
+    // NEW METHOD: Update display data
+    private void updateDisplayData() {
+        if (citizen.getApplicationDate() != null) {
+            String appDateStr = citizen.getApplicationDate().toString();
+            String transactionId = "No Transaction ID";
+
+            // Get and format transaction ID
+            if (idStatus != null) {
+                String rawTransactionId = idStatus.getTransactionId();
+                if (rawTransactionId != null && !rawTransactionId.trim().isEmpty()) {
+                    transactionId = Data.IDStatus.formatTransactionId(rawTransactionId);
+                    System.out.println("Raw Transaction ID: " + rawTransactionId);
+                    System.out.println("Formatted Transaction ID: " + transactionId);
+                }
+            }
+
+            // Show full information including application date and transaction ID
+            jLabel4.setText("Application Date: " + appDateStr + " | Transaction ID: " + transactionId);
+        }
+
+        System.out.println("Progress bar initialized with 5 steps");
+
+        checkIDStatus();
+        loadLiveTimeline();
+    }
+    
+    private void checkIDStatus() {
+        // Always get fresh status
+        refreshIDStatus();
+
+        if (idStatus != null) {
+            System.out.println("checkIDStatus: Processing status...");
+            System.out.println("  - Raw status string: " + idStatus.getStatus());
+
             String status = idStatus.getStatus();
             int currentStep = getStepFromStatus(status);
 
-            System.out.println("Current step calculated: " + currentStep + " for status: " + status);
+            System.out.println("  - Current step calculated: " + currentStep);
+            System.out.println("  - Display status: " + formatStatusForDisplay(status));
 
             customStepProgressBar1.setCurrentStep(currentStep);
 
@@ -114,64 +160,83 @@ public class IDStatus extends javax.swing.JPanel {
 
             setStatusLabelColor(status);
 
-            String normalizedStatus = status.replace(" ", "_").toUpperCase();
-            if ("READY_FOR_PICKUP".equals(normalizedStatus) || "READY".equals(normalizedStatus)) {
-                System.out.println("Showing pickup panel for status: " + normalizedStatus);
+            // Check if status is ready for pickup or claimed
+            if (currentStep == 4) { // Ready for Pickup
+                System.out.println("  - Status is READY FOR PICKUP, showing panel");
                 showPickupPanel();
-            } else if ("ID_CLAIMED".equals(normalizedStatus) || "CLAIMED".equals(normalizedStatus) || "COMPLETED".equals(normalizedStatus)) {
-                System.out.println("Showing claimed message for status: " + normalizedStatus);
+            } else if (currentStep == 5) { // ID Claimed
+                System.out.println("  - Status is ID CLAIMED, showing claimed message");
                 showClaimedMessage();
             } else {
-                System.out.println("Hiding pickup panel for status: " + normalizedStatus);
+                System.out.println("  - Status is not ready for pickup, hiding panel");
                 hidePickupPanel();
             }
-
         } else {
-            // No status found
-            System.out.println("No ID status found for citizen ID: " + citizen.getCitizenId());
+            // No status found - this means application hasn't started
+            System.out.println("checkIDStatus: No ID status found");
             jLabel3.setText("APPLICATION SUBMITTED");
-            jLabel3.setForeground(new java.awt.Color(0, 120, 215));
+            jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue
             customStepProgressBar1.setCurrentStep(1);
             hidePickupPanel();
         }
     }
-    
+
     private int getStepFromStatus(String status) {
-        if (status == null) return 1;
+        if (status == null) return 1; // Default to step 1 if no status
 
         String normalizedStatus = status.replace(" ", "_").toUpperCase();
 
+        // Map your status_names to simplified 5-step workflow
         switch (normalizedStatus) {
+            // Step 1: Application Submitted
             case "SUBMITTED":
-            case "PENDING":
+            case "STAT-001":
                 return 1;
 
+            // Step 2: Processing & Validation (combines multiple statuses)
             case "PROCESSING":
-            case "VALIDATION":
-            case "UNDER_REVIEW":
+            case "STAT-002":
+            case "DOCUMENT_VERIFICATION":
+            case "DOCUMENT VERIFICATION":
+            case "STAT-003":
+            case "BIOMETRICS_APPOINTMENT":
+            case "BIOMETRICS APPOINTMENT":
+            case "STAT-004":
+            case "BIOMETRICS_COMPLETED":
+            case "BIOMETRICS COMPLETED":
+            case "STAT-005":
+            case "BACKGROUND_CHECK":
+            case "BACKGROUND CHECK":
+            case "STAT-006":
+            case "BACKGROUND_CHECK_COMPLETED":
+            case "BACKGROUND CHECK COMPLETED":
+            case "STAT-007":
                 return 2;
 
-            case "PRINTING":
-            case "PACKAGING":
-            case "PRODUCTION":
+            // Step 3: Printing & Packaging
+            case "ID_CARD_PRODUCTION":
+            case "ID CARD PRODUCTION":
+            case "STAT-008":
                 return 3;
 
+            // Step 4: Ready for Pickup
             case "READY_FOR_PICKUP":
-            case "READY":
+            case "READY FOR PICKUP":
+            case "STAT-009":
                 return 4;
 
-            case "CLAIMED":
-            case "ID_CLAIMED":
+            // Step 5: ID Claimed
             case "COMPLETED":
+            case "STAT-010":
                 return 5;
 
+            // Error/Rejected state
             case "REJECTED":
-            case "FAILED":
-            case "CANCELLED":
-                return 0; // Error state
+            case "STAT-011":
+                return 0;
 
             default:
-                return 1;
+                return 1; // Default to step 1
         }
     }
     
@@ -180,37 +245,63 @@ public class IDStatus extends javax.swing.JPanel {
 
         String normalizedStatus = status.replace(" ", "_").toUpperCase();
 
+        // Convert detailed statuses to simplified display names
         switch (normalizedStatus) {
+            // Step 1: Application Submitted
             case "SUBMITTED":
+            case "STAT-001":
                 return "APPLICATION SUBMITTED";
-            case "PENDING":
-                return "PENDING REVIEW";
+
+            // Step 2: Processing & Validation (all variations)
             case "PROCESSING":
+            case "STAT-002":
+            case "DOCUMENT_VERIFICATION":
+            case "DOCUMENT VERIFICATION":
+            case "STAT-003":
                 return "PROCESSING & VALIDATION";
-            case "VALIDATION":
-                return "UNDER VALIDATION";
-            case "UNDER_REVIEW":
-                return "UNDER REVIEW";
-            case "PRINTING":
+
+            case "BIOMETRICS_APPOINTMENT":
+            case "BIOMETRICS APPOINTMENT":
+            case "STAT-004":
+                return "PROCESSING & VALIDATION";
+
+            case "BIOMETRICS_COMPLETED":
+            case "BIOMETRICS COMPLETED":
+            case "STAT-005":
+                return "PROCESSING & VALIDATION";
+
+            case "BACKGROUND_CHECK":
+            case "BACKGROUND CHECK":
+            case "STAT-006":
+                return "PROCESSING & VALIDATION";
+
+            case "BACKGROUND_CHECK_COMPLETED":
+            case "BACKGROUND CHECK COMPLETED":
+            case "STAT-007":
+                return "PROCESSING & VALIDATION";
+
+            // Step 3: Printing & Packaging
+            case "ID_CARD_PRODUCTION":
+            case "ID CARD PRODUCTION":
+            case "STAT-008":
                 return "PRINTING & PACKAGING";
-            case "PACKAGING":
-                return "PACKAGING IN PROGRESS";
-            case "PRODUCTION":
-                return "IN PRODUCTION";
+
+            // Step 4: Ready for Pickup
             case "READY_FOR_PICKUP":
-            case "READY":
+            case "READY FOR PICKUP":
+            case "STAT-009":
                 return "READY FOR PICKUP";
-            case "CLAIMED":
-            case "ID_CLAIMED":
-                return "ID CLAIMED";
+
+            // Step 5: ID Claimed
             case "COMPLETED":
-                return "PROCESS COMPLETED";
+            case "STAT-010":
+                return "ID CLAIMED";
+
+            // Error/Rejected state
             case "REJECTED":
+            case "STAT-011":
                 return "APPLICATION REJECTED";
-            case "FAILED":
-                return "PROCESSING FAILED";
-            case "CANCELLED":
-                return "APPLICATION CANCELLED";
+
             default:
                 return status.toUpperCase();
         }
@@ -218,44 +309,38 @@ public class IDStatus extends javax.swing.JPanel {
     
     private void setStatusLabelColor(String status) {
         if (status == null) {
-            jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue
+            jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue for Step 1
             return;
         }
 
-        String normalizedStatus = status.replace(" ", "_").toUpperCase();
+        int currentStep = getStepFromStatus(status);
 
-        switch (normalizedStatus) {
-            case "SUBMITTED":
-            case "PENDING":
+        // Color coding based on simplified steps
+        switch (currentStep) {
+            case 1: // Application Submitted
                 jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue
                 break;
-
-            case "PROCESSING":
-            case "VALIDATION":
-            case "UNDER_REVIEW":
-            case "PRINTING":
-            case "PACKAGING":
-            case "PRODUCTION":
+                
+            case 2: // Processing & Validation
                 jLabel3.setForeground(new java.awt.Color(255, 165, 0)); // Orange
                 break;
-
-            case "READY_FOR_PICKUP":
-            case "READY":
+                
+            case 3: // Printing & Packaging
+                jLabel3.setForeground(new java.awt.Color(255, 140, 0)); // Dark Orange
+                break;
+                
+            case 4: // Ready for Pickup
                 jLabel3.setForeground(new java.awt.Color(0, 150, 0)); // Green
                 break;
-
-            case "CLAIMED":
-            case "ID_CLAIMED":
-            case "COMPLETED":
+                
+            case 5: // ID Claimed
                 jLabel3.setForeground(new java.awt.Color(0, 100, 0)); // Dark Green
                 break;
-
-            case "REJECTED":
-            case "FAILED":
-            case "CANCELLED":
+                
+            case 0: // Rejected
                 jLabel3.setForeground(new java.awt.Color(220, 0, 0)); // Red
                 break;
-
+                
             default:
                 jLabel3.setForeground(new java.awt.Color(100, 100, 100)); // Gray
         }
@@ -264,8 +349,8 @@ public class IDStatus extends javax.swing.JPanel {
     private void showPickupPanel() {
         System.out.println("showPickupPanel() called");
         jPanel1.setVisible(true);
-        jLabel1.setText("Congratulations! Your physical National ID card is ready. Please schedule an appointment to claim your ID at a center near you.");
-        SchedulePickup.setText("SCHEDULE MY PICKUP");
+        jLabel1.setText("Your National ID card is ready for pickup. Please schedule an appointment to claim your ID at a designated center.");
+        SchedulePickup.setText("SCHEDULE PICKUP");
         SchedulePickup.setBackground(new java.awt.Color(0, 150, 0)); // Green
 
         jPanel1.revalidate();
@@ -282,7 +367,11 @@ public class IDStatus extends javax.swing.JPanel {
         SchedulePickup.setText("VIEW ID DETAILS");
         SchedulePickup.setBackground(new java.awt.Color(0, 120, 215)); // Blue
         
-        SchedulePickup.removeActionListener(SchedulePickup.getActionListeners()[0]);
+        // Remove existing action listeners
+        for (java.awt.event.ActionListener al : SchedulePickup.getActionListeners()) {
+            SchedulePickup.removeActionListener(al);
+        }
+        
         SchedulePickup.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -312,13 +401,25 @@ public class IDStatus extends javax.swing.JPanel {
             DefaultTableModel model = (DefaultTableModel) FullStatusHistoryTable.getModel();
             model.setRowCount(0); // Clear existing data
 
-            List<Data.IDStatus> statusHistory = getStatusHistoryForCitizen(citizen.getCitizenId());
-            System.out.println("Found " + statusHistory.size() + " status history entries for citizen ID: " + citizen.getCitizenId());
+            // IMPORTANT: Get fresh status history from database
+            System.out.println("Getting status history for citizen ID: " + citizen.getCitizenId());
+            List<Data.IDStatus> statusHistory = Data.IDStatus.getStatusHistoryByCitizenId(citizen.getCitizenId());
+            System.out.println("Found " + (statusHistory != null ? statusHistory.size() : 0) + " status history entries");
+
+            if (statusHistory != null && !statusHistory.isEmpty()) {
+                System.out.println("Status history entries:");
+                for (Data.IDStatus status : statusHistory) {
+                    System.out.println("  - Status ID: " + status.getStatusId() + 
+                                     ", Status: " + status.getStatus() + 
+                                     ", Date: " + status.getUpdateDate());
+                }
+            }
 
             // Add application date as first entry
             if (citizen.getApplicationDate() != null) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
                 model.addRow(new Object[]{
-                    citizen.getApplicationDate().toString(),
+                    sdf.format(citizen.getApplicationDate()),
                     "Application Submitted",
                     "National ID application submitted successfully",
                     "System"
@@ -326,42 +427,54 @@ public class IDStatus extends javax.swing.JPanel {
                 System.out.println("Added application date: " + citizen.getApplicationDate());
             }
 
-            // Add all status history entries in chronological order
-            for (Data.IDStatus status : statusHistory) {
-                String statusDesc = formatStatusForDisplay(status.getStatus());
-                String description = getStatusDescription(status.getStatus());
+            // Add all status history entries, but consolidate them into simplified steps
+            if (statusHistory != null) {
+                for (Data.IDStatus status : statusHistory) {
+                    String simplifiedStatus = formatStatusForDisplay(status.getStatus());
+                    String description = getSimplifiedStatusDescription(status.getStatus());
 
-                model.addRow(new Object[]{
-                    status.getUpdateDate() != null ? status.getUpdateDate().toString() : "",
-                    statusDesc,
-                    description,
-                    status.getNotes() != null && !status.getNotes().isEmpty() ? 
-                        status.getNotes() : "System Update"
-                });
-                System.out.println("Added status: " + status.getStatus() + " on " + status.getUpdateDate());
-            }
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    String dateStr = status.getUpdateDate() != null ? 
+                        sdf.format(status.getUpdateDate()) : "";
 
-            // Add document submissions
-            List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(citizen.getCitizenId());
-            System.out.println("Found " + documents.size() + " documents for this citizen");
-
-            for (Data.Document doc : documents) {
-                if ("Yes".equalsIgnoreCase(doc.getSubmitted()) || 
-                    "Verified".equalsIgnoreCase(doc.getStatus()) ||
-                    "Submitted".equalsIgnoreCase(doc.getSubmitted())) {
-
-                    String docStatus = "Submitted";
-                    if ("Verified".equalsIgnoreCase(doc.getStatus())) {
-                        docStatus = "Verified";
+                    String notes = status.getNotes();
+                    if (notes != null && notes.length() > 100) {
+                        notes = notes.substring(0, 100) + "...";
                     }
 
                     model.addRow(new Object[]{
-                        doc.getUploadDate() != null ? doc.getUploadDate().toString() : "",
-                        "Document " + docStatus,
-                        doc.getDocumentName() + " document",
-                        "Status: " + doc.getStatus()
+                        dateStr,
+                        simplifiedStatus,
+                        description,
+                        notes != null && !notes.isEmpty() ? notes : "System Update"
                     });
-                    System.out.println("Added document: " + doc.getDocumentName());
+                    System.out.println("Added status to timeline: " + simplifiedStatus + " on " + dateStr + 
+                                     " (Status ID: " + status.getStatusId() + ")");
+                }
+            }
+
+            // Add document submissions (as part of Processing & Validation)
+            List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(citizen.getCitizenId());
+            System.out.println("Found " + (documents != null ? documents.size() : 0) + " documents for this citizen");
+
+            if (documents != null) {
+                for (Data.Document doc : documents) {
+                    if ("Yes".equalsIgnoreCase(doc.getSubmitted()) || 
+                        "Verified".equalsIgnoreCase(doc.getStatus()) ||
+                        "Submitted".equalsIgnoreCase(doc.getSubmitted())) {
+
+                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                        String dateStr = doc.getUploadDate() != null ? 
+                            sdf.format(doc.getUploadDate()) : "";
+
+                        model.addRow(new Object[]{
+                            dateStr,
+                            "Document Verified",
+                            doc.getDocumentName() + " - Verified",
+                            "Document Validation System"
+                        });
+                        System.out.println("Added document: " + doc.getDocumentName());
+                    }
                 }
             }
 
@@ -373,40 +486,29 @@ public class IDStatus extends javax.swing.JPanel {
                 String description = "";
 
                 if ("SCHEDULED".equalsIgnoreCase(appStatus)) {
-                    statusDesc = "Appointment Scheduled";
+                    statusDesc = "Pickup Appointment Scheduled";
                     description = "ID pickup appointment scheduled";
                 } else if ("COMPLETED".equalsIgnoreCase(appStatus)) {
-                    statusDesc = "Appointment Completed";
+                    statusDesc = "ID Claimed";
                     description = "ID collected at center";
                 } else if ("CANCELLED".equalsIgnoreCase(appStatus)) {
                     statusDesc = "Appointment Cancelled";
                     description = "Pickup appointment cancelled";
-                } else if ("RESCHEDULED".equalsIgnoreCase(appStatus)) {
-                    statusDesc = "Appointment Rescheduled";
-                    description = "Pickup appointment rescheduled";
                 }
 
                 if (!statusDesc.isEmpty()) {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    String dateStr = appointment.getAppDate() != null ? 
+                        sdf.format(appointment.getAppDate()) : "";
+
                     model.addRow(new Object[]{
-                        appointment.getAppDate() != null ? appointment.getAppDate().toString() : "",
+                        dateStr,
                         statusDesc,
                         description,
                         "Time: " + (appointment.getAppTime() != null ? appointment.getAppTime() : "N/A")
                     });
                     System.out.println("Added appointment: " + statusDesc);
                 }
-            }
-
-            // Add address updates if available - NEW
-            if (address != null && address.getAddressId() > 0) {
-                // We could add address verification as a step in the timeline
-                // For now, just note that address information is on file
-                model.addRow(new Object[]{
-                    citizen.getApplicationDate() != null ? citizen.getApplicationDate().toString() : "",
-                    "Address Verified",
-                    "Residential address verified and stored",
-                    "Address System"
-                });
             }
 
             // If no timeline data, show default based on current status
@@ -427,8 +529,8 @@ public class IDStatus extends javax.swing.JPanel {
             model.fireTableDataChanged();
             FullStatusHistoryTable.revalidate();
             FullStatusHistoryTable.repaint();
-            jScrollPane1.revalidate();
-            jScrollPane1.repaint();
+            customScrollPane1.revalidate();
+            customScrollPane1.repaint();
 
         } catch (Exception e) {
             System.err.println("Error loading live timeline: " + e.getMessage());
@@ -441,15 +543,37 @@ public class IDStatus extends javax.swing.JPanel {
         }
     }
     
-    private List<Data.IDStatus> getStatusHistoryForCitizen(int citizenId) {
-        try {
-            // Use the new method
-            return Data.IDStatus.getStatusHistoryByCitizenId(citizenId);
-        } catch (Exception e) {
-            System.err.println("Error getting status history: " + e.getMessage());
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+    // Add this method to your IDStatus class
+    private void addForceRefreshButton() {
+        // Create a small hidden button for force refresh
+        FlatButton forceRefreshBtn = new FlatButton("🔄 Force Refresh");
+        forceRefreshBtn.setFont(new java.awt.Font("Segoe UI", Font.PLAIN, 10));
+        forceRefreshBtn.setNormalColor(new java.awt.Color(200, 200, 200));
+        forceRefreshBtn.setPreferredSize(new java.awt.Dimension(120, 25));
+        forceRefreshBtn.addActionListener(e -> {
+            System.out.println("Force refresh triggered manually");
+            refreshData();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Data refreshed manually at " + new java.util.Date(),
+                "Force Refresh",
+                javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        // Add it to your layout (you'll need to adjust your layout)
+        // Or make it a right-click context menu option
+    }
+
+    // Add this to your right-click menu
+    private void setupContextMenu() {
+        JPopupMenu contextMenu = new JPopupMenu();
+        JMenuItem refreshItem = new JMenuItem("Refresh Status");
+        refreshItem.addActionListener(e -> {
+            System.out.println("Context menu refresh triggered");
+            refreshData();
+        });
+        contextMenu.add(refreshItem);
+
+        this.setComponentPopupMenu(contextMenu);
     }
     
     private void sortTableByDateDesc(DefaultTableModel model) {
@@ -489,6 +613,9 @@ public class IDStatus extends javax.swing.JPanel {
     }
     
     private String[][] getDefaultTimelineBasedOnStatus() {
+        // Get fresh status
+        refreshIDStatus();
+        
         String currentStatus = idStatus != null ? idStatus.getStatus() : null;
         int currentStep = getStepFromStatus(currentStatus);
         System.out.println("Current status: " + currentStatus + ", Step: " + currentStep);
@@ -496,60 +623,32 @@ public class IDStatus extends javax.swing.JPanel {
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
         String today = sdf.format(new java.util.Date());
 
+        // Generate dates for the last 30 days
         String[] dates = new String[5];
-        dates[0] = getDateOffset(-30); // Submitted 30 days ago
-        dates[1] = getDateOffset(-25); // Processing 25 days ago
-        dates[2] = getDateOffset(-20); // Printing 20 days ago
-        dates[3] = getDateOffset(-5);  // Ready 5 days ago
-        dates[4] = getDateOffset(0);   // Today/Claimed
-
-        switch (currentStep) {
-            case 5: // ID Claimed - Complete timeline
-                return new String[][] {
-                    {dates[0], "Application Submitted", "Application submitted online via portal", "System"},
-                    {dates[1], "Processing & Validation", "Documents verified and background check completed", "Officer Smith"},
-                    {dates[2], "Printing & Packaging", "ID card printed and prepared for distribution", "Production Dept"},
-                    {dates[3], "Ready for Pickup", "Card ready for pickup at designated center", "Officer Johnson"},
-                    {dates[4], "ID Claimed", "ID collected successfully at the center", "Center Staff"}
-                };
-
-            case 4: // Ready for Pickup
-                return new String[][] {
-                    {dates[0], "Application Submitted", "Application submitted online via portal", "System"},
-                    {dates[1], "Processing & Validation", "Documents verified and validated", "Officer Smith"},
-                    {dates[2], "Printing & Packaging", "ID card sent for printing and packaging", "Production Dept"},
-                    {dates[3], "Ready for Pickup", "Card ready for collection at center", "Officer Johnson"},
-                    {"", "Next Step", "Schedule pickup appointment at your convenience", ""}
-                };
-
-            case 3: // Printing & Packaging
-                return new String[][] {
-                    {dates[0], "Application Submitted", "Application submitted online via portal", "System"},
-                    {dates[1], "Processing & Validation", "Documents verified and approved for printing", "Officer Smith"},
-                    {dates[2], "Printing & Packaging", "ID card printing in progress at facility", "Production Dept"},
-                    {"", "Next Step", "Awaiting packaging and quality control", ""},
-                    {"", "Future Step", "Notification when ready for pickup", ""}
-                };
-
-            case 2: // Processing & Validation
-                return new String[][] {
-                    {dates[0], "Application Submitted", "Application submitted online via portal", "System"},
-                    {dates[1], "Processing & Validation", "Documents under review and verification", "Officer Smith"},
-                    {"", "Next Step", "Background check and validation process", ""},
-                    {"", "Future Step", "Approval for printing", ""},
-                    {"", "Future Step", "Printing and packaging phase", ""}
-                };
-
-            case 1: // Application Submitted
-            default:
-                return new String[][] {
-                    {dates[0], "Application Submitted", "Application submitted successfully", "System"},
-                    {"", "Next Step", "Document verification and processing", ""},
-                    {"", "Future Step", "Background check and validation", ""},
-                    {"", "Future Step", "Approval and production", ""},
-                    {"", "Future Step", "Pickup scheduling and collection", ""}
-                };
+        for (int i = 0; i < 5; i++) {
+            dates[i] = getDateOffset(-30 + (i * 7)); // Spread over 30 days, one week apart
         }
+
+        // Return timeline based on current step
+        List<String[]> timeline = new ArrayList<>();
+        
+        if (currentStep >= 1) {
+            timeline.add(new String[]{dates[0], "Application Submitted", "Application submitted online via portal", "System"});
+        }
+        if (currentStep >= 2) {
+            timeline.add(new String[]{dates[1], "Processing & Validation", "Documents verified and background check completed", "Validation Team"});
+        }
+        if (currentStep >= 3) {
+            timeline.add(new String[]{dates[2], "Printing & Packaging", "ID card is being printed and packaged", "Production Dept"});
+        }
+        if (currentStep >= 4) {
+            timeline.add(new String[]{dates[3], "Ready for Pickup", "ID card is ready for pickup", "Distribution Center"});
+        }
+        if (currentStep >= 5) {
+            timeline.add(new String[]{dates[4], "ID Claimed", "ID card has been collected", "Center Staff"});
+        }
+
+        return timeline.toArray(new String[0][]);
     }
     
     private String getDateOffset(int daysOffset) {
@@ -559,50 +658,69 @@ public class IDStatus extends javax.swing.JPanel {
         return sdf.format(cal.getTime());
     }
 
-    private String getStatusDescription(String status) {
+    private String getSimplifiedStatusDescription(String status) {
         if (status == null) return "No status available";
 
         String normalizedStatus = status.replace(" ", "_").toUpperCase();
 
+        // Group detailed statuses into simplified descriptions
         switch (normalizedStatus) {
+            // Step 1: Application Submitted
             case "SUBMITTED":
-            case "PENDING":
-                return "Application received and registered in the system";
+            case "STAT-001":
+                return "Application has been submitted and is awaiting processing";
 
+            // Step 2: Processing & Validation (all variations)
             case "PROCESSING":
-            case "UNDER_REVIEW":
-            case "VALIDATION":
-                return "Documents are being reviewed and validated by officials";
+            case "STAT-002":
+                return "Initial processing started";
 
-            case "APPROVED":
-                return "Application has been approved for processing";
+            case "DOCUMENT_VERIFICATION":
+            case "DOCUMENT VERIFICATION":
+            case "STAT-003":
+                return "Documents are being verified for authenticity";
 
-            case "PRINTING":
-            case "PRODUCTION":
-                return "Physical ID card is being printed and manufactured";
+            case "BIOMETRICS_APPOINTMENT":
+            case "BIOMETRICS APPOINTMENT":
+            case "STAT-004":
+                return "Biometrics data collection scheduled";
 
-            case "PACKAGING":
-                return "ID card is being packaged and prepared for distribution";
+            case "BIOMETRICS_COMPLETED":
+            case "BIOMETRICS COMPLETED":
+            case "STAT-005":
+                return "Biometrics data (fingerprints, photo) successfully captured";
 
+            case "BACKGROUND_CHECK":
+            case "BACKGROUND CHECK":
+            case "STAT-006":
+                return "Background investigation and verification in progress";
+
+            case "BACKGROUND_CHECK_COMPLETED":
+            case "BACKGROUND CHECK COMPLETED":
+            case "STAT-007":
+                return "Background check completed successfully";
+
+            // Step 3: Printing & Packaging
+            case "ID_CARD_PRODUCTION":
+            case "ID CARD PRODUCTION":
+            case "STAT-008":
+                return "Physical ID card is being manufactured and packaged";
+
+            // Step 4: Ready for Pickup
             case "READY_FOR_PICKUP":
-            case "READY":
-                return "ID card is ready for pickup at the designated center";
+            case "READY FOR PICKUP":
+            case "STAT-009":
+                return "ID card is ready for pickup at designated center";
 
-            case "ID_CLAIMED":
-            case "CLAIMED":
-                return "ID card has been successfully collected by the applicant";
-
+            // Step 5: ID Claimed
             case "COMPLETED":
-                return "ID application process has been completed";
+            case "STAT-010":
+                return "ID card has been successfully received by applicant";
 
+            // Error/Rejected state
             case "REJECTED":
-                return "Application did not meet the required criteria";
-
-            case "FAILED":
-                return "Processing failed due to technical issues";
-
-            case "CANCELLED":
-                return "Application was cancelled by the applicant";
+            case "STAT-011":
+                return "Application did not meet required criteria";
 
             default:
                 return "Status update: " + status;
@@ -617,10 +735,11 @@ public class IDStatus extends javax.swing.JPanel {
         
         String[][] timelineData = {
             {"", "No application data", "Please submit an application first", ""},
-            {"", "Step 1", "Submit application online", ""},
-            {"", "Step 2", "Document verification", ""},
-            {"", "Step 3", "Background check", ""},
-            {"", "Step 4", "Card production", ""}
+            {"", "Step 1: Submit Application", "Submit application online with required documents", ""},
+            {"", "Step 2: Processing & Validation", "Document verification and background check", ""},
+            {"", "Step 3: Printing & Packaging", "Physical ID card manufacturing", ""},
+            {"", "Step 4: Ready for Pickup", "Card ready at designated center", ""},
+            {"", "Step 5: ID Claimed", "Collect your ID at the center", ""}
         };
         
         for (String[] row : timelineData) {
@@ -630,8 +749,8 @@ public class IDStatus extends javax.swing.JPanel {
         model.fireTableDataChanged();
         FullStatusHistoryTable.revalidate();
         FullStatusHistoryTable.repaint();
-        jScrollPane1.revalidate();
-        jScrollPane1.repaint();
+        customScrollPane1.revalidate();
+        customScrollPane1.repaint();
         
         System.out.println("Default timeline loaded with " + timelineData.length + " rows");
     }
@@ -645,12 +764,15 @@ public class IDStatus extends javax.swing.JPanel {
             return;
         }
 
+        // Get fresh appointment data
         Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(citizen.getCitizenId());
 
         StringBuilder details = new StringBuilder();
-        details.append("ID Details:\n");
-        details.append("----------------\n");
-        details.append("Name: ").append(citizen.getFullName()).append("\n");
+        details.append("NATIONAL ID DETAILS\n");
+        details.append("===================\n\n");
+        details.append("PERSONAL INFORMATION:\n");
+        details.append("--------------------\n");
+        details.append("Full Name: ").append(citizen.getFullName()).append("\n");
         details.append("First Name: ").append(citizen.getFname()).append("\n");
         if (citizen.getMname() != null && !citizen.getMname().isEmpty()) {
             details.append("Middle Name: ").append(citizen.getMname()).append("\n");
@@ -658,7 +780,8 @@ public class IDStatus extends javax.swing.JPanel {
         details.append("Last Name: ").append(citizen.getLname()).append("\n");
         details.append("Gender: ").append(citizen.getGender() != null ? citizen.getGender() : "Not specified").append("\n");
 
-        // Show formatted Transaction ID
+        // Show formatted Transaction ID - get fresh status
+        refreshIDStatus();
         String transactionId = "Not Assigned";
         if (idStatus != null) {
             String rawTransactionId = idStatus.getTransactionId();
@@ -668,7 +791,27 @@ public class IDStatus extends javax.swing.JPanel {
         }
         details.append("Transaction ID: ").append(transactionId).append("\n");
 
-        details.append("Date of Birth: ").append(citizen.getBirthDate()).append("\n");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        details.append("Date of Birth: ").append(citizen.getBirthDate() != null ? sdf.format(citizen.getBirthDate()) : "Not provided").append("\n");
+        details.append("Application Date: ").append(citizen.getApplicationDate() != null ? sdf.format(citizen.getApplicationDate()) : "Not provided").append("\n\n");
+
+        // Application Status
+        details.append("APPLICATION STATUS:\n");
+        details.append("-------------------\n");
+        if (idStatus != null) {
+            String simplifiedStatus = formatStatusForDisplay(idStatus.getStatus());
+            details.append("Current Status: ").append(simplifiedStatus).append("\n");
+            if (idStatus.getUpdateDate() != null) {
+                details.append("Last Updated: ").append(sdf.format(idStatus.getUpdateDate())).append("\n");
+            }
+            if (idStatus.getNotes() != null && !idStatus.getNotes().isEmpty()) {
+                details.append("Notes: ").append(idStatus.getNotes()).append("\n");
+            }
+            details.append("Status ID: ").append(idStatus.getStatusId()).append("\n");
+        } else {
+            details.append("Status: Application submitted\n");
+        }
+        details.append("\n");
 
         // Load address if not already loaded
         if (address == null && citizen != null) {
@@ -677,10 +820,10 @@ public class IDStatus extends javax.swing.JPanel {
 
         // Show address from Address table
         if (address != null) {
-            details.append("\nAddress Details:\n");
+            details.append("ADDRESS DETAILS:\n");
             details.append("----------------\n");
             if (address.getStreetAddress() != null && !address.getStreetAddress().isEmpty()) {
-                details.append("Street Address: ").append(address.getStreetAddress()).append("\n");
+                details.append("Street: ").append(address.getStreetAddress()).append("\n");
             }
             if (address.getAddressLine() != null && !address.getAddressLine().isEmpty()) {
                 details.append("Address Line 2: ").append(address.getAddressLine()).append("\n");
@@ -692,26 +835,44 @@ public class IDStatus extends javax.swing.JPanel {
                 details.append("City: ").append(address.getCity()).append("\n");
             }
             if (address.getStateProvince() != null && !address.getStateProvince().isEmpty()) {
-                details.append("State/Province: ").append(address.getStateProvince()).append("\n");
+                details.append("Province: ").append(address.getStateProvince()).append("\n");
             }
             if (address.getZipPostalCode() != null && !address.getZipPostalCode().isEmpty()) {
-                details.append("ZIP/Postal Code: ").append(address.getZipPostalCode()).append("\n");
+                details.append("ZIP Code: ").append(address.getZipPostalCode()).append("\n");
             }
             if (address.getCountry() != null && !address.getCountry().isEmpty()) {
                 details.append("Country: ").append(address.getCountry()).append("\n");
             }
-
-            // Also show the full formatted address
-            details.append("Full Address: ").append(address.getFullAddress()).append("\n");
+            details.append("\n");
+            details.append("Formatted Address: ").append(address.getFullAddress()).append("\n\n");
         } else {
-            details.append("\nAddress: Not available\n");
+            details.append("ADDRESS: Not available\n\n");
+        }
+
+        // Document Status Summary
+        List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(citizen.getCitizenId());
+        if (documents != null && !documents.isEmpty()) {
+            details.append("DOCUMENT STATUS:\n");
+            details.append("----------------\n");
+            int verifiedCount = 0;
+            int totalCount = 0;
+            
+            for (Data.Document doc : documents) {
+                totalCount++;
+                if ("Verified".equalsIgnoreCase(doc.getStatus()) || "Yes".equalsIgnoreCase(doc.getSubmitted())) {
+                    verifiedCount++;
+                }
+                details.append("- ").append(doc.getDocumentName()).append(": ").append(doc.getStatus()).append("\n");
+            }
+            details.append("\n");
+            details.append("Documents Verified: ").append(verifiedCount).append("/").append(totalCount).append("\n\n");
         }
 
         if (appointment != null) {
-            details.append("\nAppointment Details:\n");
-            details.append("----------------\n");
-            details.append("Appointment Date: ").append(appointment.getAppDate()).append("\n");
-            details.append("Appointment Time: ").append(appointment.getAppTime()).append("\n");
+            details.append("APPOINTMENT DETAILS:\n");
+            details.append("--------------------\n");
+            details.append("Date: ").append(appointment.getAppDate()).append("\n");
+            details.append("Time: ").append(appointment.getAppTime()).append("\n");
             details.append("Status: ").append(appointment.getStatus()).append("\n");
         }
 
@@ -724,7 +885,27 @@ public class IDStatus extends javax.swing.JPanel {
     // Add method to refresh status (can be called from outside)
     public void refreshData() {
         System.out.println("Refreshing ID Status data...");
+        if (citizen != null) {
+            System.out.println("Refreshing for citizen ID: " + citizen.getCitizenId());
+        }
+        
+        // Always get fresh data from database
+        if (citizen != null) {
+            refreshIDStatus();
+        }
+        
         loadCitizenData();
+        System.out.println("Refresh completed at " + new java.util.Date());
+    }
+    
+    // Override dispose to clean up timer
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        if (refreshTimer != null && refreshTimer.isRunning()) {
+            refreshTimer.stop();
+            System.out.println("Refresh timer stopped");
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -737,11 +918,11 @@ public class IDStatus extends javax.swing.JPanel {
         jSeparator1 = new javax.swing.JSeparator();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
-        SchedulePickup = new javax.swing.JButton();
+        SchedulePickup = new component.Button.FlatButton();
         customStepProgressBar1 = new component.Progress.CustomStepProgressBar();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        FullStatusHistoryTable = new component.Table.CustomTable();
         jLabel5 = new javax.swing.JLabel();
+        customScrollPane1 = new component.Scroll.CustomScrollPane();
+        FullStatusHistoryTable = new component.Table.CustomTable();
 
         setBackground(new java.awt.Color(255, 255, 255));
         setPreferredSize(new java.awt.Dimension(850, 550));
@@ -764,7 +945,7 @@ public class IDStatus extends javax.swing.JPanel {
         jLabel4.setPreferredSize(new java.awt.Dimension(850, 25));
 
         jSeparator1.setBackground(new java.awt.Color(255, 255, 255));
-        jSeparator1.setForeground(new java.awt.Color(150, 150, 150));
+        jSeparator1.setForeground(new java.awt.Color(0, 120, 215));
         jSeparator1.setMinimumSize(new java.awt.Dimension(800, 10));
         jSeparator1.setPreferredSize(new java.awt.Dimension(800, 10));
 
@@ -777,10 +958,10 @@ public class IDStatus extends javax.swing.JPanel {
         jLabel1.setText("Congratulations! Your physical National ID card is ready Please schedule an appointment to claim your ID at a center near you.");
 
         SchedulePickup.setBackground(new java.awt.Color(0, 150, 0));
-        SchedulePickup.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        SchedulePickup.setForeground(new java.awt.Color(255, 255, 255));
         SchedulePickup.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/calendar.png"))); // NOI18N
         SchedulePickup.setText("SCHEDULE MY PICKUP");
+        SchedulePickup.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        SchedulePickup.setNormalColor(new java.awt.Color(0, 150, 0));
         SchedulePickup.setPreferredSize(new java.awt.Dimension(200, 35));
         SchedulePickup.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -803,12 +984,17 @@ public class IDStatus extends javax.swing.JPanel {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(25, 25, 25)
                 .addComponent(jLabel1)
-                .addGap(25, 25, 25)
+                .addGap(18, 18, 18)
                 .addComponent(SchedulePickup, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(20, Short.MAX_VALUE))
+                .addContainerGap(27, Short.MAX_VALUE))
         );
 
-        jScrollPane1.setBackground(new java.awt.Color(255, 255, 255));
+        customStepProgressBar1.setCurrentStep(4);
+
+        jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel5.setForeground(new java.awt.Color(0, 120, 215));
+        jLabel5.setText("FULL STATUS HISTORY");
+        jLabel5.setPreferredSize(new java.awt.Dimension(850, 25));
 
         FullStatusHistoryTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -829,7 +1015,7 @@ public class IDStatus extends javax.swing.JPanel {
                 return canEdit [columnIndex];
             }
         });
-        jScrollPane1.setViewportView(FullStatusHistoryTable);
+        customScrollPane1.setViewportView(FullStatusHistoryTable);
         if (FullStatusHistoryTable.getColumnModel().getColumnCount() > 0) {
             FullStatusHistoryTable.getColumnModel().getColumn(0).setResizable(false);
             FullStatusHistoryTable.getColumnModel().getColumn(0).setPreferredWidth(80);
@@ -840,11 +1026,6 @@ public class IDStatus extends javax.swing.JPanel {
             FullStatusHistoryTable.getColumnModel().getColumn(3).setResizable(false);
             FullStatusHistoryTable.getColumnModel().getColumn(3).setPreferredWidth(100);
         }
-
-        jLabel5.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel5.setForeground(new java.awt.Color(0, 120, 215));
-        jLabel5.setText("FULL STATUS HISTORY");
-        jLabel5.setPreferredSize(new java.awt.Dimension(850, 25));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -862,11 +1043,11 @@ public class IDStatus extends javax.swing.JPanel {
             .addComponent(customStepProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(customScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -887,7 +1068,7 @@ public class IDStatus extends javax.swing.JPanel {
                 .addGap(5, 5, 5)
                 .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(5, 5, 5)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 144, Short.MAX_VALUE)
+                .addComponent(customScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 124, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -944,7 +1125,8 @@ public class IDStatus extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private component.Table.CustomTable FullStatusHistoryTable;
-    private javax.swing.JButton SchedulePickup;
+    private component.Button.FlatButton SchedulePickup;
+    private component.Scroll.CustomScrollPane customScrollPane1;
     private component.Progress.CustomStepProgressBar customStepProgressBar1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

@@ -49,12 +49,12 @@ public class Login extends javax.swing.JPanel {
 
         RIGHT = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
-        LoginButton = new javax.swing.JButton();
         ForgotPasswordButton = new javax.swing.JButton();
         RegisterButton = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         UsernameText = new sys.main.CustomTextField();
         PasswordText = new sys.main.CustomPasswordField();
+        LoginButton = new component.Button.FlatButton();
 
         setPreferredSize(new java.awt.Dimension(450, 500));
 
@@ -66,19 +66,6 @@ public class Login extends javax.swing.JPanel {
         jLabel1.setForeground(new java.awt.Color(0, 120, 215));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("SIGN IN");
-
-        LoginButton.setBackground(new java.awt.Color(0, 120, 215));
-        LoginButton.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        LoginButton.setForeground(new java.awt.Color(255, 255, 255));
-        LoginButton.setText("LOGIN");
-        LoginButton.setBorder(null);
-        LoginButton.setFocusable(false);
-        LoginButton.setPreferredSize(new java.awt.Dimension(91, 35));
-        LoginButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                LoginButtonActionPerformed(evt);
-            }
-        });
 
         ForgotPasswordButton.setForeground(new java.awt.Color(100, 100, 100));
         ForgotPasswordButton.setText("Forgot your password?");
@@ -117,6 +104,12 @@ public class Login extends javax.swing.JPanel {
 
         PasswordText.setPlaceholder("Password");
 
+        LoginButton.setBackground(new java.awt.Color(0, 120, 215));
+        LoginButton.setText("SIGN IN");
+        LoginButton.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        LoginButton.setNormalColor(new java.awt.Color(0, 120, 215));
+        LoginButton.setPreferredSize(new java.awt.Dimension(91, 35));
+
         javax.swing.GroupLayout RIGHTLayout = new javax.swing.GroupLayout(RIGHT);
         RIGHT.setLayout(RIGHTLayout);
         RIGHTLayout.setHorizontalGroup(
@@ -144,7 +137,7 @@ public class Login extends javax.swing.JPanel {
             .addGroup(RIGHTLayout.createSequentialGroup()
                 .addGap(24, 24, 24)
                 .addComponent(jLabel1)
-                .addGap(18, 112, Short.MAX_VALUE)
+                .addGap(18, 113, Short.MAX_VALUE)
                 .addComponent(UsernameText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(PasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -152,11 +145,11 @@ public class Login extends javax.swing.JPanel {
                 .addComponent(ForgotPasswordButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(LoginButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
+                .addGap(22, 22, 22)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(RegisterButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(88, Short.MAX_VALUE))
+                .addContainerGap(84, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
@@ -172,10 +165,6 @@ public class Login extends javax.swing.JPanel {
             .addComponent(RIGHT, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
     }// </editor-fold>//GEN-END:initComponents
-
-    private void LoginButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LoginButtonActionPerformed
-        
-    }//GEN-LAST:event_LoginButtonActionPerformed
 
     private void RegisterButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RegisterButtonActionPerformed
         clearForm();
@@ -211,7 +200,7 @@ public class Login extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton ForgotPasswordButton;
-    private javax.swing.JButton LoginButton;
+    private component.Button.FlatButton LoginButton;
     private sys.main.CustomPasswordField PasswordText;
     private javax.swing.JPanel RIGHT;
     private javax.swing.JButton RegisterButton;

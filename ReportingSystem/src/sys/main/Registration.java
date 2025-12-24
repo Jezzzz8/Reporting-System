@@ -311,7 +311,6 @@ public class Registration extends javax.swing.JPanel {
         customScrollPane1 = new component.Scroll.CustomScrollPane();
         RIGHT = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
-        CreateAccountButton = new javax.swing.JButton();
         SigninButton = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         FirstnameText = new sys.main.CustomTextField();
@@ -335,6 +334,7 @@ public class Registration extends javax.swing.JPanel {
         ZipPostalCodeTextField = new sys.main.CustomTextField();
         BarangayAddressText = new sys.main.CustomTextField();
         TransactionReferenceNumberText = new sys.main.CustomTextField();
+        CreateAccountButton = new component.Button.FlatButton();
 
         setPreferredSize(new java.awt.Dimension(450, 500));
 
@@ -349,19 +349,6 @@ public class Registration extends javax.swing.JPanel {
         jLabel1.setForeground(new java.awt.Color(0, 120, 215));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("REGISTRATION FORM");
-
-        CreateAccountButton.setBackground(new java.awt.Color(0, 120, 215));
-        CreateAccountButton.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        CreateAccountButton.setForeground(new java.awt.Color(255, 255, 255));
-        CreateAccountButton.setText("CREATE ACCOUNT");
-        CreateAccountButton.setBorder(null);
-        CreateAccountButton.setFocusable(false);
-        CreateAccountButton.setPreferredSize(new java.awt.Dimension(200, 35));
-        CreateAccountButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                CreateAccountButtonActionPerformed(evt);
-            }
-        });
 
         SigninButton.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         SigninButton.setForeground(new java.awt.Color(0, 120, 215));
@@ -432,6 +419,17 @@ public class Registration extends javax.swing.JPanel {
 
         TransactionReferenceNumberText.setPlaceholder("Transaction Reference Number*");
 
+        CreateAccountButton.setBackground(new java.awt.Color(0, 120, 215));
+        CreateAccountButton.setText("CREATE ACCOUNT");
+        CreateAccountButton.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        CreateAccountButton.setNormalColor(new java.awt.Color(0, 120, 215));
+        CreateAccountButton.setPreferredSize(new java.awt.Dimension(200, 35));
+        CreateAccountButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                CreateAccountButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout RIGHTLayout = new javax.swing.GroupLayout(RIGHT);
         RIGHT.setLayout(RIGHTLayout);
         RIGHTLayout.setHorizontalGroup(
@@ -471,12 +469,13 @@ public class Registration extends javax.swing.JPanel {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(RIGHTLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(RIGHTLayout.createSequentialGroup()
-                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(RIGHTLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         RIGHTLayout.setVerticalGroup(
@@ -522,17 +521,17 @@ public class Registration extends javax.swing.JPanel {
                 .addComponent(PasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
                 .addComponent(ConfirmPasswordText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
                 .addComponent(TransactionReferenceNumberText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, Short.MAX_VALUE)
                 .addComponent(TermsAndConditionCheckBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(10, 10, 10))
+                .addGap(16, 16, 16))
         );
 
         PasswordText.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -565,7 +564,7 @@ public class Registration extends javax.swing.JPanel {
     }//GEN-LAST:event_SigninButtonActionPerformed
 
     private void CreateAccountButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CreateAccountButtonActionPerformed
-        
+        // TODO add your handling code here:
     }//GEN-LAST:event_CreateAccountButtonActionPerformed
     
     public void createAccount() {
@@ -882,7 +881,7 @@ public class Registration extends javax.swing.JPanel {
     private sys.main.CustomTextField CityText;
     private sys.main.CustomPasswordField ConfirmPasswordText;
     private sys.main.CustomTextField CountryText;
-    private javax.swing.JButton CreateAccountButton;
+    private component.Button.FlatButton CreateAccountButton;
     private component.CustomDatePicker.CustomDatePicker DateOfBirthcustomDatePicker;
     private sys.main.CustomTextField EmailText;
     private sys.main.CustomTextField FirstnameText;

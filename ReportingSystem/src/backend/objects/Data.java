@@ -1691,7 +1691,9 @@ public class Data {
         public static IDStatus getStatusByCitizenId(int citizenId) {
             String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
                           "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
-                          "WHERE ist.citizen_id = ?";
+                          "WHERE ist.citizen_id = ? " +
+                          "ORDER BY ist.update_date DESC, ist.status_id DESC LIMIT 1";
+
 
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -1962,19 +1964,18 @@ public class Data {
         }
         
         public static boolean updateStatus(IDStatus idStatus) {
-            String query = "UPDATE id_status SET transaction_id = ?, citizen_id = ?, status = ?, update_date = ?, notes = ? " +
+            String query = "UPDATE id_status SET transaction_id = ?, status_name_id = ?, update_date = ?, notes = ? " +
                           "WHERE status_id = ?";
-            
+
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
                 stmt.setString(1, idStatus.getTransactionId());
-                stmt.setInt(2, idStatus.getCitizenId());
-                stmt.setString(3, idStatus.getStatus());
-                stmt.setDate(4, idStatus.getUpdateDate());
-                stmt.setString(5, idStatus.getNotes());
-                stmt.setInt(6, idStatus.getStatusId());
-                
+                stmt.setInt(2, idStatus.getStatusNameId());  // Update status_name_id instead of status
+                stmt.setDate(3, idStatus.getUpdateDate());
+                stmt.setString(4, idStatus.getNotes());
+                stmt.setInt(5, idStatus.getStatusId());
+
                 return stmt.executeUpdate() > 0;
             } catch (SQLException e) {
                 System.err.println("Error updating status: " + e.getMessage());

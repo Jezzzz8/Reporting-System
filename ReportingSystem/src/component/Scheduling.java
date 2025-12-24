@@ -766,6 +766,7 @@ public class Scheduling extends javax.swing.JPanel {
         lblSelectedDate = new javax.swing.JLabel();
         lblSelectedDay = new javax.swing.JLabel();
         lblSelectedTime = new javax.swing.JLabel();
+        jSeparator1 = new javax.swing.JSeparator();
         timeSlotsPanel = new javax.swing.JPanel();
         JLabel = new javax.swing.JLabel();
         JLabel1 = new javax.swing.JLabel();
@@ -776,9 +777,9 @@ public class Scheduling extends javax.swing.JPanel {
         SchedulingTabbedPane = new component.NoTabJTabbedPane();
         SelectDatePanel = new javax.swing.JPanel();
         jLayeredPane1 = new javax.swing.JLayeredPane();
-        EarliestAvailableButton = new javax.swing.JButton();
-        ThisWeekButton = new javax.swing.JButton();
-        NextWeekButton = new javax.swing.JButton();
+        EarliestAvailableButton = new component.Button.FlatButton();
+        ThisWeekButton = new component.Button.FlatButton();
+        NextWeekButton = new component.Button.FlatButton();
         DateIndicatorsPanel = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
@@ -795,6 +796,9 @@ public class Scheduling extends javax.swing.JPanel {
 
         ProgressHeaderPanel.setBackground(new java.awt.Color(255, 255, 255));
         ProgressHeaderPanel.setPreferredSize(new java.awt.Dimension(850, 60));
+
+        customProgressBar.setCurrentStep(1);
+        customProgressBar.setTotalSteps(3);
 
         javax.swing.GroupLayout ProgressHeaderPanelLayout = new javax.swing.GroupLayout(ProgressHeaderPanel);
         ProgressHeaderPanel.setLayout(ProgressHeaderPanelLayout);
@@ -813,11 +817,15 @@ public class Scheduling extends javax.swing.JPanel {
         SummaryConfirmationPanel.setBackground(new java.awt.Color(255, 255, 255));
         SummaryConfirmationPanel.setPreferredSize(new java.awt.Dimension(250, 500));
 
+        PreviousButton.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         PreviousButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/previous.png"))); // NOI18N
+        PreviousButton.setText("Go Back");
         PreviousButton.setBorderPainted(false);
         PreviousButton.setContentAreaFilled(false);
+        PreviousButton.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         PreviousButton.setFocusPainted(false);
-        PreviousButton.setPreferredSize(new java.awt.Dimension(50, 50));
+        PreviousButton.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
+        PreviousButton.setPreferredSize(new java.awt.Dimension(120, 50));
         PreviousButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/images/previous_pressed.png"))); // NOI18N
         PreviousButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -825,11 +833,15 @@ public class Scheduling extends javax.swing.JPanel {
             }
         });
 
+        ContinueButton.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         ContinueButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/continue.png"))); // NOI18N
+        ContinueButton.setText("Continue");
         ContinueButton.setBorderPainted(false);
         ContinueButton.setContentAreaFilled(false);
+        ContinueButton.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         ContinueButton.setFocusPainted(false);
-        ContinueButton.setPreferredSize(new java.awt.Dimension(50, 50));
+        ContinueButton.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
+        ContinueButton.setPreferredSize(new java.awt.Dimension(120, 50));
         ContinueButton.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/images/continue_pressed.png"))); // NOI18N
         ContinueButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -837,17 +849,27 @@ public class Scheduling extends javax.swing.JPanel {
             }
         });
 
+        lblName.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblName.setPreferredSize(new java.awt.Dimension(90, 30));
 
+        lblTransactionId.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTransactionId.setPreferredSize(new java.awt.Dimension(90, 30));
 
+        lblPhone.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblPhone.setPreferredSize(new java.awt.Dimension(90, 30));
 
+        lblSelectedDate.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblSelectedDate.setPreferredSize(new java.awt.Dimension(90, 30));
 
+        lblSelectedDay.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblSelectedDay.setPreferredSize(new java.awt.Dimension(90, 30));
 
+        lblSelectedTime.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblSelectedTime.setPreferredSize(new java.awt.Dimension(90, 30));
+
+        jSeparator1.setBackground(new java.awt.Color(0, 120, 215));
+        jSeparator1.setForeground(new java.awt.Color(0, 120, 215));
+        jSeparator1.setOrientation(javax.swing.SwingConstants.VERTICAL);
 
         timeSlotsPanel.setPreferredSize(new java.awt.Dimension(200, 35));
 
@@ -862,28 +884,29 @@ public class Scheduling extends javax.swing.JPanel {
             .addGap(0, 35, Short.MAX_VALUE)
         );
 
-        JLabel.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        JLabel.setText("Name");
+        JLabel.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        JLabel.setText("Name:");
+        JLabel.setToolTipText("");
         JLabel.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        JLabel1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        JLabel1.setText("Phone");
+        JLabel1.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        JLabel1.setText("Phone:");
         JLabel1.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        JLabel2.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        JLabel2.setText("TRN");
+        JLabel2.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        JLabel2.setText("TRN:");
         JLabel2.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        JLabel3.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        JLabel3.setText("Selected Time");
+        JLabel3.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        JLabel3.setText("Selected Time:");
         JLabel3.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        JLabel4.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        JLabel4.setText("Selected Date");
+        JLabel4.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        JLabel4.setText("Selected Date:");
         JLabel4.setPreferredSize(new java.awt.Dimension(100, 30));
 
-        JLabel5.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        JLabel5.setText("Selected Day");
+        JLabel5.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        JLabel5.setText("Selected Day:");
         JLabel5.setPreferredSize(new java.awt.Dimension(100, 30));
 
         javax.swing.GroupLayout SummaryConfirmationPanelLayout = new javax.swing.GroupLayout(SummaryConfirmationPanel);
@@ -892,68 +915,73 @@ public class Scheduling extends javax.swing.JPanel {
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(ContinueButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(timeSlotsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 172, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
                         .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(JLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(JLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(JLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(JLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(JLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(JLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(JLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 11, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lblTransactionId, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addComponent(JLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, SummaryConfirmationPanelLayout.createSequentialGroup()
-                        .addComponent(JLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)))
-                .addContainerGap())
+                            .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(lblTransactionId, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(timeSlotsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 255, Short.MAX_VALUE)
+                            .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                                .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(ContinueButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap())))
         );
         SummaryConfirmationPanelLayout.setVerticalGroup(
             SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(lblTransactionId, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(JLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(timeSlotsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ContinueButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(PreviousButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(lblName, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(lblTransactionId, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(lblPhone, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(lblSelectedDate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(lblSelectedDay, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(lblSelectedTime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(JLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(34, 34, 34))
+                    .addGroup(SummaryConfirmationPanelLayout.createSequentialGroup()
+                        .addComponent(jSeparator1)
+                        .addGap(8, 8, 8)))
+                .addComponent(timeSlotsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(28, 28, 28)
+                .addGroup(SummaryConfirmationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(ContinueButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(PreviousButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
 
         SchedulingTabbedPane.setBorder(null);
@@ -966,10 +994,7 @@ public class Scheduling extends javax.swing.JPanel {
         jLayeredPane1.setLayout(new java.awt.GridLayout(3, 3, 5, 5));
 
         EarliestAvailableButton.setText("Earliest Available");
-        EarliestAvailableButton.setBorder(null);
-        EarliestAvailableButton.setBorderPainted(false);
-        EarliestAvailableButton.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        EarliestAvailableButton.setPreferredSize(new java.awt.Dimension(150, 45));
+        EarliestAvailableButton.setPreferredSize(new java.awt.Dimension(100, 45));
         EarliestAvailableButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 EarliestAvailableButtonActionPerformed(evt);
@@ -978,9 +1003,7 @@ public class Scheduling extends javax.swing.JPanel {
         jLayeredPane1.add(EarliestAvailableButton);
 
         ThisWeekButton.setText("This Week");
-        ThisWeekButton.setBorder(null);
-        ThisWeekButton.setBorderPainted(false);
-        ThisWeekButton.setPreferredSize(new java.awt.Dimension(150, 45));
+        ThisWeekButton.setPreferredSize(new java.awt.Dimension(100, 45));
         ThisWeekButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 ThisWeekButtonActionPerformed(evt);
@@ -989,9 +1012,7 @@ public class Scheduling extends javax.swing.JPanel {
         jLayeredPane1.add(ThisWeekButton);
 
         NextWeekButton.setText("Next Week");
-        NextWeekButton.setBorder(null);
-        NextWeekButton.setBorderPainted(false);
-        NextWeekButton.setPreferredSize(new java.awt.Dimension(150, 45));
+        NextWeekButton.setPreferredSize(new java.awt.Dimension(100, 45));
         NextWeekButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 NextWeekButtonActionPerformed(evt);
@@ -999,7 +1020,8 @@ public class Scheduling extends javax.swing.JPanel {
         });
         jLayeredPane1.add(NextWeekButton);
 
-        DateIndicatorsPanel.setBackground(new java.awt.Color(142, 217, 255));
+        DateIndicatorsPanel.setBackground(new java.awt.Color(255, 255, 255));
+        DateIndicatorsPanel.setOpaque(false);
         DateIndicatorsPanel.setLayout(new java.awt.GridLayout(1, 0));
 
         jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -1050,25 +1072,25 @@ public class Scheduling extends javax.swing.JPanel {
         SelectDatePanelLayout.setHorizontalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SelectDatePanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
-                .addGap(122, 122, 122)
+                .addContainerGap(60, Short.MAX_VALUE)
                 .addGroup(SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE))
-                .addGap(123, 123, 123))
+                    .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 456, Short.MAX_VALUE)
+                    .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(62, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, SelectDatePanelLayout.createSequentialGroup()
+                .addGap(95, 95, 95)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                .addGap(95, 95, 95))
         );
         SelectDatePanelLayout.setVerticalGroup(
             SelectDatePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(SelectDatePanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, 312, Short.MAX_VALUE)
-                .addGap(3, 3, 3)
-                .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 111, Short.MAX_VALUE)
+                .addComponent(DateIndicatorsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(calendarCustom, javax.swing.GroupLayout.DEFAULT_SIZE, 283, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
+                .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -1095,11 +1117,11 @@ public class Scheduling extends javax.swing.JPanel {
         ConfirmDetailsPanel.setLayout(ConfirmDetailsPanelLayout);
         ConfirmDetailsPanelLayout.setHorizontalGroup(
             ConfirmDetailsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 661, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
         ConfirmDetailsPanelLayout.setVerticalGroup(
             ConfirmDetailsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 485, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
 
         SchedulingTabbedPane.addTab("tab3", ConfirmDetailsPanel);
@@ -1110,9 +1132,9 @@ public class Scheduling extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(ProgressHeaderPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 666, Short.MAX_VALUE)
+                .addComponent(SchedulingTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 583, Short.MAX_VALUE)
                 .addGap(0, 0, 0)
-                .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 184, Short.MAX_VALUE))
+                .addComponent(SummaryConfirmationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 267, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1131,18 +1153,6 @@ public class Scheduling extends javax.swing.JPanel {
             updateUIForStep(currentStep);
         }
     }//GEN-LAST:event_PreviousButtonActionPerformed
-
-    private void EarliestAvailableButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EarliestAvailableButtonActionPerformed
-        calendarCustom.goToEarliestAvailable();
-    }//GEN-LAST:event_EarliestAvailableButtonActionPerformed
-
-    private void NextWeekButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NextWeekButtonActionPerformed
-        calendarCustom.goToNextWeek();
-    }//GEN-LAST:event_NextWeekButtonActionPerformed
-
-    private void ThisWeekButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ThisWeekButtonActionPerformed
-        calendarCustom.goToThisWeek();
-    }//GEN-LAST:event_ThisWeekButtonActionPerformed
 
     private void ContinueButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ContinueButtonActionPerformed
         if (currentStep < 3) {
@@ -1200,27 +1210,39 @@ public class Scheduling extends javax.swing.JPanel {
         }
 
     }//GEN-LAST:event_ContinueButtonActionPerformed
+
+    private void EarliestAvailableButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EarliestAvailableButtonActionPerformed
+        calendarCustom.goToEarliestAvailable();
+    }//GEN-LAST:event_EarliestAvailableButtonActionPerformed
+
+    private void ThisWeekButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ThisWeekButtonActionPerformed
+        calendarCustom.goToThisWeek();
+    }//GEN-LAST:event_ThisWeekButtonActionPerformed
+
+    private void NextWeekButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NextWeekButtonActionPerformed
+        calendarCustom.goToNextWeek();
+    }//GEN-LAST:event_NextWeekButtonActionPerformed
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel ConfirmDetailsPanel;
     private javax.swing.JButton ContinueButton;
     private javax.swing.JPanel DateIndicatorsPanel;
-    private javax.swing.JButton EarliestAvailableButton;
+    private component.Button.FlatButton EarliestAvailableButton;
     private javax.swing.JLabel JLabel;
     private javax.swing.JLabel JLabel1;
     private javax.swing.JLabel JLabel2;
     private javax.swing.JLabel JLabel3;
     private javax.swing.JLabel JLabel4;
     private javax.swing.JLabel JLabel5;
-    private javax.swing.JButton NextWeekButton;
+    private component.Button.FlatButton NextWeekButton;
     private javax.swing.JButton PreviousButton;
     private javax.swing.JPanel ProgressHeaderPanel;
     private component.NoTabJTabbedPane SchedulingTabbedPane;
     private javax.swing.JPanel SelectDatePanel;
     private javax.swing.JPanel SelectTimePanel;
     private javax.swing.JPanel SummaryConfirmationPanel;
-    private javax.swing.JButton ThisWeekButton;
+    private component.Button.FlatButton ThisWeekButton;
     private component.Calendar.CalendarCustom calendarCustom;
     private component.Progress.CustomStepProgressBar customProgressBar;
     private javax.swing.JLabel jLabel1;
@@ -1230,6 +1252,7 @@ public class Scheduling extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLayeredPane jLayeredPane1;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JLabel lblName;
     private javax.swing.JLabel lblPhone;
     private javax.swing.JLabel lblSelectedDate;

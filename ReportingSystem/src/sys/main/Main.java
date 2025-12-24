@@ -4,9 +4,9 @@ import component.Dashboard;
 import component.DefaultForm;
 import component.IDStatus;
 import component.Profile;
-import backend.objects.Data;
 import backend.objects.Data.User;
 import component.Scheduling;
+import component.UpdateIDStatus;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -291,9 +291,11 @@ public class Main extends javax.swing.JFrame {
     }
     
     private void showIDStatusManagementMenu(int subIndex) {
+        UpdateIDStatus updateidstatus = new UpdateIDStatus(currentUser);
+        
         switch (subIndex) {
             case 1: // Update ID Status
-                showForm(new DefaultForm("Update ID Status - Admin Panel"));
+                showForm(updateidstatus);
                 break;
             case 2: // View Status History
                 showForm(new DefaultForm("View Status History - Admin Panel"));
@@ -317,10 +319,7 @@ public class Main extends javax.swing.JFrame {
             case 1: // System Configuration
                 showForm(new DefaultForm("System Configuration - Admin Panel"));
                 break;
-            case 2: // Activity Logs
-                showForm(new DefaultForm("Activity Logs - Admin Panel"));
-                break;
-            case 3: // Backup & Restore
+            case 2: // Backup & Restore
                 showForm(new DefaultForm("Backup & Restore - Admin Panel"));
                 break;
         }
@@ -409,7 +408,7 @@ public class Main extends javax.swing.JFrame {
                 System.out.println("Admin Dashboard created successfully");
                 
                 // Show the dashboard
-                showForm(new DefaultForm("Upcoming Admin Dashboard - Coming Soon"));
+                showForm(new DefaultForm("Admin Dashboard - Coming Soon"));
                 
             } catch (Exception e) {
                 System.err.println("Error creating admin dashboard: " + e.getMessage());
@@ -430,7 +429,7 @@ public class Main extends javax.swing.JFrame {
                 System.out.println("Staff Dashboard created successfully");
                 
                 // Show the dashboard
-                showForm(new DefaultForm("Upcoming Staff Dashboard - Coming Soon"));
+                showForm(new DefaultForm("Staff Dashboard - Coming Soon"));
                 
             } catch (Exception e) {
                 System.err.println("Error creating staff dashboard: " + e.getMessage());
@@ -458,6 +457,16 @@ public class Main extends javax.swing.JFrame {
         
         // Show the id status
         showForm(idstatus);
+    }
+    
+    private void showUpdateIDStatus() {
+        System.out.println("showIDStatus() called");
+        System.out.println("Creating ID Status for user: " + currentUser.getFullName());
+        UpdateIDStatus updateidstatus = new UpdateIDStatus(currentUser);
+        System.out.println("ID Status created successfully");
+        
+        // Show the id status
+        showForm(updateidstatus);
     }
     
     private void showForm(Component com) {

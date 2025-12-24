@@ -496,13 +496,15 @@ public class CalendarCustom extends javax.swing.JPanel {
 
         jLayeredPane1 = new javax.swing.JLayeredPane();
         lbMonthYear = new javax.swing.JLabel();
-        cmdBack = new javax.swing.JButton();
         cmdNext = new javax.swing.JButton();
+        cmdBack = new javax.swing.JButton();
         panelSlide1 = new component.Calendar.swing.PanelSlide();
 
         setBackground(new java.awt.Color(255, 255, 255));
+        setOpaque(false);
 
-        jLayeredPane1.setBackground(new java.awt.Color(255, 255, 255));
+        jLayeredPane1.setBackground(new java.awt.Color(142, 217, 255));
+        jLayeredPane1.setOpaque(true);
         jLayeredPane1.setPreferredSize(new java.awt.Dimension(500, 50));
 
         lbMonthYear.setBackground(new java.awt.Color(255, 255, 255));
@@ -511,47 +513,55 @@ public class CalendarCustom extends javax.swing.JPanel {
         lbMonthYear.setText("Month - Year");
         lbMonthYear.setPreferredSize(new java.awt.Dimension(400, 50));
 
-        cmdBack.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/back.png"))); // NOI18N
-        cmdBack.setPreferredSize(new java.awt.Dimension(50, 50));
-        cmdBack.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cmdBackActionPerformed(evt);
-            }
-        });
-
-        cmdNext.setIcon(new javax.swing.ImageIcon(getClass().getResource("/component/Calendar/icon/next.png"))); // NOI18N
+        cmdNext.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/continue.png"))); // NOI18N
+        cmdNext.setBorderPainted(false);
+        cmdNext.setContentAreaFilled(false);
+        cmdNext.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        cmdNext.setFocusPainted(false);
         cmdNext.setPreferredSize(new java.awt.Dimension(50, 50));
+        cmdNext.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/images/continue_pressed.png"))); // NOI18N
         cmdNext.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cmdNextActionPerformed(evt);
             }
         });
 
+        cmdBack.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/previous.png"))); // NOI18N
+        cmdBack.setBorderPainted(false);
+        cmdBack.setContentAreaFilled(false);
+        cmdBack.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        cmdBack.setFocusPainted(false);
+        cmdBack.setPreferredSize(new java.awt.Dimension(50, 50));
+        cmdBack.setPressedIcon(new javax.swing.ImageIcon(getClass().getResource("/images/previous_pressed.png"))); // NOI18N
+        cmdBack.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmdBackActionPerformed(evt);
+            }
+        });
+
         jLayeredPane1.setLayer(lbMonthYear, javax.swing.JLayeredPane.DEFAULT_LAYER);
-        jLayeredPane1.setLayer(cmdBack, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jLayeredPane1.setLayer(cmdNext, javax.swing.JLayeredPane.DEFAULT_LAYER);
+        jLayeredPane1.setLayer(cmdBack, javax.swing.JLayeredPane.DEFAULT_LAYER);
 
         javax.swing.GroupLayout jLayeredPane1Layout = new javax.swing.GroupLayout(jLayeredPane1);
         jLayeredPane1.setLayout(jLayeredPane1Layout);
         jLayeredPane1Layout.setHorizontalGroup(
             jLayeredPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jLayeredPane1Layout.createSequentialGroup()
-                .addGap(0, 0, 0)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jLayeredPane1Layout.createSequentialGroup()
                 .addComponent(cmdBack, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
-                .addComponent(lbMonthYear, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addComponent(lbMonthYear, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addGap(0, 0, 0)
-                .addComponent(cmdNext, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0))
+                .addComponent(cmdNext, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         jLayeredPane1Layout.setVerticalGroup(
             jLayeredPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jLayeredPane1Layout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addGroup(jLayeredPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(cmdBack, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(lbMonthYear, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(cmdNext, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jLayeredPane1Layout.createSequentialGroup()
+                .addGroup(jLayeredPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(cmdBack, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cmdNext, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lbMonthYear, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 0, 0))
         );
 
         panelSlide1.setBackground(new java.awt.Color(255, 255, 255));
@@ -560,45 +570,17 @@ public class CalendarCustom extends javax.swing.JPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
             .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
-            .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, 244, Short.MAX_VALUE))
+                .addGap(0, 0, 0)
+                .addComponent(panelSlide1, javax.swing.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
-
-    private void cmdBackActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdBackActionPerformed
-        if (month == 1) {
-            month = 12;
-            year--;
-        } else {
-            month--;
-        }
-
-        // Create the panel
-        PanelDate panelDate = createPanelDate();
-
-        // Initialize IMMEDIATELY (this will call init() and set dates)
-        panelDate.init();
-
-        // Force initialization of all cells BEFORE showing the panel
-        initializePanelDateCells(panelDate);
-
-        // Show the already-initialized panel
-        panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_RIGHT);
-
-        showMonthYear();
-
-        // Notify listener if exists
-        if (listener != null) {
-            listener.monthChanged(month, year);
-        }
-    }//GEN-LAST:event_cmdBackActionPerformed
 
     private void cmdNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdNextActionPerformed
         if (month == 12) {
@@ -627,6 +609,34 @@ public class CalendarCustom extends javax.swing.JPanel {
             listener.monthChanged(month, year);
         }
     }//GEN-LAST:event_cmdNextActionPerformed
+
+    private void cmdBackActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmdBackActionPerformed
+        if (month == 1) {
+            month = 12;
+            year--;
+        } else {
+            month--;
+        }
+
+        // Create the panel
+        PanelDate panelDate = createPanelDate();
+
+        // Initialize IMMEDIATELY (this will call init() and set dates)
+        panelDate.init();
+
+        // Force initialization of all cells BEFORE showing the panel
+        initializePanelDateCells(panelDate);
+
+        // Show the already-initialized panel
+        panelSlide1.show(panelDate, PanelSlide.AnimateType.TO_RIGHT);
+
+        showMonthYear();
+
+        // Notify listener if exists
+        if (listener != null) {
+            listener.monthChanged(month, year);
+        }
+    }//GEN-LAST:event_cmdBackActionPerformed
 
     private void thisMonth() {
         Calendar calendar = Calendar.getInstance();

@@ -456,7 +456,7 @@ public class Profile extends javax.swing.JPanel {
         NationalIDTextField = new sys.main.CustomTextField();
         jLabel1 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
-        UpdatePersonalDetailsButton = new javax.swing.JButton();
+        UpdatePersonalDetailsButton = new component.Button.FlatButton();
         ContactInformationCard = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
@@ -472,19 +472,18 @@ public class Profile extends javax.swing.JPanel {
         ZIPPostalCodeTextField = new sys.main.CustomTextField();
         CountryTextField = new sys.main.CustomTextField();
         jLabel17 = new javax.swing.JLabel();
-        UpdateContactDetailsButton = new javax.swing.JButton();
         AddressLineTextArea = new component.CustomTextArea.CustomTextArea();
         jLabel16 = new javax.swing.JLabel();
         StreetAddressTextField = new sys.main.CustomTextField();
         BarangayAddressTextField = new sys.main.CustomTextField();
         jLabel20 = new javax.swing.JLabel();
+        UpdateContactDetailsButton = new component.Button.FlatButton();
         AccountSecurityCard = new javax.swing.JPanel();
         jLabel12 = new javax.swing.JLabel();
         jLabel18 = new javax.swing.JLabel();
         jLabel19 = new javax.swing.JLabel();
         jLabel21 = new javax.swing.JLabel();
         jLabel22 = new javax.swing.JLabel();
-        UpdatePasswordButton = new javax.swing.JButton();
         CurrentPasswordField = new sys.main.CustomPasswordField();
         ConfirmPasswordField = new sys.main.CustomPasswordField();
         jLabel35 = new javax.swing.JLabel();
@@ -492,6 +491,7 @@ public class Profile extends javax.swing.JPanel {
         PasswordField = new sys.main.CustomPasswordField();
         jLabel37 = new javax.swing.JLabel();
         NewPasswordField = new sys.main.CustomPasswordField();
+        UpdatePasswordButton = new component.Button.FlatButton();
         IDApplicationStatusCard = new javax.swing.JPanel();
         jLabel23 = new javax.swing.JLabel();
         jLabel24 = new javax.swing.JLabel();
@@ -500,13 +500,13 @@ public class Profile extends javax.swing.JPanel {
         jLabel27 = new javax.swing.JLabel();
         jLabel28 = new javax.swing.JLabel();
         jLabel29 = new javax.swing.JLabel();
-        RescheduleAppointmentButton = new javax.swing.JButton();
         TransactionIDTextField = new sys.main.CustomTextField();
         StatusTextField = new sys.main.CustomTextField();
         AppliedDateTextField = new sys.main.CustomTextField();
         EstimatedDateTextField = new sys.main.CustomTextField();
         NextStepTextField = new sys.main.CustomTextField();
         AppointmentDateTextField = new sys.main.CustomTextField();
+        RescheduleAppointmentButton = new component.Button.FlatButton();
 
         setBackground(new java.awt.Color(250, 250, 250));
         setPreferredSize(new java.awt.Dimension(850, 550));
@@ -596,12 +596,9 @@ public class Profile extends javax.swing.JPanel {
         jLabel7.setText("Personal Details");
         jLabel7.setPreferredSize(new java.awt.Dimension(400, 40));
 
-        UpdatePersonalDetailsButton.setBackground(new java.awt.Color(0, 120, 215));
-        UpdatePersonalDetailsButton.setForeground(new java.awt.Color(255, 255, 255));
         UpdatePersonalDetailsButton.setText("Update Details");
-        UpdatePersonalDetailsButton.setBorder(null);
-        UpdatePersonalDetailsButton.setBorderPainted(false);
-        UpdatePersonalDetailsButton.setPreferredSize(new java.awt.Dimension(150, 45));
+        UpdatePersonalDetailsButton.setNormalColor(new java.awt.Color(0, 120, 215));
+        UpdatePersonalDetailsButton.setPreferredSize(new java.awt.Dimension(150, 37));
         UpdatePersonalDetailsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 UpdatePersonalDetailsButtonActionPerformed(evt);
@@ -619,6 +616,9 @@ public class Profile extends javax.swing.JPanel {
             .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                 .addGap(15, 15, 15)
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(PersonalInformationCardLayout.createSequentialGroup()
+                        .addComponent(UpdatePersonalDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
@@ -641,10 +641,7 @@ public class Profile extends javax.swing.JPanel {
                     .addGroup(PersonalInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
-                        .addComponent(NationalIDTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(PersonalInformationCardLayout.createSequentialGroup()
-                        .addComponent(UpdatePersonalDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addComponent(NationalIDTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         PersonalInformationCardLayout.setVerticalGroup(
@@ -676,8 +673,8 @@ public class Profile extends javax.swing.JPanel {
                 .addGroup(PersonalInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(NationalIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(UpdatePersonalDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(39, 39, 39)
+                .addComponent(UpdatePersonalDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -736,18 +733,6 @@ public class Profile extends javax.swing.JPanel {
         jLabel17.setText("Country:");
         jLabel17.setPreferredSize(new java.awt.Dimension(120, 40));
 
-        UpdateContactDetailsButton.setBackground(new java.awt.Color(0, 120, 215));
-        UpdateContactDetailsButton.setForeground(new java.awt.Color(255, 255, 255));
-        UpdateContactDetailsButton.setText("Update Details");
-        UpdateContactDetailsButton.setBorder(null);
-        UpdateContactDetailsButton.setBorderPainted(false);
-        UpdateContactDetailsButton.setPreferredSize(new java.awt.Dimension(150, 45));
-        UpdateContactDetailsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                UpdateContactDetailsButtonActionPerformed(evt);
-            }
-        });
-
         AddressLineTextArea.setPlaceholder("Street, City, State/Province, ZIP/Postal Code, Country");
 
         jLabel16.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -764,6 +749,15 @@ public class Profile extends javax.swing.JPanel {
         jLabel20.setText("Street:");
         jLabel20.setPreferredSize(new java.awt.Dimension(120, 40));
 
+        UpdateContactDetailsButton.setText("Update Details");
+        UpdateContactDetailsButton.setNormalColor(new java.awt.Color(0, 120, 215));
+        UpdateContactDetailsButton.setPreferredSize(new java.awt.Dimension(150, 37));
+        UpdateContactDetailsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                UpdateContactDetailsButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ContactInformationCardLayout = new javax.swing.GroupLayout(ContactInformationCard);
         ContactInformationCard.setLayout(ContactInformationCardLayout);
         ContactInformationCardLayout.setHorizontalGroup(
@@ -775,6 +769,9 @@ public class Profile extends javax.swing.JPanel {
             .addGroup(ContactInformationCardLayout.createSequentialGroup()
                 .addGap(15, 15, 15)
                 .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(ContactInformationCardLayout.createSequentialGroup()
+                        .addComponent(UpdateContactDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(ContactInformationCardLayout.createSequentialGroup()
                         .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
@@ -789,9 +786,6 @@ public class Profile extends javax.swing.JPanel {
                             .addComponent(StateProvinceTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(ZIPPostalCodeTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(CountryTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(ContactInformationCardLayout.createSequentialGroup()
-                        .addComponent(UpdateContactDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(ContactInformationCardLayout.createSequentialGroup()
                         .addGroup(ContactInformationCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -851,7 +845,7 @@ public class Profile extends javax.swing.JPanel {
                     .addComponent(CountryTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(UpdateContactDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(UpdateContactDetailsButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -880,18 +874,6 @@ public class Profile extends javax.swing.JPanel {
         jLabel22.setText("Account & Security");
         jLabel22.setPreferredSize(new java.awt.Dimension(400, 40));
 
-        UpdatePasswordButton.setBackground(new java.awt.Color(0, 120, 215));
-        UpdatePasswordButton.setForeground(new java.awt.Color(255, 255, 255));
-        UpdatePasswordButton.setText("Update Password");
-        UpdatePasswordButton.setBorder(null);
-        UpdatePasswordButton.setBorderPainted(false);
-        UpdatePasswordButton.setPreferredSize(new java.awt.Dimension(150, 45));
-        UpdatePasswordButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                UpdatePasswordButtonActionPerformed(evt);
-            }
-        });
-
         CurrentPasswordField.setPlaceholder("Current Password");
 
         ConfirmPasswordField.setPlaceholder("Confirm Password");
@@ -910,6 +892,16 @@ public class Profile extends javax.swing.JPanel {
         jLabel37.setPreferredSize(new java.awt.Dimension(120, 40));
 
         NewPasswordField.setPlaceholder("New Password");
+        NewPasswordField.setToggleButtonVisible(false);
+
+        UpdatePasswordButton.setText("Update Details");
+        UpdatePasswordButton.setNormalColor(new java.awt.Color(0, 120, 215));
+        UpdatePasswordButton.setPreferredSize(new java.awt.Dimension(150, 37));
+        UpdatePasswordButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                UpdatePasswordButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout AccountSecurityCardLayout = new javax.swing.GroupLayout(AccountSecurityCard);
         AccountSecurityCard.setLayout(AccountSecurityCardLayout);
@@ -978,7 +970,7 @@ public class Profile extends javax.swing.JPanel {
                     .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(ConfirmPasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(UpdatePasswordButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(UpdatePasswordButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -1015,18 +1007,6 @@ public class Profile extends javax.swing.JPanel {
         jLabel29.setText("Appointment Date");
         jLabel29.setPreferredSize(new java.awt.Dimension(120, 40));
 
-        RescheduleAppointmentButton.setBackground(new java.awt.Color(0, 120, 215));
-        RescheduleAppointmentButton.setForeground(new java.awt.Color(255, 255, 255));
-        RescheduleAppointmentButton.setText("Reschedule Appointment");
-        RescheduleAppointmentButton.setBorder(null);
-        RescheduleAppointmentButton.setBorderPainted(false);
-        RescheduleAppointmentButton.setPreferredSize(new java.awt.Dimension(150, 45));
-        RescheduleAppointmentButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                RescheduleAppointmentButtonActionPerformed(evt);
-            }
-        });
-
         TransactionIDTextField.setFocusable(false);
         TransactionIDTextField.setPlaceholder("Transaction ID");
         TransactionIDTextField.setPreferredSize(new java.awt.Dimension(250, 40));
@@ -1045,6 +1025,15 @@ public class Profile extends javax.swing.JPanel {
 
         AppointmentDateTextField.setPlaceholder("Appointment Date");
         AppointmentDateTextField.setPreferredSize(new java.awt.Dimension(250, 40));
+
+        RescheduleAppointmentButton.setText("Reschedule Appointment");
+        RescheduleAppointmentButton.setNormalColor(new java.awt.Color(0, 120, 215));
+        RescheduleAppointmentButton.setPreferredSize(new java.awt.Dimension(150, 37));
+        RescheduleAppointmentButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                RescheduleAppointmentButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout IDApplicationStatusCardLayout = new javax.swing.GroupLayout(IDApplicationStatusCard);
         IDApplicationStatusCard.setLayout(IDApplicationStatusCardLayout);
@@ -1066,18 +1055,18 @@ public class Profile extends javax.swing.JPanel {
                             .addComponent(jLabel24, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 0, 0)
                         .addGroup(IDApplicationStatusCardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(TransactionIDTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(TransactionIDTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 261, Short.MAX_VALUE)
                             .addComponent(StatusTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(AppliedDateTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(EstimatedDateTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(NextStepTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(IDApplicationStatusCardLayout.createSequentialGroup()
-                        .addComponent(RescheduleAppointmentButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(IDApplicationStatusCardLayout.createSequentialGroup()
                         .addComponent(jLabel29, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, 0)
-                        .addComponent(AppointmentDateTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(AppointmentDateTextField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(IDApplicationStatusCardLayout.createSequentialGroup()
+                        .addComponent(RescheduleAppointmentButton, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         IDApplicationStatusCardLayout.setVerticalGroup(
@@ -1110,7 +1099,7 @@ public class Profile extends javax.swing.JPanel {
                     .addComponent(jLabel29, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(AppointmentDateTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(RescheduleAppointmentButton, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(RescheduleAppointmentButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -1135,8 +1124,8 @@ public class Profile extends javax.swing.JPanel {
                 .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(PersonalInformationPanelLayout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 549, Short.MAX_VALUE))
-                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 555, Short.MAX_VALUE))
+                        .addComponent(ContactInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE))
+                    .addComponent(PersonalInformationCard, javax.swing.GroupLayout.DEFAULT_SIZE, 556, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(PersonalInformationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(IDApplicationStatusCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1180,120 +1169,6 @@ public class Profile extends javax.swing.JPanel {
                 .addComponent(MainProfile, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
-
-    private void RescheduleAppointmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RescheduleAppointmentButtonActionPerformed
-        if (citizenInfo == null) {
-            JOptionPane.showMessageDialog(this, "No citizen record found. Please update your personal details first.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        JDialog rescheduleDialog = new JDialog((java.awt.Frame)SwingUtilities.getWindowAncestor(this), "Reschedule Appointment", true);
-        rescheduleDialog.setLayout(new java.awt.BorderLayout());
-        rescheduleDialog.setSize(400, 300);
-        rescheduleDialog.setLocationRelativeTo(this);
-        
-        JPanel contentPanel = new JPanel(new java.awt.GridBagLayout());
-        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
-        gbc.insets = new java.awt.Insets(10, 10, 10, 10);
-        gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        contentPanel.add(new JLabel("Select New Date:"), gbc);
-        
-        gbc.gridx = 1;
-        component.CustomDatePicker.CustomDatePicker newDatePicker = new component.CustomDatePicker.CustomDatePicker("Select date");
-        newDatePicker.setPreferredSize(new java.awt.Dimension(200, 40));
-        contentPanel.add(newDatePicker, gbc);
-        
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        contentPanel.add(new JLabel("Select Time:"), gbc);
-        
-        gbc.gridx = 1;
-        String[] timeSlots = {"09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM"};
-        JComboBox<String> timeComboBox = new JComboBox<>(timeSlots);
-        timeComboBox.setPreferredSize(new java.awt.Dimension(200, 40));
-        contentPanel.add(timeComboBox, gbc);
-        
-        JPanel buttonPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
-        JButton cancelButton = new JButton("Cancel");
-        JButton scheduleButton = new JButton("Schedule");
-        
-        cancelButton.addActionListener(e -> rescheduleDialog.dispose());
-        scheduleButton.addActionListener(e -> {
-            if (newDatePicker.getDate() == null) {
-                JOptionPane.showMessageDialog(rescheduleDialog, "Please select a date.", "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            String selectedTime = (String) timeComboBox.getSelectedItem();
-            
-            try {
-                Appointment newAppointment = new Appointment();
-                newAppointment.setCitizenId(citizenInfo.getCitizenId());
-                newAppointment.setAppDate(new java.sql.Date(newDatePicker.getDate().getTime()));
-                newAppointment.setAppTime(selectedTime);
-                newAppointment.setStatus("Scheduled");
-                newAppointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
-                
-                boolean success;
-                if (appointment != null) {
-                    newAppointment.setAppointmentId(appointment.getAppointmentId());
-                    success = Appointment.updateAppointment(newAppointment);
-                } else {
-                    success = Appointment.addAppointment(newAppointment);
-                }
-                
-                if (success) {
-                    appointment = newAppointment;
-                    String appointmentText = dateFormat.format(appointment.getAppDate()) + ", " + appointment.getAppTime();
-                    AppointmentDateTextField.setText(appointmentText);
-                    
-                    ActivityLog.logActivity(currentUser.getUserId(), "Rescheduled appointment to " + appointmentText);
-                    
-                    JOptionPane.showMessageDialog(rescheduleDialog, "Appointment rescheduled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                    rescheduleDialog.dispose();
-                } else {
-                    JOptionPane.showMessageDialog(rescheduleDialog, "Failed to reschedule appointment. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(rescheduleDialog, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(scheduleButton);
-        
-        rescheduleDialog.add(contentPanel, java.awt.BorderLayout.CENTER);
-        rescheduleDialog.add(buttonPanel, java.awt.BorderLayout.SOUTH);
-        rescheduleDialog.setVisible(true);
-    }//GEN-LAST:event_RescheduleAppointmentButtonActionPerformed
-
-    private void UpdatePasswordButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UpdatePasswordButtonActionPerformed
-        if (!validatePasswordChange()) {
-            return;
-        }
-        
-        String newPassword = new String(NewPasswordField.getPassword());
-        
-        currentUser.setPassword(newPassword);
-        boolean success = User.updateUser(currentUser);
-        
-        if (success) {
-            CurrentPasswordField.setText("");
-            NewPasswordField.setText("");
-            ConfirmPasswordField.setText("");
-            
-            PasswordField.setText("********");
-            
-            ActivityLog.logActivity(currentUser.getUserId(), "Changed password");
-            
-            JOptionPane.showMessageDialog(this, "Password updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Failed to update password. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }//GEN-LAST:event_UpdatePasswordButtonActionPerformed
 
     private void UpdatePersonalDetailsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UpdatePersonalDetailsButtonActionPerformed
         if (!validatePersonalDetails()) {
@@ -1459,6 +1334,120 @@ public class Profile extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_UpdateContactDetailsButtonActionPerformed
 
+    private void UpdatePasswordButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UpdatePasswordButtonActionPerformed
+        if (!validatePasswordChange()) {
+            return;
+        }
+        
+        String newPassword = new String(NewPasswordField.getPassword());
+        
+        currentUser.setPassword(newPassword);
+        boolean success = User.updateUser(currentUser);
+        
+        if (success) {
+            CurrentPasswordField.setText("");
+            NewPasswordField.setText("");
+            ConfirmPasswordField.setText("");
+            
+            PasswordField.setText("********");
+            
+            ActivityLog.logActivity(currentUser.getUserId(), "Changed password");
+            
+            JOptionPane.showMessageDialog(this, "Password updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Failed to update password. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_UpdatePasswordButtonActionPerformed
+
+    private void RescheduleAppointmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RescheduleAppointmentButtonActionPerformed
+        if (citizenInfo == null) {
+            JOptionPane.showMessageDialog(this, "No citizen record found. Please update your personal details first.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        JDialog rescheduleDialog = new JDialog((java.awt.Frame)SwingUtilities.getWindowAncestor(this), "Reschedule Appointment", true);
+        rescheduleDialog.setLayout(new java.awt.BorderLayout());
+        rescheduleDialog.setSize(400, 300);
+        rescheduleDialog.setLocationRelativeTo(this);
+        
+        JPanel contentPanel = new JPanel(new java.awt.GridBagLayout());
+        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+        gbc.insets = new java.awt.Insets(10, 10, 10, 10);
+        gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        contentPanel.add(new JLabel("Select New Date:"), gbc);
+        
+        gbc.gridx = 1;
+        component.CustomDatePicker.CustomDatePicker newDatePicker = new component.CustomDatePicker.CustomDatePicker("Select date");
+        newDatePicker.setPreferredSize(new java.awt.Dimension(200, 40));
+        contentPanel.add(newDatePicker, gbc);
+        
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        contentPanel.add(new JLabel("Select Time:"), gbc);
+        
+        gbc.gridx = 1;
+        String[] timeSlots = {"09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM"};
+        JComboBox<String> timeComboBox = new JComboBox<>(timeSlots);
+        timeComboBox.setPreferredSize(new java.awt.Dimension(200, 40));
+        contentPanel.add(timeComboBox, gbc);
+        
+        JPanel buttonPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+        JButton cancelButton = new JButton("Cancel");
+        JButton scheduleButton = new JButton("Schedule");
+        
+        cancelButton.addActionListener(e -> rescheduleDialog.dispose());
+        scheduleButton.addActionListener(e -> {
+            if (newDatePicker.getDate() == null) {
+                JOptionPane.showMessageDialog(rescheduleDialog, "Please select a date.", "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            String selectedTime = (String) timeComboBox.getSelectedItem();
+            
+            try {
+                Appointment newAppointment = new Appointment();
+                newAppointment.setCitizenId(citizenInfo.getCitizenId());
+                newAppointment.setAppDate(new java.sql.Date(newDatePicker.getDate().getTime()));
+                newAppointment.setAppTime(selectedTime);
+                newAppointment.setStatus("Scheduled");
+                newAppointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
+                
+                boolean success;
+                if (appointment != null) {
+                    newAppointment.setAppointmentId(appointment.getAppointmentId());
+                    success = Appointment.updateAppointment(newAppointment);
+                } else {
+                    success = Appointment.addAppointment(newAppointment);
+                }
+                
+                if (success) {
+                    appointment = newAppointment;
+                    String appointmentText = dateFormat.format(appointment.getAppDate()) + ", " + appointment.getAppTime();
+                    AppointmentDateTextField.setText(appointmentText);
+                    
+                    ActivityLog.logActivity(currentUser.getUserId(), "Rescheduled appointment to " + appointmentText);
+                    
+                    JOptionPane.showMessageDialog(rescheduleDialog, "Appointment rescheduled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    rescheduleDialog.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(rescheduleDialog, "Failed to reschedule appointment. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(rescheduleDialog, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(scheduleButton);
+        
+        rescheduleDialog.add(contentPanel, java.awt.BorderLayout.CENTER);
+        rescheduleDialog.add(buttonPanel, java.awt.BorderLayout.SOUTH);
+        rescheduleDialog.setVisible(true);
+    }//GEN-LAST:event_RescheduleAppointmentButtonActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel AccountSecurityCard;
@@ -1489,15 +1478,15 @@ public class Profile extends javax.swing.JPanel {
     private javax.swing.JPanel PersonalInformationPanel;
     private sys.main.CustomTextField PhoneNumberTextField;
     private javax.swing.JPanel ProfileHeader;
-    private javax.swing.JButton RescheduleAppointmentButton;
+    private component.Button.FlatButton RescheduleAppointmentButton;
     private sys.main.CustomTextField StateProvinceTextField;
     private sys.main.CustomTextField StatusTextField;
     private sys.main.CustomTextField StreetAddressTextField;
     private javax.swing.JLabel TodayDate;
     private sys.main.CustomTextField TransactionIDTextField;
-    private javax.swing.JButton UpdateContactDetailsButton;
-    private javax.swing.JButton UpdatePasswordButton;
-    private javax.swing.JButton UpdatePersonalDetailsButton;
+    private component.Button.FlatButton UpdateContactDetailsButton;
+    private component.Button.FlatButton UpdatePasswordButton;
+    private component.Button.FlatButton UpdatePersonalDetailsButton;
     private sys.main.CustomTextField UsernameTextField;
     private javax.swing.JLabel WelcomeLabel;
     private sys.main.CustomTextField ZIPPostalCodeTextField;

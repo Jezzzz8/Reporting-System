@@ -5,8 +5,6 @@ import backend.objects.Data.User;
 import backend.objects.Data.Citizen;
 import backend.objects.Data.IDStatus;
 import backend.objects.Data.Appointment;
-import backend.objects.Data.Document;
-import backend.objects.Data.Notification;
 import backend.objects.Data.Address;
 import backend.objects.Data.CitizenInfo;
 import static backend.objects.Data.IDStatus.formatTransactionId;
@@ -47,6 +45,9 @@ public class Dashboard extends javax.swing.JPanel {
         this.currentUser = user;
         initComponents();
         
+        // Initialize tables before other setup
+        initializeTables();
+        
         showApplicationTimelineView();
         initGlowAnimation();
         applyButtonEffects();
@@ -60,12 +61,100 @@ public class Dashboard extends javax.swing.JPanel {
         setupButtonColumn();
         setupButtonBorders();
     }
-
+    
+    private void initializeTables() {
+        // Initialize all tables with custom configurations
+        initApplicationTimelineTable();
+        initRequiredDocumentsTable();
+        initAppointmentDetailsTable();
+        initNotificationsTable();
+    }
+    
+    private void initApplicationTimelineTable() {
+        // Configure Application Timeline Table
+        ApplicationTimelineTable.setHeaderColor(new Color(180, 220, 255));
+        ApplicationTimelineTable.setOddRowColor(new Color(250, 250, 250));
+        ApplicationTimelineTable.setEvenRowColor(new Color(240, 248, 255));
+        ApplicationTimelineTable.setHoverColor(new Color(230, 240, 255));
+        ApplicationTimelineTable.setSelectedRowColor(new Color(41, 128, 185));
+        ApplicationTimelineTable.setSelectedRowTextColor(Color.WHITE);
+        ApplicationTimelineTable.setNormalTextColor(Color.BLACK);
+        ApplicationTimelineTable.setCellFont(new Font("Times New Roman", Font.PLAIN, 12));
+        ApplicationTimelineTable.setHeaderFont(new Font("Times New Roman", Font.BOLD, 14));
+        ApplicationTimelineTable.setCustomRowHeight(35);
+        ApplicationTimelineTable.setShowGrid(true);
+        ApplicationTimelineTable.setAutoResize(true, true);
+        
+        // Ensure scroll pane is created and configured
+        ApplicationTimelineTable.createAndConfigureScrollPane();
+    }
+    
+    private void initRequiredDocumentsTable() {
+        // Configure Required Documents Table
+        RequiredDocumentsTable.setHeaderColor(new Color(180, 220, 255));
+        RequiredDocumentsTable.setOddRowColor(new Color(250, 250, 250));
+        RequiredDocumentsTable.setEvenRowColor(new Color(240, 248, 255));
+        RequiredDocumentsTable.setHoverColor(new Color(230, 240, 255));
+        RequiredDocumentsTable.setSelectedRowColor(new Color(41, 128, 185));
+        RequiredDocumentsTable.setSelectedRowTextColor(Color.WHITE);
+        RequiredDocumentsTable.setNormalTextColor(Color.BLACK);
+        RequiredDocumentsTable.setCellFont(new Font("Times New Roman", Font.PLAIN, 12));
+        RequiredDocumentsTable.setHeaderFont(new Font("Times New Roman", Font.BOLD, 14));
+        RequiredDocumentsTable.setCustomRowHeight(35);
+        RequiredDocumentsTable.setShowGrid(true);
+        RequiredDocumentsTable.setAutoResize(true, true);
+        
+        // Ensure scroll pane is created and configured
+        RequiredDocumentsTable.createAndConfigureScrollPane();
+    }
+    
+    private void initAppointmentDetailsTable() {
+        // Configure Appointment Details Table
+        MyAppointmentDetailsTable.setHeaderColor(new Color(180, 220, 255));
+        MyAppointmentDetailsTable.setOddRowColor(new Color(250, 250, 250));
+        MyAppointmentDetailsTable.setEvenRowColor(new Color(240, 248, 255));
+        MyAppointmentDetailsTable.setHoverColor(new Color(230, 240, 255));
+        MyAppointmentDetailsTable.setSelectedRowColor(new Color(41, 128, 185));
+        MyAppointmentDetailsTable.setSelectedRowTextColor(Color.WHITE);
+        MyAppointmentDetailsTable.setNormalTextColor(Color.BLACK);
+        MyAppointmentDetailsTable.setCellFont(new Font("Times New Roman", Font.PLAIN, 12));
+        MyAppointmentDetailsTable.setHeaderFont(new Font("Times New Roman", Font.BOLD, 14));
+        MyAppointmentDetailsTable.setCustomRowHeight(35);
+        MyAppointmentDetailsTable.setShowGrid(true);
+        MyAppointmentDetailsTable.setAutoResize(true, true);
+        
+        // Configure the Action column as a button column
+        setupButtonColumn();
+        
+        // Ensure scroll pane is created and configured
+        MyAppointmentDetailsTable.createAndConfigureScrollPane();
+    }
+    
+    private void initNotificationsTable() {
+        // Configure Notifications Table
+        MyNotificationsTable.setHeaderColor(new Color(180, 220, 255));
+        MyNotificationsTable.setOddRowColor(new Color(250, 250, 250));
+        MyNotificationsTable.setEvenRowColor(new Color(240, 248, 255));
+        MyNotificationsTable.setHoverColor(new Color(230, 240, 255));
+        MyNotificationsTable.setSelectedRowColor(new Color(41, 128, 185));
+        MyNotificationsTable.setSelectedRowTextColor(Color.WHITE);
+        MyNotificationsTable.setNormalTextColor(Color.BLACK);
+        MyNotificationsTable.setCellFont(new Font("Times New Roman", Font.PLAIN, 12));
+        MyNotificationsTable.setHeaderFont(new Font("Times New Roman", Font.BOLD, 14));
+        MyNotificationsTable.setCustomRowHeight(35);
+        MyNotificationsTable.setShowGrid(true);
+        MyNotificationsTable.setAutoResize(true, true);
+        
+        // Ensure scroll pane is created and configured
+        MyNotificationsTable.createAndConfigureScrollPane();
+    }
+    
+    
     private void setupButtonBorders() {
         // Set line borders with same color as background and no rounded corners
         setupLineBorder(MyApplicationStatusActionBtn, new Color(254, 100, 100));
-        setupLineBorder(DaySinceApplicationActionBtn, new Color(249, 200, 100));
-        setupLineBorder(MyAppointmentActionBtn, new Color(100, 254, 100));
+        setupLineBorder(MyAppointmentActionBtn, new Color(249, 200, 100));
+        setupLineBorder(DaySinceApplicationActionBtn, new Color(100, 254, 100));
         setupLineBorder(NotificationsActionBtn, new Color(100, 100, 254));
     }
 
@@ -91,20 +180,20 @@ public class Dashboard extends javax.swing.JPanel {
     private void applyButtonEffects() {
         // Apply enhanced ripple effects to all buttons
         applyEnhancedRippleEffect(MyApplicationStatusActionBtn, new Color(41, 128, 185, 150));
-        applyEnhancedRippleEffect(DaySinceApplicationActionBtn, new Color(41, 128, 185, 150));
         applyEnhancedRippleEffect(MyAppointmentActionBtn, new Color(41, 128, 185, 150));
+        applyEnhancedRippleEffect(DaySinceApplicationActionBtn, new Color(41, 128, 185, 150));
         applyEnhancedRippleEffect(NotificationsActionBtn, new Color(41, 128, 185, 150));
         
         // Apply hover effects
         applyHoverEffect(MyApplicationStatusActionBtn);
-        applyHoverEffect(DaySinceApplicationActionBtn);
         applyHoverEffect(MyAppointmentActionBtn);
+        applyHoverEffect(DaySinceApplicationActionBtn);
         applyHoverEffect(NotificationsActionBtn);
         
         // Apply shadow effects
         applyShadowEffect(MyApplicationStatusActionBtn);
-        applyShadowEffect(DaySinceApplicationActionBtn);
         applyShadowEffect(MyAppointmentActionBtn);
+        applyShadowEffect(DaySinceApplicationActionBtn);
         applyShadowEffect(NotificationsActionBtn);
     }
     
@@ -386,8 +475,8 @@ public class Dashboard extends javax.swing.JPanel {
     }
 
     private void applyRippleEffects() {
-        if (DaySinceApplicationActionBtn != null) {
-            RippleEffect approvedRipple = new RippleEffect(DaySinceApplicationActionBtn);
+        if (MyAppointmentActionBtn != null) {
+            RippleEffect approvedRipple = new RippleEffect(MyAppointmentActionBtn);
             approvedRipple.setRippleColor(new Color(255, 255, 255, 100));
         }
         
@@ -401,8 +490,8 @@ public class Dashboard extends javax.swing.JPanel {
             pendingRipple.setRippleColor(new Color(255, 255, 255, 100));
         }
         
-        if (MyAppointmentActionBtn != null) {
-            RippleEffect urgentRipple = new RippleEffect(MyAppointmentActionBtn);
+        if (DaySinceApplicationActionBtn != null) {
+            RippleEffect urgentRipple = new RippleEffect(DaySinceApplicationActionBtn);
             urgentRipple.setRippleColor(new Color(255, 255, 255, 100));
         }
     }
@@ -414,25 +503,25 @@ public class Dashboard extends javax.swing.JPanel {
             });
         }
 
-        if (DaySinceApplicationActionBtn != null) {
-            DaySinceApplicationActionBtn.addActionListener((ActionEvent e) -> {
+        if (MyAppointmentActionBtn != null) {
+            MyAppointmentActionBtn.addActionListener((ActionEvent e) -> {
                 showAppointmentView(); // Shows appointments
             });
         }
 
-        if (MyAppointmentActionBtn != null) {
-            MyAppointmentActionBtn.addActionListener((ActionEvent e) -> {
+        if (DaySinceApplicationActionBtn != null) {
+            DaySinceApplicationActionBtn.addActionListener((ActionEvent e) -> {
                 showDocumentsView(); // Shows documents
             });
         }
 
         if (NotificationsActionBtn != null) {
             NotificationsActionBtn.addActionListener((ActionEvent e) -> {
-                showNotificationsView();
+                showNotificationsView(); // Shows notifications
             });
         }
     }
-
+    
     private void setupSearchFunctionality() {
         searchField.setText("Search...");
         searchField.setForeground(Color.GRAY);
@@ -619,163 +708,75 @@ public class Dashboard extends javax.swing.JPanel {
         currentView = 1;
 
         try {
-            // Use CitizenInfo to get all data at once
-            CitizenInfo citizenInfo = getCompleteCitizenInfo();
-
-            if (citizenInfo == null || citizenInfo.getCitizen() == null) {
-                model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
+            if (currentCitizen == null) {
+                model.addRow(new Object[]{"No citizen data available", "", "", "", ""});
                 return;
             }
 
-            Citizen citizen = citizenInfo.getCitizen();
-            IDStatus status = citizenInfo.getStatus();
-            Address address = citizenInfo.getAddress();
+            // Get status history for the current citizen
+            List<Data.IDStatus> statusHistory = Data.IDStatus.getStatusHistoryByCitizenId(currentCitizen.getCitizenId());
 
-            // Get transaction ID safely
-            String transactionId = "TXN-Not-Assigned";
-            if (status != null && status.getTransactionId() != null && !status.getTransactionId().trim().isEmpty()) {
-                transactionId = Data.IDStatus.formatTransactionId(status.getTransactionId());
+            if (statusHistory == null || statusHistory.isEmpty()) {
+                // Get current status if no history
+                Data.IDStatus currentStatus = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+                if (currentStatus != null) {
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    String date = currentStatus.getUpdateDate() != null ? 
+                        dateFormat.format(currentStatus.getUpdateDate()) : "N/A";
+                    String status = currentStatus.getStatus() != null ? 
+                        currentStatus.getStatus() : "No Status";
+                    String transactionId = currentStatus.getTransactionId() != null ? 
+                        currentStatus.getTransactionId() : "N/A";
+
+                    model.addRow(new Object[]{
+                        date,
+                        "Application Status",
+                        status,
+                        "System",
+                        "Transaction: " + transactionId
+                    });
+                } else {
+                    model.addRow(new Object[]{
+                        formatDate(new Date()),
+                        "Application Submitted",
+                        "Pending Review",
+                        "System",
+                        "Initial application submission"
+                    });
+                }
+            } else {
+                // Add all status history entries
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                for (Data.IDStatus status : statusHistory) {
+                    String date = status.getUpdateDate() != null ? 
+                        dateFormat.format(status.getUpdateDate()) : "N/A";
+                    String statusText = status.getStatus() != null ? 
+                        status.getStatus() : "No Status";
+                    String transactionId = status.getTransactionId() != null ? 
+                        status.getTransactionId() : "N/A";
+                    String notes = status.getNotes() != null && !status.getNotes().isEmpty() ? 
+                        status.getNotes() : "Transaction: " + transactionId;
+
+                    model.addRow(new Object[]{
+                        date,
+                        "Status Update",
+                        statusText,
+                        "System",
+                        notes
+                    });
+                }
             }
 
-            // Add personal information as first entry
-            model.addRow(new Object[]{
-                "Personal Info",
-                "Gender: " + (citizen.getGender() != null ? citizen.getGender() : "Not specified"),
-                "Date of Birth: " + formatDate(citizen.getBirthDate()),
-                "System",
-                "Basic Information"
-            });
-
-            // Add transaction ID as second entry
-            model.addRow(new Object[]{
-                "TXN ID",
-                transactionId,
-                "Your application tracking number",
-                "System",
-                "Use this to track your application"
-            });
-
-            // Add application submission
-            if (citizen.getApplicationDate() != null) {
+            // Add application date if available
+            if (currentCitizen.getApplicationDate() != null) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                 model.addRow(new Object[]{
-                    formatDate(citizen.getApplicationDate()),
+                    dateFormat.format(currentCitizen.getApplicationDate()),
                     "Application Submitted",
-                    "Your National ID application has been submitted",
-                    "System",
-                    "Transaction ID: " + transactionId
+                    "Application received",
+                    currentCitizen.getFullName(),
+                    "National ID Application"
                 });
-            }
-
-            // Add address information if available
-            if (address != null) {
-                String addressText = address.getFullAddress();
-                if (addressText != null && !addressText.trim().isEmpty() && !addressText.contains("Not Provided")) {
-                    model.addRow(new Object[]{
-                        formatDate(citizen.getApplicationDate()),
-                        "Address Registered",
-                        "Address information added to application",
-                        "System",
-                        "Address: " + addressText
-                    });
-                }
-            }
-
-            // Get status history using the new method from Data.IDStatus class
-            // First, let's try to get all status entries and filter them
-            List<Data.IDStatus> citizenStatuses = getStatusHistoryForCitizen(citizen.getCitizenId());
-            for (IDStatus statusEntry : citizenStatuses) {
-                String statusText = statusEntry.getStatus();
-                if (statusText == null) {
-                    statusText = "Status Update";
-                }
-
-                model.addRow(new Object[]{
-                    formatDate(statusEntry.getUpdateDate()),
-                    statusText,
-                    "Status updated",
-                    "PSA Staff",
-                    statusEntry.getNotes() != null ? statusEntry.getNotes() : "System update"
-                });
-            }
-
-            // Add appointment information
-            Appointment appointment = citizenInfo.getAppointment();
-            if (appointment != null) {
-                model.addRow(new Object[]{
-                    formatDate(appointment.getCreatedDate()),
-                    "Appointment " + appointment.getStatus(),
-                    "Appointment scheduled for ID pickup",
-                    appointment.getStatus().equals("Scheduled") ? "You" : "System",
-                    "Time: " + appointment.getAppTime() + " | Date: " + formatDate(appointment.getAppDate())
-                });
-            }
-
-            // Add activity logs
-            List<Data.ActivityLog> activityLogs = Data.ActivityLog.getActivityLogsByCitizenId(citizen.getCitizenId());
-            if (activityLogs != null) {
-                for (Data.ActivityLog log : activityLogs) {
-                    model.addRow(new Object[]{
-                        formatDate(log.getActionDate()),
-                        "Activity",
-                        log.getAction(),
-                        "System",
-                        "Time: " + log.getActionTime()
-                    });
-                }
-            }
-
-            // Add document submission events
-            List<Document> documents = citizenInfo.getDocuments();
-            if (documents != null) {
-                for (Document doc : documents) {
-                    if ("Yes".equalsIgnoreCase(doc.getSubmitted()) || 
-                        "Verified".equalsIgnoreCase(doc.getStatus()) ||
-                        "Submitted".equalsIgnoreCase(doc.getSubmitted())) {
-
-                        String docStatus = "Submitted";
-                        if ("Verified".equalsIgnoreCase(doc.getStatus())) {
-                            docStatus = "Verified";
-                        }
-
-                        model.addRow(new Object[]{
-                            formatDate(doc.getUploadDate()),
-                            "Document " + docStatus,
-                            doc.getDocumentName() + " document",
-                            "You",
-                            "Status: " + doc.getStatus()
-                        });
-                    }
-                }
-            }
-
-            // Sort timeline by date (most recent first)
-            java.util.Collections.sort(java.util.Arrays.asList(model.getDataVector().toArray()), (a, b) -> {
-                try {
-                    Object[] rowA = ((java.util.Vector) a).toArray();
-                    Object[] rowB = ((java.util.Vector) b).toArray();
-
-                    // Skip the Personal Info and TXN ID rows
-                    if (rowA[0].equals("Personal Info")) return -1;
-                    if (rowB[0].equals("Personal Info")) return 1;
-                    if (rowA[0].equals("TXN ID")) return -1;
-                    if (rowB[0].equals("TXN ID")) return 1;
-
-                    // Handle empty dates
-                    if (rowA[0] == null || rowA[0].toString().isEmpty()) return 1;
-                    if (rowB[0] == null || rowB[0].toString().isEmpty()) return -1;
-
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                    Date dateA = sdf.parse(rowA[0].toString());
-                    Date dateB = sdf.parse(rowB[0].toString());
-                    return dateB.compareTo(dateA); // Descending order
-                } catch (Exception e) {
-                    return 0;
-                }
-            });
-
-            // If no data, add a message
-            if (model.getRowCount() <= 2) { // Only Personal Info and TXN ID rows
-                model.addRow(new Object[]{"No timeline data available", "", "Submit your application to see updates", "", ""});
             }
 
         } catch (Exception e) {
@@ -784,8 +785,16 @@ public class Dashboard extends javax.swing.JPanel {
             model.addRow(new Object[]{"Error loading data", "Check database connection", e.getMessage(), "", ""});
         } finally {
             model.fireTableDataChanged();
+
+            // Use the CustomTable's built-in methods
             ApplicationTimelineTable.revalidate();
             ApplicationTimelineTable.repaint();
+
+            // Update the scroll pane if needed
+            if (ApplicationTimelineTable.isScrollPaneCreated()) {
+                ApplicationTimelineTable.getScrollPane().revalidate();
+                ApplicationTimelineTable.getScrollPane().repaint();
+            }
         }
     }
     
@@ -822,47 +831,45 @@ public class Dashboard extends javax.swing.JPanel {
     private void loadRequiredDocumentsTable() {
         DefaultTableModel model = (DefaultTableModel) RequiredDocumentsTable.getModel();
         model.setRowCount(0);
-        currentView = 3;
+        currentView = 2;
 
         try {
             if (currentCitizen == null) {
-                model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
+                model.addRow(new Object[]{"No citizen data available", "", "", "", ""});
                 return;
             }
 
-            // Use the new Document class
-            List<Document> documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
+            // Get all documents for the citizen
+            List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
 
             if (documents == null || documents.isEmpty()) {
-                model.addRow(new Object[]{"No documents found", "", "", "", ""});
-                return;
+                // Create default documents if none exist
+                createDefaultDocuments();
+                // Reload documents
+                documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
             }
 
-            for (Document doc : documents) {
-                String documentName = doc.getDocumentName();
-                if (documentName == null || documentName.isEmpty()) {
-                    // Try to get document name from doc_forms table
-                    if (doc.getDocForm() != null) {
-                        documentName = doc.getDocForm().getFormName();
-                    } else {
-                        documentName = "Unknown Document";
-                    }
-                }
+            if (documents != null && !documents.isEmpty()) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                for (Data.Document doc : documents) {
+                    String documentName = doc.getDocumentName() != null ? 
+                        doc.getDocumentName() : "Document #" + doc.getDocumentId();
+                    String status = doc.getStatus() != null ? doc.getStatus() : "Pending";
+                    String submitted = doc.getSubmitted() != null ? doc.getSubmitted() : "No";
+                    String requiredBy = doc.getRequiredBy() != null ? doc.getRequiredBy() : "PSA";
+                    String uploadDate = doc.getUploadDate() != null ? 
+                        dateFormat.format(doc.getUploadDate()) : "Not uploaded";
 
-                String actionText = "View";
-                if ("Pending".equals(doc.getStatus()) && "No".equals(doc.getSubmitted())) {
-                    actionText = "Upload";
-                } else if ("Not Required".equals(doc.getStatus())) {
-                    actionText = "N/A";
+                    model.addRow(new Object[]{
+                        documentName,
+                        status,
+                        submitted,
+                        requiredBy,
+                        uploadDate
+                    });
                 }
-
-                model.addRow(new Object[]{
-                    documentName,
-                    doc.getStatus(),
-                    doc.getSubmitted(),
-                    doc.getRequiredBy(),
-                    actionText
-                });
+            } else {
+                model.addRow(new Object[]{"No documents found", "", "", "", ""});
             }
 
         } catch (Exception e) {
@@ -871,11 +878,13 @@ public class Dashboard extends javax.swing.JPanel {
             model.addRow(new Object[]{"Error loading data", e.getMessage(), "", "", ""});
         } finally {
             model.fireTableDataChanged();
+
+            // Use the CustomTable's built-in methods
             RequiredDocumentsTable.revalidate();
             RequiredDocumentsTable.repaint();
         }
     }
-
+    
     private void createDefaultDocuments() {
         try {
             if (currentCitizen == null) {
@@ -955,30 +964,43 @@ public class Dashboard extends javax.swing.JPanel {
 
         try {
             if (currentCitizen == null) {
-                model.addRow(new Object[]{"No citizen data found", "", "", "", ""});
+                model.addRow(new Object[]{"No citizen data available", "", "", "", ""});
                 return;
             }
 
-            // Use the new Notification class
-            List<Notification> notifications = Data.Notification.getNotificationsByCitizenId(currentCitizen.getCitizenId());
-            
-            if (notifications.isEmpty()) {
+            // Get notifications for the citizen
+            List<Data.Notification> notifications = Data.Notification.getNotificationsByCitizenId(currentCitizen.getCitizenId());
+
+            if (notifications == null || notifications.isEmpty()) {
                 // Create default notifications if none exist
                 createDefaultNotifications();
+                // Reload notifications
                 notifications = Data.Notification.getNotificationsByCitizenId(currentCitizen.getCitizenId());
             }
 
-            for (Notification notification : notifications) {
-                model.addRow(new Object[]{
-                    formatDate(notification.getNotificationDate()),
-                    notification.getNotificationTime(),
-                    notification.getMessage(),
-                    notification.getType(),
-                    notification.getReadStatus()
-                });
-            }
+            if (notifications != null && !notifications.isEmpty()) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                for (Data.Notification notif : notifications) {
+                    String notifDate = notif.getNotificationDate() != null ? 
+                        dateFormat.format(notif.getNotificationDate()) : "N/A";
+                    String time = notif.getNotificationTime() != null ? 
+                        notif.getNotificationTime() : "N/A";
+                    String message = notif.getMessage() != null ? 
+                        notif.getMessage() : "Notification";
+                    String type = notif.getType() != null ? 
+                        notif.getType() : "General";
+                    String readStatus = notif.getReadStatus() != null ? 
+                        notif.getReadStatus() : "Unread";
 
-            if (model.getRowCount() == 0) {
+                    model.addRow(new Object[]{
+                        notifDate,
+                        time,
+                        message,
+                        type,
+                        readStatus
+                    });
+                }
+            } else {
                 model.addRow(new Object[]{"No notifications", "", "", "", ""});
             }
 
@@ -987,6 +1009,8 @@ public class Dashboard extends javax.swing.JPanel {
             model.addRow(new Object[]{"Error loading data", "", "", "", ""});
         } finally {
             model.fireTableDataChanged();
+
+            // Use the CustomTable's built-in methods
             MyNotificationsTable.revalidate();
             MyNotificationsTable.repaint();
         }
@@ -994,45 +1018,91 @@ public class Dashboard extends javax.swing.JPanel {
 
     private void createDefaultNotifications() {
         try {
-            IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
-            
+            if (currentCitizen == null) return;
+
+            // Check if notifications already exist
+            List<Data.Notification> existingNotifications = Data.Notification.getNotificationsByCitizenId(currentCitizen.getCitizenId());
+            if (existingNotifications != null && !existingNotifications.isEmpty()) {
+                return; // Notifications already exist
+            }
+
             // Add application submission notification
             Data.Notification.addNotification(
                 currentCitizen.getCitizenId(),
-                "Your National ID application has been received.",
+                "Your National ID application has been successfully submitted.",
                 "Application"
             );
-            
+
+            Data.IDStatus status = Data.IDStatus.getStatusByCitizenId(currentCitizen.getCitizenId());
+
             if (status != null) {
                 String statusText = status.getStatus();
-                
-                if ("Ready".equals(statusText)) {
+                String transactionId = status.getTransactionId();
+
+                // Add transaction ID notification
+                if (transactionId != null && !transactionId.isEmpty()) {
+                    Data.Notification.addNotification(
+                        currentCitizen.getCitizenId(),
+                        "Your Transaction ID: " + transactionId + " - Save this for reference.",
+                        "Transaction"
+                    );
+                }
+
+                // Add status-specific notifications
+                if ("Submitted".equalsIgnoreCase(statusText) || "Pending".equalsIgnoreCase(statusText)) {
+                    Data.Notification.addNotification(
+                        currentCitizen.getCitizenId(),
+                        "Your application is currently under review. Please check back for updates.",
+                        "Status Update"
+                    );
+                } else if ("Processing".equalsIgnoreCase(statusText)) {
+                    Data.Notification.addNotification(
+                        currentCitizen.getCitizenId(),
+                        "Your ID application is now being processed. This may take 7-10 business days.",
+                        "Status Update"
+                    );
+                } else if ("Ready".equalsIgnoreCase(statusText)) {
                     Data.Notification.addNotification(
                         currentCitizen.getCitizenId(),
                         "Your National ID is ready for pickup! Please schedule an appointment.",
                         "Status Update"
                     );
-                }
-                
-                if ("Processing".equals(statusText)) {
+                } else if ("Completed".equalsIgnoreCase(statusText)) {
                     Data.Notification.addNotification(
                         currentCitizen.getCitizenId(),
-                        "Your ID application is now being processed.",
+                        "Your National ID application process has been completed.",
                         "Status Update"
                     );
                 }
             }
+
+            // Add document submission reminder if needed
+            List<Data.Document> documents = Data.Document.getDocumentsByCitizenId(currentCitizen.getCitizenId());
+            if (documents != null) {
+                long pendingDocuments = documents.stream()
+                    .filter(doc -> "Pending".equals(doc.getStatus()) || "Required".equals(doc.getStatus()))
+                    .count();
+
+                if (pendingDocuments > 0) {
+                    Data.Notification.addNotification(
+                        currentCitizen.getCitizenId(),
+                        "You have " + pendingDocuments + " pending documents to submit for your application.",
+                        "Reminder"
+                    );
+                }
+            }
+
         } catch (Exception e) {
             System.err.println("Error creating default notifications: " + e.getMessage());
         }
     }
-
+    
     private String formatDate(Date date) {
         if (date == null) return "N/A";
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         return sdf.format(date);
     }
-    
+
     private void setDefaultValues() {
         if (MyApplicationStatusValueLabel != null) {
             MyApplicationStatusValueLabel.setText("No Data");
@@ -1060,17 +1130,17 @@ public class Dashboard extends javax.swing.JPanel {
         switchTableVisibility(1);
         loadApplicationTimelineTable();
     }
-
-    private void showAppointmentView() {
-        switchTableVisibility(2);
-        loadAppointmentDetailsTable();
-    }
-
+    
     private void showDocumentsView() {
-        switchTableVisibility(3);
+        switchTableVisibility(2);
         loadRequiredDocumentsTable();
     }
-
+    
+    private void showAppointmentView() {
+        switchTableVisibility(3);
+        loadAppointmentDetailsTable();
+    }
+    
     private void showNotificationsView() {
         switchTableVisibility(4);
         loadNotificationsTable();
@@ -1133,7 +1203,7 @@ public class Dashboard extends javax.swing.JPanel {
         
         switch (currentView) {
             case 1:
-                model = (DefaultTableModel) RequiredDocumentsTable.getModel();
+                model = (DefaultTableModel) ApplicationTimelineTable.getModel();
                 break;
             case 2:
                 model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
@@ -1156,16 +1226,20 @@ public class Dashboard extends javax.swing.JPanel {
             // Get fresh model
             switch (currentView) {
                 case 1:
-                    model = (DefaultTableModel) RequiredDocumentsTable.getModel();
+                    ApplicationTimelineTable.revalidate();
+                    ApplicationTimelineTable.repaint();
                     break;
                 case 2:
-                    model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
+                    MyAppointmentDetailsTable.revalidate();
+                    MyAppointmentDetailsTable.repaint();
                     break;
                 case 3:
-                    model = (DefaultTableModel) RequiredDocumentsTable.getModel();
+                    RequiredDocumentsTable.revalidate();
+                    RequiredDocumentsTable.repaint();
                     break;
                 case 4:
-                    model = (DefaultTableModel) MyNotificationsTable.getModel();
+                    MyNotificationsTable.revalidate();
+                    MyNotificationsTable.repaint();
                     break;
             }
 
@@ -1193,55 +1267,71 @@ public class Dashboard extends javax.swing.JPanel {
     private void loadAppointmentDetailsTable() {
         DefaultTableModel model = (DefaultTableModel) MyAppointmentDetailsTable.getModel();
         model.setRowCount(0);
-        currentView = 2;
+        currentView = 3;
 
         try {
             if (currentCitizen == null) {
-                model.addRow(new Object[]{"No citizen data found", "", "", "", "", ""});
+                model.addRow(new Object[]{"No citizen data available", "", "", "", "", "Schedule"});
                 return;
             }
 
-            Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+            // Get appointment for the citizen
+            Data.Appointment appointment = Data.Appointment.getAppointmentByCitizenId(currentCitizen.getCitizenId());
+
             if (appointment != null) {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+                String date = appointment.getAppDate() != null ? 
+                    dateFormat.format(appointment.getAppDate()) : "Not scheduled";
+                String time = appointment.getAppTime() != null ? 
+                    appointment.getAppTime() : "N/A";
+                String status = appointment.getStatus() != null ? 
+                    appointment.getStatus() : "Scheduled";
+                String purpose = "ID Application/Pickup";
 
-                // Get action text
-                String actionText = getAppointmentActions(appointment);
+                // Get address for location
+                String location = "PSA Office";
+                if (currentAddress != null && currentAddress.getCity() != null) {
+                    location = "PSA " + currentAddress.getCity() + " Office";
+                }
+
+                String action = getAppointmentActions(appointment);
 
                 model.addRow(new Object[]{
-                    dateFormat.format(appointment.getAppDate()),
-                    appointment.getAppTime(),
-                    appointment.getStatus(),
-                    "ID Pickup",
-                    "PSA Office - Main Branch",
-                    actionText  // Use String instead of JButton
+                    date,
+                    time,
+                    status,
+                    purpose,
+                    location,
+                    action
+                });
+            } else {
+                // Show that no appointment is scheduled
+                model.addRow(new Object[]{
+                    "Not scheduled",
+                    "N/A",
+                    "No appointment",
+                    "ID Application",
+                    "PSA Office",
+                    "Schedule"
                 });
 
-                // Get additional appointment history
-                List<Appointment> allAppointments = Data.Appointment.getAllAppointments();
-                for (Appointment app : allAppointments) {
-                    if (app.getCitizenId() == currentCitizen.getCitizenId() && 
-                        app.getAppointmentId() != appointment.getAppointmentId()) {
-                        model.addRow(new Object[]{
-                            dateFormat.format(app.getAppDate()),
-                            app.getAppTime(),
-                            app.getStatus(),
-                            "ID Pickup",
-                            "PSA Office",
-                            "Completed"  // Use String instead of JButton
-                        });
+                // Optionally, show past appointments if any
+                List<Data.Appointment> allAppointments = Data.Appointment.getAllAppointments();
+                if (allAppointments != null) {
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                    for (Data.Appointment appt : allAppointments) {
+                        if (appt.getCitizenId() == currentCitizen.getCitizenId()) {
+                            model.addRow(new Object[]{
+                                dateFormat.format(appt.getAppDate()),
+                                appt.getAppTime(),
+                                appt.getStatus(),
+                                "ID Application",
+                                "PSA Office",
+                                "Completed"
+                            });
+                        }
                     }
                 }
-            } else {
-                model.addRow(new Object[]{
-                    "No appointment scheduled",
-                    "",
-                    "",
-                    "ID Pickup",
-                    "PSA Office",
-                    "Schedule"  // Use String instead of JButton
-                });
             }
 
         } catch (Exception e) {
@@ -1253,17 +1343,18 @@ public class Dashboard extends javax.swing.JPanel {
             // Set up the button renderer and editor for the Actions column (column 5)
             setupButtonColumn();
 
+            // Use the CustomTable's built-in methods
             MyAppointmentDetailsTable.revalidate();
             MyAppointmentDetailsTable.repaint();
         }
     }
-
-
+    
     class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);
             setBorder(BorderFactory.createLineBorder(new Color(41, 128, 185), 1));
             setBorderPainted(true);
+            setFont(new Font("Times New Roman", Font.PLAIN, 12));
         }
 
         @Override
@@ -1276,10 +1367,13 @@ public class Dashboard extends javax.swing.JPanel {
             }
 
             // Style the button
-            setFont(new Font("Times New Roman", Font.PLAIN, 12));
             setBackground(new Color(41, 128, 185));
             setForeground(Color.WHITE);
-            setBorder(BorderFactory.createLineBorder(new Color(41, 128, 185), 1));
+            
+            // Apply hover effect if needed
+            if (!isSelected && MyAppointmentDetailsTable.getHoveredRow() == row) {
+                setBackground(new Color(52, 152, 219)); // Lighter blue on hover
+            }
 
             return this;
         }
@@ -1680,33 +1774,33 @@ public class Dashboard extends javax.swing.JPanel {
         MyApplicationStatusBoxPanel = new javax.swing.JPanel();
         MyApplicationStatusValueLabel = new javax.swing.JLabel();
         MyApplicationStatusTitleLabel = new javax.swing.JLabel();
-        MyApplicationStatusActionBtn = new javax.swing.JButton();
+        MyApplicationStatusActionBtn = new component.Button.FlatButton();
         DaySinceApplicationBoxPanel = new javax.swing.JPanel();
         DaySinceApplicationValueLabel = new javax.swing.JLabel();
         DaySinceApplicationTitleLabel = new javax.swing.JLabel();
-        DaySinceApplicationActionBtn = new javax.swing.JButton();
+        MyAppointmentActionBtn = new component.Button.FlatButton();
         MyAppointmentBoxPanel = new javax.swing.JPanel();
         MyAppointmentCountLabel = new javax.swing.JLabel();
-        MyAppointmentActionBtn = new javax.swing.JButton();
         MyAppointmentTitleLabel = new javax.swing.JLabel();
+        DaySinceApplicationActionBtn = new component.Button.FlatButton();
         NotificationsBoxPanel = new javax.swing.JPanel();
         NotificationsValueLabel = new javax.swing.JLabel();
-        NotificationsActionBtn = new javax.swing.JButton();
         NotificationsTitleLabel = new javax.swing.JLabel();
+        NotificationsActionBtn = new component.Button.FlatButton();
         searchField = new javax.swing.JTextField();
         searchLabel = new javax.swing.JLabel();
         DashboardCitizenTable = new javax.swing.JLayeredPane();
         ApplicationTimelineTablePanel = new javax.swing.JPanel();
-        ApplicationTimelineTableScrollPane = new javax.swing.JScrollPane();
+        ApplicationTimelineTableScrollPane = new component.Scroll.CustomScrollPane();
         ApplicationTimelineTable = new component.Table.CustomTable();
         RequiredDocumentsTablePanel = new javax.swing.JPanel();
-        RequiredDocumentsTableScrollPane = new javax.swing.JScrollPane();
+        RequiredDocumentsTableScrollPanel = new component.Scroll.CustomScrollPane();
         RequiredDocumentsTable = new component.Table.CustomTable();
         MyAppointmentDetailsTablePanel = new javax.swing.JPanel();
-        MyAppointmentDetailsTableScrollPane = new javax.swing.JScrollPane();
+        MyAppointmentDetailsTableScrollPane = new component.Scroll.CustomScrollPane();
         MyAppointmentDetailsTable = new component.Table.CustomTable();
         MyNotificationsTablePanel = new javax.swing.JPanel();
-        MyNotificationsTableScrollPane = new javax.swing.JScrollPane();
+        customScrollPane = new component.Scroll.CustomScrollPane();
         MyNotificationsTable = new component.Table.CustomTable();
 
         setBackground(new java.awt.Color(255, 255, 255));
@@ -1732,17 +1826,13 @@ public class Dashboard extends javax.swing.JPanel {
         MyApplicationStatusTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
 
         MyApplicationStatusActionBtn.setBackground(new java.awt.Color(254, 100, 100));
+        MyApplicationStatusActionBtn.setForeground(new java.awt.Color(0, 0, 0));
         MyApplicationStatusActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        MyApplicationStatusActionBtn.setForeground(new java.awt.Color(25, 25, 25));
-        MyApplicationStatusActionBtn.setText("More Details");
-        MyApplicationStatusActionBtn.setBorder(null);
-        MyApplicationStatusActionBtn.setBorderPainted(false);
-        MyApplicationStatusActionBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        MyApplicationStatusActionBtn.setFocusPainted(false);
-        MyApplicationStatusActionBtn.setHideActionText(true);
-        MyApplicationStatusActionBtn.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        MyApplicationStatusActionBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        MyApplicationStatusActionBtn.setInheritsPopupMenu(true);
+        MyApplicationStatusActionBtn.setLabel("More Details");
+        MyApplicationStatusActionBtn.setNormalColor(new java.awt.Color(254, 100, 100));
         MyApplicationStatusActionBtn.setPreferredSize(new java.awt.Dimension(140, 28));
+        MyApplicationStatusActionBtn.setTextColor(new java.awt.Color(0, 0, 0));
         MyApplicationStatusActionBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 MyApplicationStatusActionBtnActionPerformed(evt);
@@ -1759,7 +1849,7 @@ public class Dashboard extends javax.swing.JPanel {
                     .addComponent(MyApplicationStatusTitleLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 188, Short.MAX_VALUE)
                     .addComponent(MyApplicationStatusValueLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
-            .addComponent(MyApplicationStatusActionBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(MyApplicationStatusActionBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         MyApplicationStatusBoxPanelLayout.setVerticalGroup(
             MyApplicationStatusBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1789,23 +1879,14 @@ public class Dashboard extends javax.swing.JPanel {
         DaySinceApplicationTitleLabel.setToolTipText("");
         DaySinceApplicationTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
 
-        DaySinceApplicationActionBtn.setBackground(new java.awt.Color(249, 200, 100));
-        DaySinceApplicationActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        DaySinceApplicationActionBtn.setForeground(new java.awt.Color(25, 25, 25));
-        DaySinceApplicationActionBtn.setText("More Details");
-        DaySinceApplicationActionBtn.setBorder(null);
-        DaySinceApplicationActionBtn.setBorderPainted(false);
-        DaySinceApplicationActionBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        DaySinceApplicationActionBtn.setFocusPainted(false);
-        DaySinceApplicationActionBtn.setHideActionText(true);
-        DaySinceApplicationActionBtn.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        DaySinceApplicationActionBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        DaySinceApplicationActionBtn.setPreferredSize(new java.awt.Dimension(140, 28));
-        DaySinceApplicationActionBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                DaySinceApplicationActionBtnActionPerformed(evt);
-            }
-        });
+        MyAppointmentActionBtn.setBackground(new java.awt.Color(249, 200, 100));
+        MyAppointmentActionBtn.setForeground(new java.awt.Color(0, 0, 0));
+        MyAppointmentActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        MyAppointmentActionBtn.setInheritsPopupMenu(true);
+        MyAppointmentActionBtn.setLabel("More Details");
+        MyAppointmentActionBtn.setNormalColor(new java.awt.Color(249, 200, 100));
+        MyAppointmentActionBtn.setPreferredSize(new java.awt.Dimension(140, 28));
+        MyAppointmentActionBtn.setTextColor(new java.awt.Color(0, 0, 0));
 
         javax.swing.GroupLayout DaySinceApplicationBoxPanelLayout = new javax.swing.GroupLayout(DaySinceApplicationBoxPanel);
         DaySinceApplicationBoxPanel.setLayout(DaySinceApplicationBoxPanelLayout);
@@ -1817,7 +1898,7 @@ public class Dashboard extends javax.swing.JPanel {
                     .addComponent(DaySinceApplicationTitleLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 188, Short.MAX_VALUE)
                     .addComponent(DaySinceApplicationValueLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
-            .addComponent(DaySinceApplicationActionBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(MyAppointmentActionBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         DaySinceApplicationBoxPanelLayout.setVerticalGroup(
             DaySinceApplicationBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1827,7 +1908,7 @@ public class Dashboard extends javax.swing.JPanel {
                 .addGap(18, 18, 18)
                 .addComponent(DaySinceApplicationTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
-                .addComponent(DaySinceApplicationActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(MyAppointmentActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         MyAppointmentBoxPanel.setBackground(new java.awt.Color(200, 254, 156));
@@ -1840,30 +1921,26 @@ public class Dashboard extends javax.swing.JPanel {
         MyAppointmentCountLabel.setToolTipText("");
         MyAppointmentCountLabel.setPreferredSize(new java.awt.Dimension(100, 43));
 
-        MyAppointmentActionBtn.setBackground(new java.awt.Color(100, 254, 100));
-        MyAppointmentActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        MyAppointmentActionBtn.setForeground(new java.awt.Color(25, 25, 25));
-        MyAppointmentActionBtn.setText("More Details");
-        MyAppointmentActionBtn.setBorder(null);
-        MyAppointmentActionBtn.setBorderPainted(false);
-        MyAppointmentActionBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        MyAppointmentActionBtn.setFocusPainted(false);
-        MyAppointmentActionBtn.setHideActionText(true);
-        MyAppointmentActionBtn.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        MyAppointmentActionBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        MyAppointmentActionBtn.setPreferredSize(new java.awt.Dimension(140, 28));
-        MyAppointmentActionBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                MyAppointmentActionBtnActionPerformed(evt);
-            }
-        });
-
         MyAppointmentTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
         MyAppointmentTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
         MyAppointmentTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         MyAppointmentTitleLabel.setText("My Appointment");
         MyAppointmentTitleLabel.setToolTipText("");
         MyAppointmentTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
+
+        DaySinceApplicationActionBtn.setBackground(new java.awt.Color(100, 254, 100));
+        DaySinceApplicationActionBtn.setForeground(new java.awt.Color(0, 0, 0));
+        DaySinceApplicationActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        DaySinceApplicationActionBtn.setInheritsPopupMenu(true);
+        DaySinceApplicationActionBtn.setLabel("More Details");
+        DaySinceApplicationActionBtn.setNormalColor(new java.awt.Color(100, 254, 100));
+        DaySinceApplicationActionBtn.setPreferredSize(new java.awt.Dimension(140, 28));
+        DaySinceApplicationActionBtn.setTextColor(new java.awt.Color(0, 0, 0));
+        DaySinceApplicationActionBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                DaySinceApplicationActionBtnActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout MyAppointmentBoxPanelLayout = new javax.swing.GroupLayout(MyAppointmentBoxPanel);
         MyAppointmentBoxPanel.setLayout(MyAppointmentBoxPanelLayout);
@@ -1875,7 +1952,7 @@ public class Dashboard extends javax.swing.JPanel {
                     .addComponent(MyAppointmentCountLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(MyAppointmentTitleLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 188, Short.MAX_VALUE))
                 .addContainerGap())
-            .addComponent(MyAppointmentActionBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(DaySinceApplicationActionBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         MyAppointmentBoxPanelLayout.setVerticalGroup(
             MyAppointmentBoxPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1885,7 +1962,7 @@ public class Dashboard extends javax.swing.JPanel {
                 .addGap(18, 18, 18)
                 .addComponent(MyAppointmentTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
-                .addComponent(MyAppointmentActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(DaySinceApplicationActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         NotificationsBoxPanel.setBackground(new java.awt.Color(156, 200, 254));
@@ -1898,30 +1975,21 @@ public class Dashboard extends javax.swing.JPanel {
         NotificationsValueLabel.setToolTipText("");
         NotificationsValueLabel.setPreferredSize(new java.awt.Dimension(100, 43));
 
-        NotificationsActionBtn.setBackground(new java.awt.Color(80, 80, 254));
-        NotificationsActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
-        NotificationsActionBtn.setForeground(new java.awt.Color(25, 25, 25));
-        NotificationsActionBtn.setText("More Details");
-        NotificationsActionBtn.setBorder(null);
-        NotificationsActionBtn.setBorderPainted(false);
-        NotificationsActionBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        NotificationsActionBtn.setFocusPainted(false);
-        NotificationsActionBtn.setHideActionText(true);
-        NotificationsActionBtn.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        NotificationsActionBtn.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        NotificationsActionBtn.setPreferredSize(new java.awt.Dimension(140, 28));
-        NotificationsActionBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                NotificationsActionBtnActionPerformed(evt);
-            }
-        });
-
         NotificationsTitleLabel.setFont(new java.awt.Font("Times New Roman", 1, 14)); // NOI18N
         NotificationsTitleLabel.setForeground(new java.awt.Color(25, 25, 25));
         NotificationsTitleLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         NotificationsTitleLabel.setText("Notifications");
         NotificationsTitleLabel.setToolTipText("");
         NotificationsTitleLabel.setPreferredSize(new java.awt.Dimension(140, 43));
+
+        NotificationsActionBtn.setBackground(new java.awt.Color(80, 80, 254));
+        NotificationsActionBtn.setForeground(new java.awt.Color(0, 0, 0));
+        NotificationsActionBtn.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
+        NotificationsActionBtn.setInheritsPopupMenu(true);
+        NotificationsActionBtn.setLabel("More Details");
+        NotificationsActionBtn.setNormalColor(new java.awt.Color(80, 80, 254));
+        NotificationsActionBtn.setPreferredSize(new java.awt.Dimension(140, 28));
+        NotificationsActionBtn.setTextColor(new java.awt.Color(0, 0, 0));
 
         javax.swing.GroupLayout NotificationsBoxPanelLayout = new javax.swing.GroupLayout(NotificationsBoxPanel);
         NotificationsBoxPanel.setLayout(NotificationsBoxPanelLayout);
@@ -1942,7 +2010,7 @@ public class Dashboard extends javax.swing.JPanel {
                 .addComponent(NotificationsValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
                 .addComponent(NotificationsTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(12, 12, 12)
                 .addComponent(NotificationsActionBtn, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
@@ -1989,9 +2057,7 @@ public class Dashboard extends javax.swing.JPanel {
 
         DashboardCitizenTable.setLayout(new javax.swing.OverlayLayout(DashboardCitizenTable));
 
-        ApplicationTimelineTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
-
-        ApplicationTimelineTableScrollPane.setPreferredSize(new java.awt.Dimension(402, 150));
+        ApplicationTimelineTablePanel.setPreferredSize(new java.awt.Dimension(812, 150));
 
         ApplicationTimelineTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -2001,7 +2067,7 @@ public class Dashboard extends javax.swing.JPanel {
                 {null, null, null, null, null}
             },
             new String [] {
-                "Date", "Status", "Description", "Updated By", "Notes"
+                "Date", "Content", "Description", "Updated By", "Notes"
             }
         ) {
             Class[] types = new Class [] {
@@ -2037,18 +2103,16 @@ public class Dashboard extends javax.swing.JPanel {
         ApplicationTimelineTablePanel.setLayout(ApplicationTimelineTablePanelLayout);
         ApplicationTimelineTablePanelLayout.setHorizontalGroup(
             ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 918, Short.MAX_VALUE)
+            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ApplicationTimelineTablePanelLayout.setVerticalGroup(
             ApplicationTimelineTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
+            .addComponent(ApplicationTimelineTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         DashboardCitizenTable.add(ApplicationTimelineTablePanel);
 
-        RequiredDocumentsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
-
-        RequiredDocumentsTableScrollPane.setPreferredSize(new java.awt.Dimension(912, 150));
+        RequiredDocumentsTablePanel.setPreferredSize(new java.awt.Dimension(812, 150));
 
         RequiredDocumentsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -2076,7 +2140,7 @@ public class Dashboard extends javax.swing.JPanel {
                 return canEdit [columnIndex];
             }
         });
-        RequiredDocumentsTableScrollPane.setViewportView(RequiredDocumentsTable);
+        RequiredDocumentsTableScrollPanel.setViewportView(RequiredDocumentsTable);
         if (RequiredDocumentsTable.getColumnModel().getColumnCount() > 0) {
             RequiredDocumentsTable.getColumnModel().getColumn(0).setResizable(false);
             RequiredDocumentsTable.getColumnModel().getColumn(0).setPreferredWidth(150);
@@ -2094,21 +2158,16 @@ public class Dashboard extends javax.swing.JPanel {
         RequiredDocumentsTablePanel.setLayout(RequiredDocumentsTablePanelLayout);
         RequiredDocumentsTablePanelLayout.setHorizontalGroup(
             RequiredDocumentsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
+            .addComponent(RequiredDocumentsTableScrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         RequiredDocumentsTablePanelLayout.setVerticalGroup(
             RequiredDocumentsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(RequiredDocumentsTablePanelLayout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(RequiredDocumentsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(RequiredDocumentsTableScrollPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         DashboardCitizenTable.add(RequiredDocumentsTablePanel);
 
-        MyAppointmentDetailsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
-
-        MyAppointmentDetailsTableScrollPane.setPreferredSize(new java.awt.Dimension(402, 150));
+        MyAppointmentDetailsTablePanel.setPreferredSize(new java.awt.Dimension(812, 150));
 
         MyAppointmentDetailsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -2125,7 +2184,7 @@ public class Dashboard extends javax.swing.JPanel {
                 java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Object.class
             };
             boolean[] canEdit = new boolean [] {
-                true, false, false, false, false, true
+                false, false, false, true, false, true
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -2156,18 +2215,18 @@ public class Dashboard extends javax.swing.JPanel {
         MyAppointmentDetailsTablePanel.setLayout(MyAppointmentDetailsTablePanelLayout);
         MyAppointmentDetailsTablePanelLayout.setHorizontalGroup(
             MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
+            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         MyAppointmentDetailsTablePanelLayout.setVerticalGroup(
             MyAppointmentDetailsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
+            .addComponent(MyAppointmentDetailsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         DashboardCitizenTable.add(MyAppointmentDetailsTablePanel);
 
-        MyNotificationsTablePanel.setPreferredSize(new java.awt.Dimension(812, 242));
+        MyNotificationsTablePanel.setPreferredSize(new java.awt.Dimension(812, 150));
 
-        MyNotificationsTableScrollPane.setPreferredSize(new java.awt.Dimension(918, 150));
+        customScrollPane.setPreferredSize(new java.awt.Dimension(812, 150));
 
         MyNotificationsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -2195,7 +2254,7 @@ public class Dashboard extends javax.swing.JPanel {
                 return canEdit [columnIndex];
             }
         });
-        MyNotificationsTableScrollPane.setViewportView(MyNotificationsTable);
+        customScrollPane.setViewportView(MyNotificationsTable);
         if (MyNotificationsTable.getColumnModel().getColumnCount() > 0) {
             MyNotificationsTable.getColumnModel().getColumn(0).setResizable(false);
             MyNotificationsTable.getColumnModel().getColumn(0).setPreferredWidth(80);
@@ -2213,13 +2272,11 @@ public class Dashboard extends javax.swing.JPanel {
         MyNotificationsTablePanel.setLayout(MyNotificationsTablePanelLayout);
         MyNotificationsTablePanelLayout.setHorizontalGroup(
             MyNotificationsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(customScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         MyNotificationsTablePanelLayout.setVerticalGroup(
             MyNotificationsTablePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(MyNotificationsTablePanelLayout.createSequentialGroup()
-                .addComponent(MyNotificationsTableScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(customScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         DashboardCitizenTable.add(MyNotificationsTablePanel);
@@ -2231,12 +2288,12 @@ public class Dashboard extends javax.swing.JPanel {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addGap(50, 50, 50)
-                        .addComponent(BoxPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGap(50, 50, 50)
+                        .addComponent(BoxPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addGap(50, 50, 50))
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
@@ -2250,31 +2307,15 @@ public class Dashboard extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGap(53, 53, 53)
                 .addComponent(BoxPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(111, 111, 111)
+                .addGap(104, 104, 104)
                 .addComponent(searchLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(5, 5, 5)
-                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.DEFAULT_SIZE, 147, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(DashboardCitizenTable, javax.swing.GroupLayout.DEFAULT_SIZE, 154, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
-
-    private void MyApplicationStatusActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MyApplicationStatusActionBtnActionPerformed
-        showApplicationTimelineView();
-    }//GEN-LAST:event_MyApplicationStatusActionBtnActionPerformed
-
-    private void DaySinceApplicationActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DaySinceApplicationActionBtnActionPerformed
-        showDocumentsView();
-    }//GEN-LAST:event_DaySinceApplicationActionBtnActionPerformed
-
-    private void MyAppointmentActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MyAppointmentActionBtnActionPerformed
-        showAppointmentView();
-    }//GEN-LAST:event_MyAppointmentActionBtnActionPerformed
-
-    private void NotificationsActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NotificationsActionBtnActionPerformed
-        showNotificationsView();
-    }//GEN-LAST:event_NotificationsActionBtnActionPerformed
 
     private void searchFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchFieldActionPerformed
         String searchTerm = searchField.getText().trim();
@@ -2285,38 +2326,47 @@ public class Dashboard extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_searchFieldActionPerformed
 
+    private void MyApplicationStatusActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MyApplicationStatusActionBtnActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_MyApplicationStatusActionBtnActionPerformed
+
+    private void DaySinceApplicationActionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DaySinceApplicationActionBtnActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_DaySinceApplicationActionBtnActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private component.Table.CustomTable ApplicationTimelineTable;
     private javax.swing.JPanel ApplicationTimelineTablePanel;
-    private javax.swing.JScrollPane ApplicationTimelineTableScrollPane;
+    private component.Scroll.CustomScrollPane ApplicationTimelineTableScrollPane;
     private javax.swing.JPanel BoxPanel;
     private javax.swing.JLayeredPane DashboardCitizenTable;
-    private javax.swing.JButton DaySinceApplicationActionBtn;
+    private component.Button.FlatButton DaySinceApplicationActionBtn;
     private javax.swing.JPanel DaySinceApplicationBoxPanel;
     private javax.swing.JLabel DaySinceApplicationTitleLabel;
     private javax.swing.JLabel DaySinceApplicationValueLabel;
-    private javax.swing.JButton MyApplicationStatusActionBtn;
+    private component.Button.FlatButton MyApplicationStatusActionBtn;
     private javax.swing.JPanel MyApplicationStatusBoxPanel;
     private javax.swing.JLabel MyApplicationStatusTitleLabel;
     private javax.swing.JLabel MyApplicationStatusValueLabel;
-    private javax.swing.JButton MyAppointmentActionBtn;
+    private component.Button.FlatButton MyAppointmentActionBtn;
     private javax.swing.JPanel MyAppointmentBoxPanel;
     private javax.swing.JLabel MyAppointmentCountLabel;
     private component.Table.CustomTable MyAppointmentDetailsTable;
     private javax.swing.JPanel MyAppointmentDetailsTablePanel;
-    private javax.swing.JScrollPane MyAppointmentDetailsTableScrollPane;
+    private component.Scroll.CustomScrollPane MyAppointmentDetailsTableScrollPane;
     private javax.swing.JLabel MyAppointmentTitleLabel;
     private component.Table.CustomTable MyNotificationsTable;
     private javax.swing.JPanel MyNotificationsTablePanel;
-    private javax.swing.JScrollPane MyNotificationsTableScrollPane;
-    private javax.swing.JButton NotificationsActionBtn;
+    private component.Button.FlatButton NotificationsActionBtn;
     private javax.swing.JPanel NotificationsBoxPanel;
     private javax.swing.JLabel NotificationsTitleLabel;
     private javax.swing.JLabel NotificationsValueLabel;
     private component.Table.CustomTable RequiredDocumentsTable;
     private javax.swing.JPanel RequiredDocumentsTablePanel;
     private javax.swing.JScrollPane RequiredDocumentsTableScrollPane;
+    private component.Scroll.CustomScrollPane RequiredDocumentsTableScrollPanel;
+    private component.Scroll.CustomScrollPane customScrollPane;
     private javax.swing.JTextField searchField;
     private javax.swing.JLabel searchLabel;
     // End of variables declaration//GEN-END:variables

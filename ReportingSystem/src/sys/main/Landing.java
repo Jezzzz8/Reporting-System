@@ -436,7 +436,7 @@ public class Landing extends javax.swing.JFrame {
         RIGHT.setBackground(new java.awt.Color(255, 255, 255));
         RIGHT.setPreferredSize(new java.awt.Dimension(450, 500));
 
-        BodyTabbedPane.addTab("tab1", login);
+        BodyTabbedPane.addTab("tab2", login);
         BodyTabbedPane.addTab("tab2", registration);
 
         javax.swing.GroupLayout RIGHTLayout = new javax.swing.GroupLayout(RIGHT);

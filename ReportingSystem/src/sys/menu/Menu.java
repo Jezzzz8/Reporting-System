@@ -65,7 +65,7 @@ public class Menu extends JComponent {
         {"Citizen Records", "Add Citizen Record", "Update Citizen Record", "View Citizen Record"},
         {"ID Status Management", "Update ID Status", "View Status History"},
         {"Appointment Management", "View Appointments", "Update Appointment Status"},
-        {"System Settings", "System Configuration", "Activity Logs", "Backup & Restore"},
+        {"System Settings", "System Configuration", "Backup & Restore"},
         {"Logout"}
     };
 
