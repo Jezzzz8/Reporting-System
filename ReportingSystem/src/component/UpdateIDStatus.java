@@ -196,7 +196,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
 
             // Adjust custom widths for better display
             Map<String, Integer> customWidths = new HashMap<>();
-            customWidths.put("PENDING", 125);
+            customWidths.put("PENDING", 130);
             customWidths.put("PROCESSING", 150);
             customWidths.put("PRODUCTION", 150);
             customWidths.put("READY", 120);
@@ -421,18 +421,30 @@ public class UpdateIDStatus extends javax.swing.JPanel {
                 }
             }
 
-            // 3. Today's updates
+            // 3. TODAY'S UPDATES: Changed from DISTINCT citizen_id to COUNT(*) for TOTAL updates
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             String today = dateFormat.format(new java.util.Date());
             String todayQuery = 
-                "SELECT COUNT(DISTINCT citizen_id) as today_updates FROM id_status WHERE DATE(update_date) = ?";
+                "SELECT COUNT(*) as today_updates FROM id_status WHERE DATE(update_date) = ?";
 
             try (PreparedStatement stmt = conn.prepareStatement(todayQuery)) {
                 stmt.setString(1, today);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        statusCounts.put("TODAY_UPDATES", rs.getInt("today_updates"));
-                        System.out.println("Today's updates: " + rs.getInt("today_updates"));
+                        int todayUpdates = rs.getInt("today_updates");
+                        statusCounts.put("TODAY_UPDATES", todayUpdates);
+                        System.out.println("Today's TOTAL updates (all records): " + todayUpdates);
+
+                        // Optional: Also count distinct citizens if needed for comparison
+                        String distinctQuery = "SELECT COUNT(DISTINCT citizen_id) as distinct_updates FROM id_status WHERE DATE(update_date) = ?";
+                        try (PreparedStatement distinctStmt = conn.prepareStatement(distinctQuery)) {
+                            distinctStmt.setString(1, today);
+                            try (ResultSet distinctRs = distinctStmt.executeQuery()) {
+                                if (distinctRs.next()) {
+                                    System.out.println("Today's DISTINCT citizen updates: " + distinctRs.getInt("distinct_updates"));
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1383,7 +1395,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(RefreshButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
-            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 995, Short.MAX_VALUE)
             .addComponent(customScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         MainIDStatusDetailsLayout.setVerticalGroup(

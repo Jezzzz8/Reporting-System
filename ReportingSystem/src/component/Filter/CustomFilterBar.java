@@ -47,6 +47,12 @@ public class CustomFilterBar extends JPanel {
         public Color rejectedColor = new Color(220, 53, 69); // Red
         public Color allColor = new Color(70, 70, 70); // Dark gray
         
+        // Date filter colors (for date range filters)
+        public Color todayColor = new Color(33, 150, 243); // Blue
+        public Color weekColor = new Color(76, 175, 80); // Green
+        public Color monthColor = new Color(255, 152, 0); // Orange
+        public Color yearColor = new Color(156, 39, 176); // Purple
+        
         // Show counts option
         public boolean showCounts = true;
         
@@ -78,12 +84,48 @@ public class CustomFilterBar extends JPanel {
         public float textWidthMultiplier = 1.2f;
     }
     
+    // Filter definition class for customizable filter contents
+    public static class FilterDefinition {
+        private String id;
+        private String displayText;
+        private Color color;
+        private int order;
+        private boolean enabled;
+        private String category; // Optional: "status", "date", "priority", etc.
+        
+        public FilterDefinition(String id, String displayText, Color color) {
+            this(id, displayText, color, 0, true, "custom");
+        }
+        
+        public FilterDefinition(String id, String displayText, Color color, int order, 
+                                boolean enabled, String category) {
+            this.id = id.toUpperCase();
+            this.displayText = displayText;
+            this.color = color;
+            this.order = order;
+            this.enabled = enabled;
+            this.category = category;
+        }
+        
+        // Getters and setters
+        public String getId() { return id; }
+        public String getDisplayText() { return displayText; }
+        public Color getColor() { return color; }
+        public int getOrder() { return order; }
+        public boolean isEnabled() { return enabled; }
+        public String getCategory() { return category; }
+        
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public void setOrder(int order) { this.order = order; }
+    }
+    
     // Instance variables
     private List<FilterButton> filterButtons;
     private FilterModel filterModel;
     private FilterListener listener;
     private String activeFilter;
     private FilterProperties properties;
+    private List<FilterDefinition> filterDefinitions;
     
     // Default constructor with default properties
     public CustomFilterBar() {
@@ -93,6 +135,7 @@ public class CustomFilterBar extends JPanel {
     // Constructor with custom properties
     public CustomFilterBar(FilterProperties properties) {
         this.properties = properties;
+        this.filterDefinitions = new ArrayList<>();
         initComponents();
         setupDefaults();
     }
@@ -113,17 +156,21 @@ public class CustomFilterBar extends JPanel {
         activeFilter = "ALL";
         
         // Set custom widths for longer filter names
+        properties.customWidths.put("ALL", 75);
         properties.customWidths.put("PENDING", 95);
         properties.customWidths.put("PROCESSING", 110);
         properties.customWidths.put("PRODUCTION", 105);
+        properties.customWidths.put("READY", 85);
         properties.customWidths.put("COMPLETED", 105);
         properties.customWidths.put("REJECTED", 100);
-        properties.customWidths.put("READY", 85);
-        properties.customWidths.put("ALL", 75);
+        properties.customWidths.put("TODAY", 85);
+        properties.customWidths.put("THIS WEEK", 105);
+        properties.customWidths.put("THIS MONTH", 115);
+        properties.customWidths.put("THIS YEAR", 105);
     }
 
     private void setupDefaultFilters() {
-        // Default status filters
+        // Default status filters - will be overridden if custom filters are set
         String[] filters = {"ALL", "PENDING", "PROCESSING", "PRODUCTION", "READY", "COMPLETED", "REJECTED"};
 
         for (String filter : filters) {
@@ -139,21 +186,265 @@ public class CustomFilterBar extends JPanel {
             case "READY": return "Ready";
             case "COMPLETED": return "Completed";
             case "REJECTED": return "Rejected";
+            case "TODAY": return "Today";
+            case "THIS WEEK": return "This Week";
+            case "THIS MONTH": return "This Month";
+            case "THIS YEAR": return "This Year";
             default: return "All";
         }
     }
     
     private Color getFilterColor(String filter) {
-        switch (filter.toUpperCase()) {
+        String upperFilter = filter.toUpperCase();
+        switch (upperFilter) {
             case "PENDING": return properties.pendingColor;
             case "PROCESSING": return properties.processingColor;
             case "PRODUCTION": return properties.productionColor;
             case "READY": return properties.readyColor;
             case "COMPLETED": return properties.completedColor;
             case "REJECTED": return properties.rejectedColor;
+            case "TODAY": return properties.todayColor;
+            case "THIS WEEK": return properties.weekColor;
+            case "THIS MONTH": return properties.monthColor;
+            case "THIS YEAR": return properties.yearColor;
             default: return properties.allColor;
         }
     }
+    
+    // ============== NEW METHODS FOR CUSTOMIZABLE FILTER CONTENTS ==============
+    
+    /**
+     * Set custom filter definitions for the filter bar.
+     * This completely replaces the existing filters.
+     */
+    public void setFilterDefinitions(List<FilterDefinition> definitions) {
+        this.filterDefinitions.clear();
+        this.filterDefinitions.addAll(definitions);
+        
+        // Sort by order
+        filterDefinitions.sort(Comparator.comparingInt(FilterDefinition::getOrder));
+        
+        // Clear existing filters
+        clearFilters();
+        
+        // Add new filters based on definitions
+        for (FilterDefinition def : filterDefinitions) {
+            if (def.isEnabled()) {
+                addFilterOption(def.getId(), def.getDisplayText(), def.getColor());
+            }
+        }
+    }
+    
+    /**
+     * Add a single filter definition.
+     */
+    public void addFilterDefinition(FilterDefinition definition) {
+        filterDefinitions.add(definition);
+        
+        // Sort by order
+        filterDefinitions.sort(Comparator.comparingInt(FilterDefinition::getOrder));
+        
+        if (definition.isEnabled()) {
+            addFilterOption(definition.getId(), definition.getDisplayText(), definition.getColor());
+        }
+    }
+    
+    /**
+     * Remove a filter definition by ID.
+     */
+    public void removeFilterDefinition(String id) {
+        filterDefinitions.removeIf(def -> def.getId().equalsIgnoreCase(id));
+        removeFilterOption(id);
+    }
+    
+    /**
+     * Update an existing filter definition.
+     */
+    public void updateFilterDefinition(FilterDefinition updatedDef) {
+        for (int i = 0; i < filterDefinitions.size(); i++) {
+            if (filterDefinitions.get(i).getId().equalsIgnoreCase(updatedDef.getId())) {
+                filterDefinitions.set(i, updatedDef);
+                
+                // Update the button if it exists
+                FilterButton button = getFilterButton(updatedDef.getId());
+                if (button != null) {
+                    button.displayText = updatedDef.getDisplayText();
+                    button.color = updatedDef.getColor();
+                    button.setEnabled(updatedDef.isEnabled());
+                    button.updateButtonText();
+                    button.updateAppearance();
+                }
+                break;
+            }
+        }
+    }
+    
+    /**
+     * Get all filter definitions.
+     */
+    public List<FilterDefinition> getFilterDefinitions() {
+        return new ArrayList<>(filterDefinitions);
+    }
+    
+    /**
+     * Get filter definitions by category.
+     */
+    public List<FilterDefinition> getFilterDefinitionsByCategory(String category) {
+        List<FilterDefinition> result = new ArrayList<>();
+        for (FilterDefinition def : filterDefinitions) {
+            if (def.getCategory().equalsIgnoreCase(category)) {
+                result.add(def);
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Create predefined status filter definitions.
+     */
+    public static List<FilterDefinition> createStatusFilterDefinitions() {
+        List<FilterDefinition> definitions = new ArrayList<>();
+        
+        definitions.add(new FilterDefinition("ALL", "All", new Color(70, 70, 70), 0, true, "status"));
+        definitions.add(new FilterDefinition("PENDING", "Pending", new Color(255, 193, 7), 1, true, "status"));
+        definitions.add(new FilterDefinition("PROCESSING", "Processing", new Color(0, 120, 215), 2, true, "status"));
+        definitions.add(new FilterDefinition("PRODUCTION", "Production", new Color(204, 85, 0), 3, true, "status"));
+        definitions.add(new FilterDefinition("READY", "Ready", new Color(40, 167, 69), 4, true, "status"));
+        definitions.add(new FilterDefinition("COMPLETED", "Completed", new Color(111, 66, 193), 5, true, "status"));
+        definitions.add(new FilterDefinition("REJECTED", "Rejected", new Color(220, 53, 69), 6, true, "status"));
+        
+        return definitions;
+    }
+    
+    /**
+     * Create predefined date filter definitions.
+     */
+    public static List<FilterDefinition> createDateFilterDefinitions() {
+        List<FilterDefinition> definitions = new ArrayList<>();
+        
+        definitions.add(new FilterDefinition("ALL", "All", new Color(70, 70, 70), 0, true, "date"));
+        definitions.add(new FilterDefinition("TODAY", "Today", new Color(33, 150, 243), 1, true, "date"));
+        definitions.add(new FilterDefinition("THIS WEEK", "This Week", new Color(76, 175, 80), 2, true, "date"));
+        definitions.add(new FilterDefinition("THIS MONTH", "This Month", new Color(255, 152, 0), 3, true, "date"));
+        definitions.add(new FilterDefinition("THIS YEAR", "This Year", new Color(156, 39, 176), 4, true, "date"));
+        
+        return definitions;
+    }
+    
+    /**
+     * Create priority filter definitions.
+     */
+    public static List<FilterDefinition> createPriorityFilterDefinitions() {
+        List<FilterDefinition> definitions = new ArrayList<>();
+        
+        definitions.add(new FilterDefinition("ALL", "All", new Color(70, 70, 70), 0, true, "priority"));
+        definitions.add(new FilterDefinition("HIGH", "High", new Color(220, 53, 69), 1, true, "priority"));
+        definitions.add(new FilterDefinition("MEDIUM", "Medium", new Color(255, 193, 7), 2, true, "priority"));
+        definitions.add(new FilterDefinition("LOW", "Low", new Color(40, 167, 69), 3, true, "priority"));
+        
+        return definitions;
+    }
+    
+    /**
+     * Create document status filter definitions.
+     */
+    public static List<FilterDefinition> createDocumentFilterDefinitions() {
+        List<FilterDefinition> definitions = new ArrayList<>();
+        
+        definitions.add(new FilterDefinition("ALL", "All", new Color(70, 70, 70), 0, true, "document"));
+        definitions.add(new FilterDefinition("UPLOADED", "Uploaded", new Color(40, 167, 69), 1, true, "document"));
+        definitions.add(new FilterDefinition("PENDING", "Pending", new Color(255, 193, 7), 2, true, "document"));
+        definitions.add(new FilterDefinition("REVIEWING", "Reviewing", new Color(0, 120, 215), 3, true, "document"));
+        definitions.add(new FilterDefinition("APPROVED", "Approved", new Color(111, 66, 193), 4, true, "document"));
+        definitions.add(new FilterDefinition("REJECTED", "Rejected", new Color(220, 53, 69), 5, true, "document"));
+        
+        return definitions;
+    }
+    
+    /**
+     * Load filters from configuration.
+     */
+    public void loadFiltersFromConfiguration(String configType) {
+        clearFilters();
+        
+        switch (configType.toUpperCase()) {
+            case "STATUS":
+                setFilterDefinitions(createStatusFilterDefinitions());
+                break;
+            case "DATE":
+                setFilterDefinitions(createDateFilterDefinitions());
+                break;
+            case "PRIORITY":
+                setFilterDefinitions(createPriorityFilterDefinitions());
+                break;
+            case "DOCUMENT":
+                setFilterDefinitions(createDocumentFilterDefinitions());
+                break;
+            case "CUSTOM":
+                // Use already set definitions
+                setFilterDefinitions(filterDefinitions);
+                break;
+            default:
+                // Fallback to status filters
+                setFilterDefinitions(createStatusFilterDefinitions());
+                break;
+        }
+    }
+    
+    /**
+     * Export current filter configuration as JSON string.
+     */
+    public String exportFilterConfiguration() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        sb.append("  \"filters\": [\n");
+        
+        for (int i = 0; i < filterDefinitions.size(); i++) {
+            FilterDefinition def = filterDefinitions.get(i);
+            Color color = def.getColor();
+            sb.append("    {\n");
+            sb.append("      \"id\": \"").append(def.getId()).append("\",\n");
+            sb.append("      \"displayText\": \"").append(def.getDisplayText()).append("\",\n");
+            sb.append("      \"color\": \"").append(String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue())).append("\",\n");
+            sb.append("      \"order\": ").append(def.getOrder()).append(",\n");
+            sb.append("      \"enabled\": ").append(def.isEnabled()).append(",\n");
+            sb.append("      \"category\": \"").append(def.getCategory()).append("\"\n");
+            sb.append("    }");
+            if (i < filterDefinitions.size() - 1) {
+                sb.append(",");
+            }
+            sb.append("\n");
+        }
+        
+        sb.append("  ]\n");
+        sb.append("}");
+        return sb.toString();
+    }
+    
+    /**
+     * Import filter configuration from JSON string.
+     */
+    public void importFilterConfiguration(String jsonConfig) {
+        // This is a simplified version - in production you would use a JSON parser
+        // For now, we'll clear and add default status filters
+        clearFilters();
+        setFilterDefinitions(createStatusFilterDefinitions());
+        
+        // TODO: Implement proper JSON parsing
+        System.out.println("JSON configuration import would be implemented here.");
+    }
+    
+    // Helper method to get filter button by ID
+    private FilterButton getFilterButton(String id) {
+        for (FilterButton button : filterButtons) {
+            if (button.getName().equalsIgnoreCase(id)) {
+                return button;
+            }
+        }
+        return null;
+    }
+    
+    // ============== END OF NEW METHODS ==============
     
     // Calculate optimal width for a button based on text
     private int calculateOptimalWidth(String text, Font font, boolean hasCount) {
@@ -614,26 +905,13 @@ public class CustomFilterBar extends JPanel {
         // Clear default filters first
         bar.clearFilters();
         
-        // Add status filters
-        Map<String, Color> statusColors = new LinkedHashMap<>();
-        statusColors.put("ALL", props.allColor);
-        statusColors.put("PENDING", props.pendingColor);
-        statusColors.put("PROCESSING", props.processingColor);
-        statusColors.put("PRODUCTION", props.productionColor);
-        statusColors.put("READY", props.readyColor);
-        statusColors.put("COMPLETED", props.completedColor);
-        statusColors.put("REJECTED", props.rejectedColor);
-        
-        for (Map.Entry<String, Color> entry : statusColors.entrySet()) {
-            String displayText = entry.getKey().charAt(0) + 
-                               entry.getKey().substring(1).toLowerCase();
-            bar.addFilterOption(entry.getKey(), displayText, entry.getValue());
-        }
+        // Add status filters using the new definition system
+        bar.setFilterDefinitions(createStatusFilterDefinitions());
         
         // Initialize all counts to 0
         Map<String, Integer> initialCounts = new HashMap<>();
-        for (String filter : statusColors.keySet()) {
-            initialCounts.put(filter, 0);
+        for (FilterDefinition def : bar.getFilterDefinitions()) {
+            initialCounts.put(def.getId(), 0);
         }
         bar.setFilterCounts(initialCounts);
         
@@ -674,15 +952,7 @@ public class CustomFilterBar extends JPanel {
                     button.color = button.color.brighter();
                 } else {
                     // Reset to original color
-                    switch (filterName.toUpperCase()) {
-                        case "PENDING": button.color = properties.pendingColor; break;
-                        case "PROCESSING": button.color = properties.processingColor; break;
-                        case "PRODUCTION": button.color = properties.productionColor; break;
-                        case "READY": button.color = properties.readyColor; break;
-                        case "COMPLETED": button.color = properties.completedColor; break;
-                        case "REJECTED": button.color = properties.rejectedColor; break;
-                        default: button.color = properties.allColor;
-                    }
+                    button.color = getFilterColor(filterName);
                 }
                 button.updateAppearance();
                 break;

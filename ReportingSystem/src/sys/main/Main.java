@@ -6,6 +6,7 @@ import component.IDStatus;
 import component.Profile;
 import backend.objects.Data.User;
 import component.Scheduling;
+import component.StatusHistory;
 import component.UpdateIDStatus;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -292,13 +293,14 @@ public class Main extends javax.swing.JFrame {
     
     private void showIDStatusManagementMenu(int subIndex) {
         UpdateIDStatus updateidstatus = new UpdateIDStatus(currentUser);
+        StatusHistory statushistory = new StatusHistory(currentUser);
         
         switch (subIndex) {
             case 1: // Update ID Status
                 showForm(updateidstatus);
                 break;
             case 2: // View Status History
-                showForm(new DefaultForm("View Status History - Admin Panel"));
+                showForm(statushistory);
                 break;
         }
     }
@@ -457,16 +459,6 @@ public class Main extends javax.swing.JFrame {
         
         // Show the id status
         showForm(idstatus);
-    }
-    
-    private void showUpdateIDStatus() {
-        System.out.println("showIDStatus() called");
-        System.out.println("Creating ID Status for user: " + currentUser.getFullName());
-        UpdateIDStatus updateidstatus = new UpdateIDStatus(currentUser);
-        System.out.println("ID Status created successfully");
-        
-        // Show the id status
-        showForm(updateidstatus);
     }
     
     public void showForm(Component com) {
