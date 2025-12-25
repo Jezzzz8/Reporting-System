@@ -6,12 +6,14 @@ import backend.objects.Data.IDStatus;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -27,9 +29,29 @@ public class Scheduling extends javax.swing.JPanel {
     private SimpleDateFormat fullDayFormat = new SimpleDateFormat("EEEE"); // For lblSelectedDay
     private boolean calendarInitialized = false;
     
-    public Scheduling(User user) {
+    private Appointment existingAppointment; // Add this field
+    private boolean isRescheduling;
+    
+        public Scheduling(User user) {
+        this(user, null, null);
+    }
+
+    // Main constructor for both new appointments and rescheduling
+    public Scheduling(User user, Citizen citizen, Appointment existingAppointment) {
         this.currentUser = user;
+        this.citizen = citizen;
+        this.existingAppointment = existingAppointment;
+        this.isRescheduling = existingAppointment != null;
+
         initComponents();
+
+        // Check eligibility before proceeding
+        if (!checkIDStatusEligibility() && !isRescheduling) {
+            showNotEligibleMessage();
+            disableForm();
+            return;
+        }
+
         configureProgressBar();
         initCitizenData();
         updateUIForStep(currentStep);
@@ -65,6 +87,170 @@ public class Scheduling extends javax.swing.JPanel {
             initCalendar();
             calendarInitialized = true;
         });
+        
+        // If rescheduling, pre-populate with existing appointment data
+        if (isRescheduling && existingAppointment != null) {
+            prePopulateAppointmentData();
+        }
+    }
+    
+    private void showNotEligibleMessage() {
+        String currentStatus = getCurrentIDStatus();
+
+        String message = "You cannot schedule a pickup appointment at this time.\n\n" +
+                        "Your current ID status is: " + currentStatus + "\n" +
+                        "You can only schedule an appointment when your ID status is 'Ready for Pickup'.\n\n" +
+                        "Please check your ID Status page for updates on your application progress.";
+
+        JOptionPane.showMessageDialog(this, 
+            message, 
+            "Appointment Not Available", 
+            JOptionPane.WARNING_MESSAGE);
+
+        // Update UI to show current status
+        lblName.setText("Appointment Not Available");
+        lblTransactionId.setText("Status: " + currentStatus);
+        lblPhone.setText("");
+        lblSelectedDate.setText("");
+        lblSelectedDay.setText("");
+        lblSelectedTime.setText("");
+    }
+
+    private void disableForm() {
+        // Disable all interactive components
+        SchedulingTabbedPane.setEnabled(false);
+        PreviousButton.setEnabled(false);
+        ContinueButton.setEnabled(false);
+        EarliestAvailableButton.setEnabled(false);
+        ThisWeekButton.setEnabled(false);
+        NextWeekButton.setEnabled(false);
+
+        if (calendarCustom != null) {
+            calendarCustom.setEnabled(false);
+        }
+
+        // Disable time slots
+        if (timeSlotsPanel != null) {
+            for (java.awt.Component comp : timeSlotsPanel.getComponents()) {
+                if (comp instanceof JButton) {
+                    comp.setEnabled(false);
+                }
+            }
+        }
+    }
+    
+    private boolean checkIDStatusEligibility() {
+        if (citizen == null) {
+            return false;
+        }
+
+        try {
+            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+            if (idStatus == null) {
+                System.out.println("No ID status found for citizen ID: " + citizen.getCitizenId());
+                return false;
+            }
+
+            String currentStatus = idStatus.getStatus();
+            System.out.println("Current ID Status: " + currentStatus);
+
+            // Check if status is "Ready for Pickup" or "Ready"
+            if (currentStatus != null) {
+                String normalizedStatus = currentStatus.toUpperCase().trim();
+                return normalizedStatus.contains("READY") || 
+                       normalizedStatus.contains("READY FOR PICKUP") ||
+                       normalizedStatus.equals("READY_FOR_PICKUP") ||
+                       normalizedStatus.equals("STAT-009");
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error checking ID status eligibility: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    public void refreshEligibility() {
+        SwingUtilities.invokeLater(() -> {
+            boolean isEligible = checkIDStatusEligibility() || isRescheduling;
+
+            // Enable/disable form based on eligibility
+            SchedulingTabbedPane.setEnabled(isEligible);
+            PreviousButton.setEnabled(isEligible && currentStep > 1);
+            ContinueButton.setEnabled(isEligible && isStepComplete(currentStep));
+            EarliestAvailableButton.setEnabled(isEligible);
+            ThisWeekButton.setEnabled(isEligible);
+            NextWeekButton.setEnabled(isEligible);
+
+            if (calendarCustom != null) {
+                calendarCustom.setEnabled(isEligible);
+            }
+
+            // Enable/disable time slots
+            if (timeSlotsPanel != null) {
+                for (java.awt.Component comp : timeSlotsPanel.getComponents()) {
+                    comp.setEnabled(isEligible);
+                }
+            }
+
+            // Update summary panel
+            updateSummaryPanel();
+
+            if (!isEligible && !isRescheduling) {
+                // Show message in the form
+                javax.swing.JLabel messageLabel = new javax.swing.JLabel(
+                    "⚠️ Your ID is not ready for pickup. Current status: " + getCurrentIDStatus());
+                messageLabel.setForeground(Color.RED);
+                messageLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+
+                // Add message to top of the panel
+                this.add(messageLabel, java.awt.BorderLayout.NORTH);
+                this.revalidate();
+                this.repaint();
+            }
+        });
+    }
+
+    private String getCurrentIDStatus() {
+        if (citizen == null) {
+            return "No citizen data";
+        }
+
+        try {
+            IDStatus idStatus = IDStatus.getStatusByCitizenId(citizen.getCitizenId());
+            return (idStatus != null && idStatus.getStatus() != null) ? 
+                   idStatus.getStatus() : "No status found";
+        } catch (Exception e) {
+            return "Error retrieving status";
+        }
+    }
+    
+    private void prePopulateAppointmentData() {
+        if (existingAppointment != null) {
+            // Pre-select the date from existing appointment
+            selectedDate = existingAppointment.getAppDate();
+            selectedTime = existingAppointment.getAppTime();
+            
+            // Update summary panel
+            updateSummaryPanel();
+            
+            // Highlight selected time slot
+            if (selectedTime != null && timeSlotsPanel != null) {
+                for (java.awt.Component comp : timeSlotsPanel.getComponents()) {
+                    if (comp instanceof JButton) {
+                        JButton btn = (JButton) comp;
+                        if (btn.getText().equals(selectedTime)) {
+                            btn.setBackground(new Color(97, 49, 237));
+                            btn.setForeground(Color.WHITE);
+                        }
+                    }
+                }
+            }
+            
+            // Update progress bar to show current step is complete
+            ContinueButton.setEnabled(true);
+            
+            System.out.println("Pre-populated with existing appointment data");
+        }
     }
     
     private void ensureCalendarVisible() {
@@ -161,10 +347,24 @@ public class Scheduling extends javax.swing.JPanel {
 
     private void initCitizenData() {
         try {
-            // Get citizen data for the current user
-            this.citizen = Citizen.getCitizenByUserId(currentUser.getUserId());
+            // If citizen is passed in constructor, use it
+            if (citizen == null) {
+                // Otherwise get citizen data for the current user
+                this.citizen = Citizen.getCitizenByUserId(currentUser.getUserId());
+            }
+
             if (citizen != null) {
                 System.out.println("Found citizen: " + citizen.getFullName() + " (ID: " + citizen.getCitizenId() + ")");
+
+                // Check ID status eligibility (except for rescheduling)
+                if (!isRescheduling && !checkIDStatusEligibility()) {
+                    System.out.println("Citizen not eligible for scheduling - ID status not ready");
+                    // Show status in summary panel
+                    lblName.setText(citizen.getFullName());
+                    lblTransactionId.setText("Status: " + getCurrentIDStatus());
+                    lblPhone.setText(citizen.getPhone() != null ? citizen.getPhone() : "Not provided");
+                    return;
+                }
 
                 // Try to get transaction ID from IDStatus
                 try {
@@ -451,6 +651,29 @@ public class Scheduling extends javax.swing.JPanel {
             }
             lblTransactionId.setText(transactionId);
 
+            // Add status indicator
+            String currentStatus = getCurrentIDStatus();
+            boolean isReady = checkIDStatusEligibility();
+
+            // Update panel colors based on eligibility
+            if (isReady || isRescheduling) {
+                SummaryConfirmationPanel.setBackground(new Color(255, 255, 255));
+                SchedulingTabbedPane.setBackground(new Color(142, 217, 255));
+            } else {
+                SummaryConfirmationPanel.setBackground(new Color(240, 240, 240));
+                SchedulingTabbedPane.setBackground(new Color(220, 220, 220));
+
+                // Add status message
+                JLabel statusLabel = new JLabel("Status: " + currentStatus + " (Not Ready for Pickup)");
+                statusLabel.setForeground(Color.RED);
+                statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+                // Add to summary panel if not already there
+                if (SummaryConfirmationPanel.getComponentCount() < 10) {
+                    SummaryConfirmationPanel.add(statusLabel);
+                }
+            }
+
             if (selectedDate != null) {
                 // Format date and day properly
                 String formattedDate = dateFormat.format(selectedDate);
@@ -479,6 +702,10 @@ public class Scheduling extends javax.swing.JPanel {
             lblSelectedDay.setText("");
             lblSelectedTime.setText("Not selected");
         }
+
+        // Revalidate the panel
+        SummaryConfirmationPanel.revalidate();
+        SummaryConfirmationPanel.repaint();
     }
     
     private void updateProgress() {
@@ -559,6 +786,17 @@ public class Scheduling extends javax.swing.JPanel {
     }
     
     private boolean saveAppointment() {
+        // Check eligibility before saving
+        if (!isRescheduling && !checkIDStatusEligibility()) {
+            String currentStatus = getCurrentIDStatus();
+            JOptionPane.showMessageDialog(this, 
+                "Cannot schedule appointment. Your ID status is: " + currentStatus + "\n" +
+                "You can only schedule when your ID is 'Ready for Pickup'.",
+                "ID Not Ready", 
+                JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        
         if (citizen == null || selectedDate == null || selectedTime == null) {
             JOptionPane.showMessageDialog(this, "Please complete all appointment details.", 
                 "Incomplete Information", JOptionPane.WARNING_MESSAGE);
@@ -614,22 +852,70 @@ public class Scheduling extends javax.swing.JPanel {
             return false;
         }
 
-        // Check if date is already booked
-        if (calendarCustom != null && calendarCustom.isBookedDate(selectedDate)) {
-            JOptionPane.showMessageDialog(this, 
-                "Selected date is fully booked.\nPlease select a different date.", 
-                "Date Fully Booked", JOptionPane.ERROR_MESSAGE);
-            return false;
+        // Check if date is already booked (excluding current appointment if rescheduling)
+        if (calendarCustom != null) {
+            boolean success;
+            String actionType;
+            
+            // For rescheduling, we need to check if it's a different date
+            if (isRescheduling && existingAppointment != null) {
+                // Check if ID is still ready for rescheduling
+                if (!checkIDStatusEligibility()) {
+                    String currentStatus = getCurrentIDStatus();
+                    JOptionPane.showMessageDialog(this, 
+                        "Cannot reschedule appointment. Your ID status is: " + currentStatus + "\n" +
+                        "You can only reschedule when your ID is 'Ready for Pickup'.",
+                        "ID Not Ready", 
+                        JOptionPane.WARNING_MESSAGE);
+                    return false;
+                }
+
+                // Update existing appointment
+                existingAppointment.setAppDate(new java.sql.Date(selectedDate.getTime()));
+                existingAppointment.setAppTime(selectedTime);
+                existingAppointment.setStatus("Rescheduled");
+                existingAppointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
+
+                success = Appointment.updateAppointment(existingAppointment);
+                actionType = "Rescheduled";
+            } else {
+                // Create new appointment
+                Appointment appointment = new Appointment();
+                appointment.setCitizenId(citizen.getCitizenId());
+                appointment.setAppDate(new java.sql.Date(selectedDate.getTime()));
+                appointment.setAppTime(selectedTime);
+                appointment.setStatus("Scheduled");
+                appointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
+
+                success = Appointment.addAppointment(appointment);
+                actionType = "Scheduled";
+            }
         }
 
-        Appointment appointment = new Appointment();
-        appointment.setCitizenId(citizen.getCitizenId());
-        appointment.setAppDate(new java.sql.Date(selectedDate.getTime()));
-        appointment.setAppTime(selectedTime);
-        appointment.setStatus("Scheduled");
-        appointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
+        boolean success;
+        String actionType;
 
-        boolean success = Appointment.addAppointment(appointment);
+        if (isRescheduling && existingAppointment != null) {
+            // Update existing appointment
+            existingAppointment.setAppDate(new java.sql.Date(selectedDate.getTime()));
+            existingAppointment.setAppTime(selectedTime);
+            existingAppointment.setStatus("Rescheduled");
+            existingAppointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
+
+            success = Appointment.updateAppointment(existingAppointment);
+            actionType = "Rescheduled";
+        } else {
+            // Create new appointment
+            Appointment appointment = new Appointment();
+            appointment.setCitizenId(citizen.getCitizenId());
+            appointment.setAppDate(new java.sql.Date(selectedDate.getTime()));
+            appointment.setAppTime(selectedTime);
+            appointment.setStatus("Scheduled");
+            appointment.setCreatedDate(new java.sql.Date(System.currentTimeMillis()));
+
+            success = Appointment.addAppointment(appointment);
+            actionType = "Scheduled";
+        }
 
         if (success) {
             // Format transaction ID for display
@@ -637,11 +923,11 @@ public class Scheduling extends javax.swing.JPanel {
 
             // Log activity with transaction ID
             ActivityLog.logActivity(currentUser.getUserId(), 
-                "Scheduled appointment for " + citizen.getFullName() + 
+                actionType + " appointment for " + citizen.getFullName() + 
                 " on " + dateFormat.format(selectedDate) + " at " + selectedTime);
 
             // Send notification to citizen with transaction ID
-            String message = "Your appointment has been scheduled for " + 
+            String message = "Your appointment has been " + actionType.toLowerCase() + " for " + 
                 dateFormat.format(selectedDate) + " at " + selectedTime;
             if (!"Not assigned".equals(transactionId)) {
                 message += "\nTransaction ID: " + formattedTransactionId;
@@ -649,15 +935,15 @@ public class Scheduling extends javax.swing.JPanel {
             Notification.addNotification(citizen.getCitizenId(), message, "Appointment");
 
             JOptionPane.showMessageDialog(this, 
-                "Appointment scheduled successfully!\n\n" +
+                "Appointment " + actionType.toLowerCase() + " successfully!\n\n" +
                 "Name: " + citizen.getFullName() + "\n" +
                 "Date: " + dateFormat.format(selectedDate) + "\n" +
                 "Time: " + selectedTime + "\n" +
                 (!"Not assigned".equals(transactionId) ? "Transaction ID: " + formattedTransactionId + "\n" : "") +
-                "Status: Scheduled\n\n" +
+                "Status: " + (isRescheduling ? "Rescheduled" : "Scheduled") + "\n\n" +
                 "Please arrive 15 minutes before your appointment time.\n" +
                 (!"Not assigned".equals(transactionId) ? "Bring your Transaction ID: " + formattedTransactionId + "\n" : ""),
-                "Appointment Confirmed", JOptionPane.INFORMATION_MESSAGE);
+                "Appointment " + actionType, JOptionPane.INFORMATION_MESSAGE);
 
             // Refresh calendar to show the new booking
             if (calendarCustom != null) {
@@ -668,7 +954,7 @@ public class Scheduling extends javax.swing.JPanel {
             return true;
         } else {
             JOptionPane.showMessageDialog(this, 
-                "Failed to schedule appointment. Please try again.", 
+                "Failed to " + actionType.toLowerCase() + " appointment. Please try again.", 
                 "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
@@ -1179,8 +1465,18 @@ public class Scheduling extends javax.swing.JPanel {
                 System.err.println("Error getting transaction ID for confirmation: " + e.getMessage());
             }
 
+            String actionType = isRescheduling ? "Reschedule" : "Schedule";
+
             StringBuilder confirmMessage = new StringBuilder();
             confirmMessage.append("Confirm appointment details:\n\n");
+
+            if (isRescheduling && existingAppointment != null) {
+                confirmMessage.append("Rescheduling appointment\n");
+                confirmMessage.append("Previous Date: ").append(existingAppointment.getAppDate()).append("\n");
+                confirmMessage.append("Previous Time: ").append(existingAppointment.getAppTime()).append("\n\n");
+            }
+
+            confirmMessage.append("NEW APPOINTMENT DETAILS:\n");
             if (!"Not assigned".equals(transactionId)) {
                 confirmMessage.append("Transaction ID: ").append(formattedTransactionId).append("\n");
             }
@@ -1189,11 +1485,11 @@ public class Scheduling extends javax.swing.JPanel {
             confirmMessage.append("Citizen: ").append(citizen.getFullName()).append("\n");
             confirmMessage.append("First Name: ").append(citizen.getFname()).append("\n");
             confirmMessage.append("Last Name: ").append(citizen.getLname()).append("\n\n");
-            confirmMessage.append("Are you sure you want to schedule this appointment?");
+            confirmMessage.append("Are you sure you want to ").append(actionType.toLowerCase()).append(" this appointment?");
 
             int confirm = JOptionPane.showConfirmDialog(this,
                 confirmMessage.toString(),
-                "Confirm Appointment", JOptionPane.YES_NO_OPTION);
+                "Confirm Appointment " + actionType, JOptionPane.YES_NO_OPTION);
 
             if (confirm == JOptionPane.YES_OPTION) {
                 boolean success = saveAppointment();
@@ -1208,7 +1504,6 @@ public class Scheduling extends javax.swing.JPanel {
                 }
             }
         }
-
     }//GEN-LAST:event_ContinueButtonActionPerformed
 
     private void EarliestAvailableButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_EarliestAvailableButtonActionPerformed

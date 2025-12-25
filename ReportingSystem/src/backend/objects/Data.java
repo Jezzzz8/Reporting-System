@@ -1692,8 +1692,8 @@ public class Data {
             String query = "SELECT ist.*, sn.status_name FROM id_status ist " +
                           "LEFT JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
                           "WHERE ist.citizen_id = ? " +
-                          "ORDER BY ist.update_date DESC, ist.status_id DESC LIMIT 1";
-
+                          "ORDER BY ist.update_date DESC, ist.status_id DESC " +
+                          "LIMIT 1";
 
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -1704,7 +1704,7 @@ public class Data {
                 if (rs.next()) {
                     IDStatus idStatus = new IDStatus(
                         rs.getInt("status_id"),
-                        rs.getString("transaction_id"),  // This should get the transaction_id
+                        rs.getString("transaction_id"),
                         rs.getInt("citizen_id"),
                         rs.getInt("status_name_id"),
                         rs.getDate("update_date"),

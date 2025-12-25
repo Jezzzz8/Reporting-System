@@ -1,6 +1,5 @@
 package component;
 
-import backend.objects.Data.*;
 import backend.objects.Data.IDStatus;
 import backend.objects.Data.Citizen;
 import backend.objects.Data.Appointment;
@@ -19,13 +18,11 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.*;
 import java.awt.*;
-import java.util.Date;
 import java.util.List;
 import javax.swing.table.TableRowSorter;
 import javax.swing.ImageIcon;
 import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
-import javax.swing.border.EmptyBorder;
 
 public class UpdateIDStatus extends javax.swing.JPanel {
     
@@ -35,21 +32,118 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     
     // For edit icon
     private ImageIcon editIcon;
+    // Status icons
+    private ImageIcon pendingIcon;
+    private ImageIcon processingIcon;
+    private ImageIcon readyIcon;
+    private ImageIcon completedIcon;
+    private ImageIcon rejectedIcon;
+    private ImageIcon defaultStatusIcon;
+    private ImageIcon productionIcon;
+    
+    // Custom cell renderer for status column
+    private StatusCellRenderer statusCellRenderer;
+    
+    // Cache for citizen statuses to avoid repeated database calls
+    private Map<Integer, String> citizenStatusCache;
+    private Map<Integer, ImageIcon> citizenStatusIconCache;
     
     public UpdateIDStatus(User user) {
         this.user = user;
+        this.citizenStatusCache = new HashMap<>();
+        this.citizenStatusIconCache = new HashMap<>();
         
-        // Load edit icon
-        editIcon = createDefaultEditIcon();
+        // Load icons
+        loadIcons();
+        
+        // Initialize custom renderer
+        statusCellRenderer = new StatusCellRenderer();
         
         initComponents();
         initializeComponents();
         loadAllData();
     }
     
-    // CREATE DEFAULT EDIT ICON METHOD
+    // LOAD ICONS METHOD
+    private void loadIcons() {
+        try {
+            // Load edit icon
+            editIcon = loadIcon("/images/edit.png");
+
+            // Load status icons
+            pendingIcon = loadIcon("/images/pending.png");
+            processingIcon = loadIcon("/images/processing.png");
+            productionIcon = loadIcon("/images/production.png");
+            readyIcon = loadIcon("/images/ready.png");
+            completedIcon = loadIcon("/images/completed.png");
+            rejectedIcon = loadIcon("/images/rejected.png");
+            defaultStatusIcon = loadIcon("/images/default.png");
+
+        } catch (Exception e) {
+            System.err.println("Error loading icons: " + e.getMessage());
+            // Create default icons if image loading fails
+            createFallbackIcons();
+        }
+    }
+    
+    private ImageIcon loadIcon(String path) {
+        try {
+            java.net.URL imgURL = getClass().getResource(path);
+            if (imgURL != null) {
+                ImageIcon originalIcon = new ImageIcon(imgURL);
+                // Resize to appropriate dimensions (16x16 for table cells)
+                Image scaledImage = originalIcon.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+                return new ImageIcon(scaledImage);
+            } else {
+                System.err.println("Couldn't find icon: " + path);
+                return createDefaultEditIcon(); // Fallback to drawn icon
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading icon from " + path + ": " + e.getMessage());
+            return createDefaultEditIcon(); // Fallback to drawn icon
+        }
+    }
+    
+    private void createFallbackIcons() {
+        // Create fallback icons if image loading fails
+        editIcon = createDefaultEditIcon();
+        pendingIcon = createStatusIcon(Color.ORANGE, "P");
+        processingIcon = createStatusIcon(Color.BLUE, "R");
+        productionIcon = createStatusIcon(new Color(204,85,0), "PD");
+        readyIcon = createStatusIcon(Color.GREEN, "Y");
+        completedIcon = createStatusIcon(new Color(0, 128, 0), "C");
+        rejectedIcon = createStatusIcon(Color.RED, "X");
+        defaultStatusIcon = createStatusIcon(Color.GRAY, "?");
+    }
+    
+    private ImageIcon createStatusIcon(Color color, String text) {
+        BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        // Draw circle background
+        g2d.setColor(color);
+        g2d.fillOval(2, 2, 12, 12);
+        
+        // Draw white border
+        g2d.setColor(Color.WHITE);
+        g2d.setStroke(new BasicStroke(1.5f));
+        g2d.drawOval(2, 2, 12, 12);
+        
+        // Draw text
+        g2d.setFont(new Font("Arial", Font.BOLD, 8));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(text);
+        int textHeight = fm.getHeight();
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(text, (16 - textWidth) / 2, (16 + textHeight) / 2 - 2);
+        
+        g2d.dispose();
+        return new ImageIcon(image);
+    }
+    
+    // CREATE DEFAULT EDIT ICON METHOD (fallback)
     private ImageIcon createDefaultEditIcon() {
-        // Create a simple edit icon
         BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -78,18 +172,45 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     private void initializeComponents() {
         // Configure table
         configureTable();
-        
-        // Configure filter bar
+
+        // Configure filter bar - UPDATE PROPERTIES AFTER INIT
         configureFilterBar();
-        
+
         // Configure search field
         configureSearchField();
-        
+
         // Configure refresh button
         configureRefreshButton();
-        
+
         // Setup auto-resizing
         setupAutoResizing();
+
+        // UPDATE FILTER BAR PROPERTIES
+        updateFilterBarProperties();
+    }
+
+    private void updateFilterBarProperties() {
+        if (customFilterBar != null) {
+            // Set auto-resize to true
+            customFilterBar.setAutoResizeButtons(true);
+
+            // Adjust custom widths for better display
+            Map<String, Integer> customWidths = new HashMap<>();
+            customWidths.put("PENDING", 125);
+            customWidths.put("PROCESSING", 150);
+            customWidths.put("PRODUCTION", 150);
+            customWidths.put("READY", 120);
+            customWidths.put("COMPLETED", 150);
+            customWidths.put("REJECTED", 125);
+            customWidths.put("ALL", 90);
+
+            customFilterBar.adjustButtonWidths(customWidths);
+            customFilterBar.recalculateButtonWidths();
+
+            // Force UI update
+            customFilterBar.revalidate();
+            customFilterBar.repaint();
+        }
     }
     
     private void configureTable() {
@@ -110,8 +231,17 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         // Configure action column as button
         setupActionColumn();
         
+        // Configure status column renderer
+        setupStatusColumn();
+        
         // Configure scroll pane
         configureScrollPane();
+    }
+    
+    // NEW METHOD: Setup status column renderer
+    private void setupStatusColumn() {
+        int statusColumn = 6; // Status column index
+        customTable1.getColumnModel().getColumn(statusColumn).setCellRenderer(statusCellRenderer);
     }
     
     private void setupAutoResizing() {
@@ -152,17 +282,17 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     
     private void setupActionColumn() {
         int actionColumn = 8; // Actions column index
-        
+
         // Configure the button column to show icon
         customTable1.getColumnModel().getColumn(actionColumn).setCellRenderer(new ButtonRenderer());
-        customTable1.getColumnModel().getColumn(actionColumn).setCellEditor(new ButtonEditor(new JCheckBox()));
-        
+        customTable1.getColumnModel().getColumn(actionColumn).setCellEditor(new ButtonEditor(new JCheckBox(), customTable1));
+
         // Set preferred width for action column
         customTable1.getColumnModel().getColumn(actionColumn).setPreferredWidth(60);
     }
     
     private void configureFilterBar() {
-        customFilterBar1.setFilterListener(new CustomFilterBar.FilterListener() {
+        customFilterBar.setFilterListener(new CustomFilterBar.FilterListener() {
             @Override
             public void onFilterSelected(String filterName) {
                 filterTableByStatus(filterName);
@@ -220,168 +350,89 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     }
     
     private void loadAllData() {
+        // Clear caches
+        citizenStatusCache.clear();
+        citizenStatusIconCache.clear();
+        
         loadStatusCounts();
         loadCitizensTable();
         updateFilterBarCounts();
+        updateStatusBoxes();
     }
     
     private void loadStatusCounts() {
         statusCounts = new HashMap<>();
 
         try (Connection conn = DatabaseConnection.getConnection()) {
-            // Total applications
-            String totalQuery = "SELECT COUNT(*) FROM citizens";
+            // 1. Total applications
+            String totalQuery = "SELECT COUNT(*) as total FROM citizens";
             try (PreparedStatement stmt = conn.prepareStatement(totalQuery);
                  ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    statusCounts.put("ALL", rs.getInt(1));
-                    MyApplicationStatusValueLabel.setText(String.valueOf(rs.getInt(1)));
+                    int total = rs.getInt("total");
+                    statusCounts.put("ALL", total);
+                    System.out.println("Total applications: " + total);
                 }
             }
 
-            // Get status names from database for proper querying
-            List<StatusName> allStatuses = Data.StatusName.getAllStatusNames();
+            // 2. SIMPLIFIED QUERY: Get counts for each status category
+            String statusQuery = 
+                "SELECT " +
+                "  COUNT(CASE WHEN COALESCE(latest_status.status_name, 'Submitted') IN ('Submitted', 'Pending') THEN 1 END) as pending, " +
+                "  COUNT(CASE WHEN COALESCE(latest_status.status_name, 'Submitted') IN ('Processing', 'Document Verification', " +
+                "        'Biometrics Appointment', 'Biometrics Completed', " +
+                "        'Background Check', 'Background Check Completed') THEN 1 END) as processing, " +
+                "  COUNT(CASE WHEN COALESCE(latest_status.status_name, 'Submitted') = 'ID Card Production' THEN 1 END) as production, " +
+                "  COUNT(CASE WHEN COALESCE(latest_status.status_name, 'Submitted') IN ('Ready for Pickup', 'Ready') THEN 1 END) as ready, " +
+                "  COUNT(CASE WHEN COALESCE(latest_status.status_name, 'Submitted') IN ('Completed', 'Claimed', 'Delivered') THEN 1 END) as completed, " +
+                "  COUNT(CASE WHEN COALESCE(latest_status.status_name, 'Submitted') IN ('Rejected', 'Cancelled', 'Failed') THEN 1 END) as rejected " +
+                "FROM citizens c " +
+                "LEFT JOIN ( " +
+                "  SELECT ist.citizen_id, sn.status_name " +
+                "  FROM id_status ist " +
+                "  JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+                "  WHERE (ist.citizen_id, ist.update_date, ist.status_id) IN ( " +
+                "    SELECT citizen_id, MAX(update_date) as max_date, MAX(status_id) as max_id " +
+                "    FROM id_status " +
+                "    GROUP BY citizen_id " +
+                "  ) " +
+                ") latest_status ON c.citizen_id = latest_status.citizen_id";
 
-            // **FIXED: Pending count - Count DISTINCT citizens with Submitted status**
-            for (StatusName status : allStatuses) {
-                if ("Submitted".equalsIgnoreCase(status.getStatusName())) {
-                    // Get the LATEST status for each citizen and count those with Submitted
-                    String pendingQuery = 
-                        "SELECT COUNT(DISTINCT ist.citizen_id) " +
-                        "FROM id_status ist " +
-                        "INNER JOIN ( " +
-                        "    SELECT citizen_id, MAX(update_date) as latest_date " +
-                        "    FROM id_status " +
-                        "    GROUP BY citizen_id " +
-                        ") latest ON ist.citizen_id = latest.citizen_id AND ist.update_date = latest.latest_date " +
-                        "WHERE ist.status_name_id = ?";
+            System.out.println("Executing status query...");
+            try (PreparedStatement stmt = conn.prepareStatement(statusQuery);
+                 ResultSet rs = stmt.executeQuery()) {
 
-                    try (PreparedStatement stmt = conn.prepareStatement(pendingQuery)) {
-                        stmt.setInt(1, status.getStatusNameId());
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                statusCounts.put("PENDING", rs.getInt(1));
-                                DaySinceApplicationValueLabel.setText(String.valueOf(rs.getInt(1)));
-                            }
-                        }
-                    }
-                    break;
+                if (rs.next()) {
+                    statusCounts.put("PENDING", rs.getInt("pending"));
+                    statusCounts.put("PROCESSING", rs.getInt("processing"));
+                    statusCounts.put("PRODUCTION", rs.getInt("production"));
+                    statusCounts.put("READY", rs.getInt("ready"));
+                    statusCounts.put("COMPLETED", rs.getInt("completed"));
+                    statusCounts.put("REJECTED", rs.getInt("rejected"));
+
+                    System.out.println("=== STATUS COUNTS ===");
+                    System.out.println("Pending: " + statusCounts.get("PENDING"));
+                    System.out.println("Processing: " + statusCounts.get("PROCESSING"));
+                    System.out.println("Production: " + statusCounts.get("PRODUCTION"));
+                    System.out.println("Ready: " + statusCounts.get("READY"));
+                    System.out.println("Completed: " + statusCounts.get("COMPLETED"));
+                    System.out.println("Rejected: " + statusCounts.get("REJECTED"));
+                    System.out.println("=====================");
                 }
             }
 
-            // **FIXED: Processing count - Count DISTINCT citizens with Processing status**
-            for (StatusName status : allStatuses) {
-                if ("Processing".equalsIgnoreCase(status.getStatusName())) {
-                    String processingQuery = 
-                        "SELECT COUNT(DISTINCT ist.citizen_id) " +
-                        "FROM id_status ist " +
-                        "INNER JOIN ( " +
-                        "    SELECT citizen_id, MAX(update_date) as latest_date " +
-                        "    FROM id_status " +
-                        "    GROUP BY citizen_id " +
-                        ") latest ON ist.citizen_id = latest.citizen_id AND ist.update_date = latest.latest_date " +
-                        "WHERE ist.status_name_id = ?";
-
-                    try (PreparedStatement stmt = conn.prepareStatement(processingQuery)) {
-                        stmt.setInt(1, status.getStatusNameId());
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                statusCounts.put("PROCESSING", rs.getInt(1));
-                                MyAppointmentCountLabel.setText(String.valueOf(rs.getInt(1)));
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-
-            // **FIXED: Ready count - check for "Ready for Pickup"**
-            for (StatusName status : allStatuses) {
-                if ("Ready for Pickup".equalsIgnoreCase(status.getStatusName())) {
-                    String readyQuery = 
-                        "SELECT COUNT(DISTINCT ist.citizen_id) " +
-                        "FROM id_status ist " +
-                        "INNER JOIN ( " +
-                        "    SELECT citizen_id, MAX(update_date) as latest_date " +
-                        "    FROM id_status " +
-                        "    GROUP BY citizen_id " +
-                        ") latest ON ist.citizen_id = latest.citizen_id AND ist.update_date = latest.latest_date " +
-                        "WHERE ist.status_name_id = ?";
-
-                    try (PreparedStatement stmt = conn.prepareStatement(readyQuery)) {
-                        stmt.setInt(1, status.getStatusNameId());
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                statusCounts.put("READY", rs.getInt(1));
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-
-            // **FIXED: Completed count**
-            for (StatusName status : allStatuses) {
-                if ("Completed".equalsIgnoreCase(status.getStatusName())) {
-                    String completedQuery = 
-                        "SELECT COUNT(DISTINCT ist.citizen_id) " +
-                        "FROM id_status ist " +
-                        "INNER JOIN ( " +
-                        "    SELECT citizen_id, MAX(update_date) as latest_date " +
-                        "    FROM id_status " +
-                        "    GROUP BY citizen_id " +
-                        ") latest ON ist.citizen_id = latest.citizen_id AND ist.update_date = latest.latest_date " +
-                        "WHERE ist.status_name_id = ?";
-
-                    try (PreparedStatement stmt = conn.prepareStatement(completedQuery)) {
-                        stmt.setInt(1, status.getStatusNameId());
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                statusCounts.put("COMPLETED", rs.getInt(1));
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-
-            // **FIXED: Rejected count**
-            for (StatusName status : allStatuses) {
-                if ("Rejected".equalsIgnoreCase(status.getStatusName())) {
-                    String rejectedQuery = 
-                        "SELECT COUNT(DISTINCT ist.citizen_id) " +
-                        "FROM id_status ist " +
-                        "INNER JOIN ( " +
-                        "    SELECT citizen_id, MAX(update_date) as latest_date " +
-                        "    FROM id_status " +
-                        "    GROUP BY citizen_id " +
-                        ") latest ON ist.citizen_id = latest.citizen_id AND ist.update_date = latest.latest_date " +
-                        "WHERE ist.status_name_id = ?";
-
-                    try (PreparedStatement stmt = conn.prepareStatement(rejectedQuery)) {
-                        stmt.setInt(1, status.getStatusNameId());
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                statusCounts.put("REJECTED", rs.getInt(1));
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-
-            // **FIXED: Today's Updates - Count DISTINCT citizens with status updates today**
+            // 3. Today's updates
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             String today = dateFormat.format(new java.util.Date());
             String todayQuery = 
-                "SELECT COUNT(DISTINCT citizen_id) FROM id_status WHERE DATE(update_date) = ?";
+                "SELECT COUNT(DISTINCT citizen_id) as today_updates FROM id_status WHERE DATE(update_date) = ?";
 
             try (PreparedStatement stmt = conn.prepareStatement(todayQuery)) {
                 stmt.setString(1, today);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        statusCounts.put("TODAY_UPDATES", rs.getInt(1));
-                        NotificationsValueLabel.setText(String.valueOf(rs.getInt(1)));
+                        statusCounts.put("TODAY_UPDATES", rs.getInt("today_updates"));
+                        System.out.println("Today's updates: " + rs.getInt("today_updates"));
                     }
                 }
             }
@@ -389,20 +440,56 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         } catch (SQLException e) {
             System.err.println("Error loading status counts: " + e.getMessage());
             e.printStackTrace();
+            // Set default values
+            statusCounts.put("ALL", 0);
+            statusCounts.put("PENDING", 0);
+            statusCounts.put("PROCESSING", 0);
+            statusCounts.put("PRODUCTION", 0);
+            statusCounts.put("READY", 0);
+            statusCounts.put("COMPLETED", 0);
+            statusCounts.put("REJECTED", 0);
+            statusCounts.put("TODAY_UPDATES", 0);
         }
     }
     
     private void updateFilterBarCounts() {
-        if (statusCounts != null && customFilterBar1 != null) {
-            Map<String, Integer> filterCounts = new HashMap<>();
+        if (statusCounts != null && customFilterBar != null) {
+            Map<String, Integer> filterCounts = new LinkedHashMap<>(); // Use LinkedHashMap to maintain order
+
+            // Set the order to match your database query groups
             filterCounts.put("ALL", statusCounts.getOrDefault("ALL", 0));
             filterCounts.put("PENDING", statusCounts.getOrDefault("PENDING", 0));
             filterCounts.put("PROCESSING", statusCounts.getOrDefault("PROCESSING", 0));
+            filterCounts.put("PRODUCTION", statusCounts.getOrDefault("PRODUCTION", 0)); // NEW
             filterCounts.put("READY", statusCounts.getOrDefault("READY", 0));
             filterCounts.put("COMPLETED", statusCounts.getOrDefault("COMPLETED", 0));
             filterCounts.put("REJECTED", statusCounts.getOrDefault("REJECTED", 0));
-            
-            customFilterBar1.setFilterCounts(filterCounts);
+
+            System.out.println("Setting filter bar counts: " + filterCounts);
+            customFilterBar.setFilterCounts(filterCounts);
+
+            // FORCE RECALCULATION OF BUTTON WIDTHS
+            customFilterBar.recalculateButtonWidths();
+
+            // Force UI update
+            customFilterBar.revalidate();
+            customFilterBar.repaint();
+        }
+    }
+    
+    private void updateStatusBoxes() {
+        if (statusCounts != null) {
+            // Update the status box labels to match your database categories
+            MyApplicationStatusValueLabel.setText(String.valueOf(statusCounts.getOrDefault("ALL", 0)));
+            DaySinceApplicationValueLabel.setText(String.valueOf(statusCounts.getOrDefault("PENDING", 0)));
+            MyAppointmentCountLabel.setText(String.valueOf(statusCounts.getOrDefault("PROCESSING", 0)));
+            NotificationsValueLabel.setText(String.valueOf(statusCounts.getOrDefault("TODAY_UPDATES", 0)));
+
+            // Update titles
+            MyApplicationStatusTitleLabel.setText("Total Applications");
+            DaySinceApplicationTitleLabel.setText("Pending");
+            MyAppointmentTitleLabel.setText("Processing");
+            NotificationsTitleLabel.setText("Today's Updates");
         }
     }
     
@@ -435,24 +522,15 @@ public class UpdateIDStatus extends javax.swing.JPanel {
                     daysSince = (int) (diff / (1000 * 60 * 60 * 24));
                 }
                 
-                // Get current status using the updated method
-                IDStatus currentStatus = Data.IDStatus.getStatusByCitizenId(citizenId);
-                String statusText = "Submitted"; // Default status
-                String statusIcon = getStatusIcon("Submitted");
+                // Get current status - using cached version
+                String statusText = getLatestStatusForCitizen(citizenId);
                 
-                if (currentStatus != null) {
-                    statusText = currentStatus.getStatus(); // This will get the status name from joined table
-                    statusIcon = getStatusIcon(statusText);
-                }
-                
+                // Get transaction ID if available
                 String transactionId = "N/A";
-                if (currentStatus != null && currentStatus.getTransactionId() != null) {
-                    transactionId = formatTransactionIdShort(currentStatus.getTransactionId());
+                IDStatus status = Data.IDStatus.getStatusByCitizenId(citizenId);
+                if (status != null && status.getTransactionId() != null) {
+                    transactionId = formatTransactionIdShort(status.getTransactionId());
                 }
-                
-                // Get documents status
-                List<Document> documents = Data.Document.getDocumentsByCitizenId(citizenId);
-                String docsStatus = getDocumentsStatus(documents);
                 
                 // Get appointment
                 Appointment appointment = Data.Appointment.getAppointmentByCitizenId(citizenId);
@@ -468,7 +546,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
                     }
                 }
                 
-                // Add row to table with status icon
+                // Store in the table model
                 model.addRow(new Object[]{
                     String.valueOf(citizenId),
                     fullName,
@@ -476,14 +554,16 @@ public class UpdateIDStatus extends javax.swing.JPanel {
                     gender,
                     appDate,
                     String.valueOf(daysSince),
-                    statusIcon + " " + statusText,
+                    statusText,
                     appointmentInfo,
-                    "" // Empty string for button (icon will be shown)
+                    ""
                 });
             }
             
             // Adjust column widths after loading data
             adjustColumnWidths();
+            
+            System.out.println("Loaded " + allCitizens.size() + " citizens into table");
             
         } catch (Exception e) {
             System.err.println("Error loading citizens table: " + e.getMessage());
@@ -492,6 +572,48 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         }
     }
     
+    private String getLatestStatusForCitizen(int citizenId) {
+        // First check cache
+        if (citizenStatusCache.containsKey(citizenId)) {
+            return citizenStatusCache.get(citizenId);
+        }
+
+        // SIMPLIFIED QUERY
+        String query = 
+            "SELECT sn.status_name " +
+            "FROM id_status ist " +
+            "JOIN status_names sn ON ist.status_name_id = sn.status_name_id " +
+            "WHERE ist.citizen_id = ? " +
+            "ORDER BY ist.update_date DESC, ist.status_id DESC " +
+            "LIMIT 1";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, citizenId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String status = rs.getString("status_name");
+                citizenStatusCache.put(citizenId, status);
+                // Also cache the icon
+                citizenStatusIconCache.put(citizenId, getStatusIcon(status));
+                return status;
+            } else {
+                // No status found, default to "Submitted"
+                citizenStatusCache.put(citizenId, "Submitted");
+                citizenStatusIconCache.put(citizenId, pendingIcon);
+                return "Submitted";
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting latest status for citizen " + citizenId + ": " + e.getMessage());
+            // Default if error
+            citizenStatusCache.put(citizenId, "Submitted");
+            citizenStatusIconCache.put(citizenId, pendingIcon);
+            return "Submitted";
+        }
+    }
+
     private void adjustColumnWidths() {
         // Adjust column widths based on content
         customTable1.getColumnModel().getColumn(0).setPreferredWidth(60);  // ID
@@ -500,33 +622,12 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         customTable1.getColumnModel().getColumn(3).setPreferredWidth(80);  // Gender
         customTable1.getColumnModel().getColumn(4).setPreferredWidth(100); // App Date
         customTable1.getColumnModel().getColumn(5).setPreferredWidth(60);  // Days
-        customTable1.getColumnModel().getColumn(6).setPreferredWidth(120); // Status
+        customTable1.getColumnModel().getColumn(6).setPreferredWidth(150); // Status (needs more space for icon+text)
         customTable1.getColumnModel().getColumn(7).setPreferredWidth(100); // Appointment
         customTable1.getColumnModel().getColumn(8).setPreferredWidth(80);  // Actions
         
         // Auto resize all columns
         customTable1.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-    }
-    
-    private String getDocumentsStatus(List<Document> documents) {
-        if (documents == null || documents.isEmpty()) {
-            return "0/0 (0✓)";
-        }
-        
-        int total = documents.size();
-        int submitted = 0;
-        int approved = 0;
-        
-        for (Document doc : documents) {
-            if ("Submitted".equalsIgnoreCase(doc.getSubmitted())) {
-                submitted++;
-            }
-            if ("Approved".equalsIgnoreCase(doc.getStatus())) {
-                approved++;
-            }
-        }
-        
-        return submitted + "/" + total + " (" + approved + "✓)";
     }
     
     private String formatTransactionIdShort(String transactionId) {
@@ -548,56 +649,131 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         DefaultTableModel model = (DefaultTableModel) customTable1.getModel();
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
         customTable1.setRowSorter(sorter);
-        
+
         if ("ALL".equalsIgnoreCase(status)) {
             sorter.setRowFilter(null);
+            System.out.println("Showing ALL applications");
         } else {
             // Filter by status - look for status text in column 6
-            String filterText = "";
-            switch (status) {
+            List<String> statusPatterns = new ArrayList<>();
+            switch (status.toUpperCase()) {
                 case "PENDING":
-                    filterText = "Submitted|Pending";
+                    statusPatterns.add("(?i).*submitted.*");
+                    statusPatterns.add("(?i).*pending.*");
                     break;
                 case "PROCESSING":
-                    filterText = "Processing|Under Review";
+                    statusPatterns.add("(?i).*processing.*");
+                    statusPatterns.add("(?i).*under review.*");
+                    statusPatterns.add("(?i).*verification.*");
+                    statusPatterns.add("(?i).*biometrics.*");
+                    statusPatterns.add("(?i).*background check.*");
+                    statusPatterns.add("(?i).*document verification.*");
+                    break;
+                case "PRODUCTION": // UPDATED: Production filter
+                    statusPatterns.add("(?i).*id card production.*");
+                    statusPatterns.add("(?i).*production.*");
                     break;
                 case "READY":
-                    filterText = "Ready|Ready for Pickup";
+                    statusPatterns.add("(?i).*ready.*");
+                    statusPatterns.add("(?i).*ready for pickup.*");
                     break;
                 case "COMPLETED":
-                    filterText = "Completed|Claimed";
+                    statusPatterns.add("(?i).*completed.*");
+                    statusPatterns.add("(?i).*claimed.*");
+                    statusPatterns.add("(?i).*delivered.*");
                     break;
                 case "REJECTED":
-                    filterText = "Rejected|Cancelled";
+                    statusPatterns.add("(?i).*rejected.*");
+                    statusPatterns.add("(?i).*cancelled.*");
+                    statusPatterns.add("(?i).*failed.*");
                     break;
                 default:
-                    filterText = status;
+                    statusPatterns.add("(?i).*" + status + ".*");
             }
-            
-            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.regexFilter("(?i)" + filterText, 6);
+
+            List<RowFilter<DefaultTableModel, Object>> filters = new ArrayList<>();
+            for (String pattern : statusPatterns) {
+                filters.add(RowFilter.regexFilter(pattern, 6));
+            }
+
+            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.orFilter(filters);
             sorter.setRowFilter(rowFilter);
+            System.out.println("Filtering by " + status + " - patterns: " + statusPatterns);
         }
     }
-    
+
     private void searchCitizens(String searchTerm) {
         DefaultTableModel model = (DefaultTableModel) customTable1.getModel();
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
         customTable1.setRowSorter(sorter);
-        
+
         if (searchTerm.trim().isEmpty()) {
-            sorter.setRowFilter(null);
+            // If search is empty, apply the current filter
+            String currentFilter = customFilterBar.getActiveFilter();
+            if (!"ALL".equals(currentFilter)) {
+                filterTableByStatus(currentFilter);
+            } else {
+                sorter.setRowFilter(null);
+            }
         } else {
-            // Search in multiple columns
-            RowFilter<DefaultTableModel, Object> rowFilter = RowFilter.orFilter(Arrays.asList(
+            // Combine search with current filter
+            List<RowFilter<DefaultTableModel, Object>> filters = new ArrayList<>();
+            
+            // Search filter
+            filters.add(RowFilter.orFilter(Arrays.asList(
                 RowFilter.regexFilter("(?i)" + searchTerm, 0), // ID
                 RowFilter.regexFilter("(?i)" + searchTerm, 1), // Name
                 RowFilter.regexFilter("(?i)" + searchTerm, 2), // Transaction ID
-                RowFilter.regexFilter("(?i)" + searchTerm, 6)  // Status
-            ));
-            sorter.setRowFilter(rowFilter);
+                RowFilter.regexFilter("(?i)" + searchTerm, 6)  // Status text
+            )));
+            
+            // Apply status filter if not "ALL"
+            String currentFilter = customFilterBar.getActiveFilter();
+            if (!"ALL".equals(currentFilter)) {
+                // Add status filter patterns
+                List<String> statusPatterns = new ArrayList<>();
+                switch (currentFilter.toUpperCase()) {
+                    case "PENDING":
+                        statusPatterns.add("(?i).*submitted.*");
+                        statusPatterns.add("(?i).*pending.*");
+                        break;
+                    case "PROCESSING":
+                        statusPatterns.add("(?i).*processing.*");
+                        statusPatterns.add("(?i).*under review.*");
+                        break;
+                    case "PRODUCTION":
+                        statusPatterns.add("(?i).*id card production.*");
+                        statusPatterns.add("(?i).*production.*");
+                        break;
+                    case "READY":
+                        statusPatterns.add("(?i).*ready.*");
+                        break;
+                    case "COMPLETED":
+                        statusPatterns.add("(?i).*completed.*");
+                        statusPatterns.add("(?i).*claimed.*");
+                        break;
+                    case "REJECTED":
+                        statusPatterns.add("(?i).*rejected.*");
+                        statusPatterns.add("(?i).*cancelled.*");
+                        break;
+                }
+                
+                List<RowFilter<DefaultTableModel, Object>> statusFilters = new ArrayList<>();
+                for (String pattern : statusPatterns) {
+                    statusFilters.add(RowFilter.regexFilter(pattern, 6));
+                }
+                
+                if (!statusFilters.isEmpty()) {
+                    filters.add(RowFilter.orFilter(statusFilters));
+                }
+            }
+            
+            // Combine all filters with AND logic
+            RowFilter<DefaultTableModel, Object> combinedFilter = RowFilter.andFilter(filters);
+            sorter.setRowFilter(combinedFilter);
         }
     }
-    
+
     private void handleFilterContextAction(String filterName, String action) {
         switch (action) {
             case "VIEW_DETAILS":
@@ -633,11 +809,11 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     
     private void reapplyFiltersExcluding(String excludedFilter) {
         // Get current active filter
-        String activeFilter = customFilterBar1.getActiveFilter();
+        String activeFilter = customFilterBar.getActiveFilter();
         
         // If excluded filter is active, switch to ALL
         if (excludedFilter.equals(activeFilter)) {
-            customFilterBar1.setActiveFilter("ALL");
+            customFilterBar.setActiveFilter("ALL");
         }
         
         // Apply complex filter that excludes the specified status
@@ -647,6 +823,115 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     private double calculatePercentage(int part, int total) {
         if (total == 0) return 0;
         return Math.round((part * 100.0 / total) * 100.0) / 100.0;
+    }
+    
+    private ImageIcon getStatusIcon(String status) {
+        if (status == null) return defaultStatusIcon;
+
+        String statusUpper = status.toUpperCase();
+        if (statusUpper.contains("SUBMITTED") || statusUpper.contains("PENDING")) {
+            return pendingIcon;
+        } else if (statusUpper.contains("PROCESSING") || 
+                   statusUpper.contains("DOCUMENT VERIFICATION") ||
+                   statusUpper.contains("BIOMETRICS APPOINTMENT") ||
+                   statusUpper.contains("BIOMETRICS COMPLETED") ||
+                   statusUpper.contains("BACKGROUND CHECK") ||
+                   statusUpper.contains("UNDER REVIEW") || 
+                   statusUpper.contains("VERIFICATION")) {
+            return processingIcon;
+        } else if (statusUpper.contains("ID CARD PRODUCTION") || 
+                   statusUpper.contains("PRODUCTION")) {
+            return productionIcon; // Use production icon
+        } else if (statusUpper.contains("READY") || 
+                   statusUpper.contains("READY FOR PICKUP")) {
+            return readyIcon;
+        } else if (statusUpper.contains("COMPLETED") || 
+                   statusUpper.contains("CLAIMED") || 
+                   statusUpper.contains("DELIVERED")) {
+            return completedIcon;
+        } else if (statusUpper.contains("REJECTED") || 
+                   statusUpper.contains("CANCELLED") || 
+                   statusUpper.contains("FAILED")) {
+            return rejectedIcon;
+        } else {
+            return defaultStatusIcon;
+        }
+    }   
+    
+    class StatusCellData {
+        private String statusText;
+        private ImageIcon statusIcon;
+
+        public StatusCellData(String statusText, ImageIcon statusIcon) {
+            this.statusText = statusText;
+            this.statusIcon = statusIcon;
+        }
+
+        public String getStatusText() {
+            return statusText;
+        }
+
+        public ImageIcon getStatusIcon() {
+            return statusIcon;
+        }
+
+        @Override
+        public String toString() {
+            return statusText;
+        }
+    }
+    
+    class StatusCellRenderer extends JLabel implements TableCellRenderer {
+
+        public StatusCellRenderer() {
+            setOpaque(true);
+            setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            setHorizontalAlignment(SwingConstants.LEFT);
+            setVerticalAlignment(SwingConstants.CENTER);
+            setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+
+            String statusText = value != null ? value.toString() : "";
+            setText(statusText);
+            
+            // Get the icon for this status (using cache if available)
+            int modelRow = table.convertRowIndexToModel(row);
+            Object idValue = table.getModel().getValueAt(modelRow, 0);
+            if (idValue != null) {
+                try {
+                    int citizenId = Integer.parseInt(idValue.toString());
+                    if (citizenStatusIconCache.containsKey(citizenId)) {
+                        setIcon(citizenStatusIconCache.get(citizenId));
+                    } else {
+                        setIcon(getStatusIcon(statusText));
+                    }
+                } catch (NumberFormatException e) {
+                    setIcon(getStatusIcon(statusText));
+                }
+            } else {
+                setIcon(getStatusIcon(statusText));
+            }
+
+            // Handle selection background
+            if (isSelected) {
+                setBackground(table.getSelectionBackground());
+                setForeground(table.getSelectionForeground());
+            } else {
+                // Use alternating row colors
+                if (row % 2 == 0) {
+                    setBackground(customTable1.getEvenRowColor());
+                } else {
+                    setBackground(customTable1.getOddRowColor());
+                }
+                setForeground(customTable1.getNormalTextColor());
+            }
+
+            return this;
+        }
     }
     
     // Button Renderer with Icon
@@ -689,9 +974,11 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         protected JButton button;
         private boolean isPushed;
         private int currentRow;
-        
-        public ButtonEditor(JCheckBox checkBox) {
+        private JTable table;
+
+        public ButtonEditor(JCheckBox checkBox, JTable table) {
             super(checkBox);
+            this.table = table;
             button = new JButton();
             button.setIcon(editIcon);
             button.setText("");
@@ -705,13 +992,13 @@ public class UpdateIDStatus extends javax.swing.JPanel {
             button.setMargin(new Insets(2, 5, 2, 5));
             button.addActionListener(e -> fireEditingStopped());
         }
-        
+
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
             currentRow = row;
             isPushed = true;
-            
+
             if (isSelected) {
                 button.setBackground(new Color(0, 100, 180));
                 button.setBorder(BorderFactory.createLineBorder(new Color(0, 80, 160), 2));
@@ -719,309 +1006,86 @@ public class UpdateIDStatus extends javax.swing.JPanel {
                 button.setBackground(new Color(0, 120, 215));
                 button.setBorder(BorderFactory.createLineBorder(new Color(0, 100, 180), 1));
             }
-            
+
             return button;
         }
-        
+
         @Override
         public Object getCellEditorValue() {
             if (isPushed) {
-                // Handle edit button click
-                editCitizenStatus(currentRow);
+                // Use SwingUtilities to ensure this runs on the EDT
+                SwingUtilities.invokeLater(() -> {
+                    editCitizenStatus(currentRow);
+                });
             }
             isPushed = false;
             return ""; // Return empty string since we're using icon
         }
-        
+
         @Override
         public boolean stopCellEditing() {
             isPushed = false;
             return super.stopCellEditing();
         }
     }
-    
+
     private void editCitizenStatus(int row) {
         // Get data from the selected row
         int modelRow = customTable1.convertRowIndexToModel(row);
         String citizenIdStr = (String) customTable1.getModel().getValueAt(modelRow, 0);
-        
+
         try {
             int citizenId = Integer.parseInt(citizenIdStr);
             Citizen citizen = Data.Citizen.getCitizenById(citizenId);
-            
+
             if (citizen != null) {
-                // Open edit dialog
-                EditStatusDialog dialog = new EditStatusDialog(
+                // Open the new EditStatusDialog
+                component.EditStatusDialog dialog = new component.EditStatusDialog(
                     (JFrame) SwingUtilities.getWindowAncestor(this),
+                    true,
                     citizen,
                     user
                 );
                 dialog.setVisible(true);
-                
+
                 // Refresh data if updated
                 if (dialog.isUpdated()) {
+                    // Clear cache for this citizen
+                    citizenStatusCache.remove(citizenId);
+                    citizenStatusIconCache.remove(citizenId);
+
+                    // Refresh the table and counts
                     loadAllData();
+
+                    // Optional: Show success message
+                    JOptionPane.showMessageDialog(this,
+                        "✓ Status updated successfully!\nThe table has been refreshed.",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
                 }
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Citizen not found with ID: " + citizenIdStr,
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this,
-                "Invalid citizen ID",
+                "Invalid citizen ID: " + citizenIdStr,
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
         }
     }
-    
-    private String getStatusIcon(String status) {
-        if (status == null) return "⚫";
-        
-        String statusUpper = status.toUpperCase();
-        if (statusUpper.contains("SUBMITTED") || statusUpper.contains("PENDING")) {
-            return "⚫";
-        } else if (statusUpper.contains("PROCESSING") || statusUpper.contains("UNDER REVIEW")) {
-            return "⚪";
-        } else if (statusUpper.contains("READY") || statusUpper.contains("READY FOR PICKUP")) {
-            return "✅";
-        } else if (statusUpper.contains("COMPLETED") || statusUpper.contains("CLAIMED")) {
-            return "🟢";
-        } else if (statusUpper.contains("REJECTED") || statusUpper.contains("CANCELLED")) {
-            return "🔴";
-        } else {
-            return "⚫";
-        }
-    }
-    
-    // Edit Status Dialog (inner class)
+
+    // Edit Status Dialog (inner class) - You need to implement this based on your needs
     class EditStatusDialog extends JDialog {
-        private Citizen citizen;
-        private User staffUser;
         private boolean updated = false;
         
-        private JComboBox<String> statusComboBox;
-        private JTextArea notesTextArea;
-        private JLabel citizenInfoLabel;
-        private JLabel currentStatusLabel;
-        
-        public EditStatusDialog(JFrame parent, Citizen citizen, User staffUser) {
-            super(parent, "Update Citizen Status", true);
-            this.citizen = citizen;
-            this.staffUser = staffUser;
-            
-            initComponents();
-            loadCurrentStatus();
-            loadStatusOptions();
-            pack();
+        public EditStatusDialog(JFrame parent, Citizen citizen, User user) {
+            super(parent, "Edit Status - " + citizen.getFullName(), true);
+            setSize(400, 300);
             setLocationRelativeTo(parent);
-            setSize(500, 400);
-        }
-        
-        private void initComponents() {
-            setLayout(new BorderLayout());
-            
-            // Header panel
-            JPanel headerPanel = new JPanel(new BorderLayout());
-            headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-            headerPanel.setBackground(Color.WHITE);
-            
-            citizenInfoLabel = new JLabel("Citizen: " + citizen.getFullName() + " (ID: " + citizen.getCitizenId() + ")");
-            citizenInfoLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            citizenInfoLabel.setForeground(new Color(70, 70, 70));
-            
-            currentStatusLabel = new JLabel("Current Status: ");
-            currentStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            currentStatusLabel.setForeground(new Color(100, 100, 100));
-            
-            headerPanel.add(citizenInfoLabel, BorderLayout.NORTH);
-            headerPanel.add(currentStatusLabel, BorderLayout.SOUTH);
-            
-            // Main form panel
-            JPanel formPanel = new JPanel(new GridLayout(4, 1, 10, 10));
-            formPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-            formPanel.setBackground(Color.WHITE);
-            
-            // Status selection
-            JPanel statusPanel = new JPanel(new BorderLayout(5, 5));
-            statusPanel.setBackground(Color.WHITE);
-            JLabel statusLabel = new JLabel("New Status:");
-            statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            
-            statusComboBox = new JComboBox<>();
-            statusComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            
-            statusPanel.add(statusLabel, BorderLayout.WEST);
-            statusPanel.add(statusComboBox, BorderLayout.CENTER);
-            
-            // Notes field
-            JPanel notesPanel = new JPanel(new BorderLayout(5, 5));
-            notesPanel.setBackground(Color.WHITE);
-            JLabel notesLabel = new JLabel("Internal Notes:");
-            notesLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            
-            notesTextArea = new JTextArea(5, 30);
-            notesTextArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            notesTextArea.setLineWrap(true);
-            notesTextArea.setWrapStyleWord(true);
-            JScrollPane notesScrollPane = new JScrollPane(notesTextArea);
-            
-            notesPanel.add(notesLabel, BorderLayout.NORTH);
-            notesPanel.add(notesScrollPane, BorderLayout.CENTER);
-            
-            formPanel.add(statusPanel);
-            formPanel.add(notesPanel);
-            
-            // Citizen notification (optional)
-            JPanel notificationPanel = new JPanel(new BorderLayout(5, 5));
-            notificationPanel.setBackground(Color.WHITE);
-            JLabel notifyLabel = new JLabel("Notification to Citizen:");
-            notifyLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            
-            JTextArea notificationTextArea = new JTextArea(3, 30);
-            notificationTextArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            notificationTextArea.setLineWrap(true);
-            notificationTextArea.setText("Your National ID application status has been updated.");
-            JScrollPane notifyScrollPane = new JScrollPane(notificationTextArea);
-            
-            notificationPanel.add(notifyLabel, BorderLayout.NORTH);
-            notificationPanel.add(notifyScrollPane, BorderLayout.CENTER);
-            
-            formPanel.add(notificationPanel);
-            
-            // Buttons panel
-            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-            buttonPanel.setBackground(Color.WHITE);
-            buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-            
-            JButton cancelButton = new JButton("Cancel");
-            cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            cancelButton.addActionListener(e -> dispose());
-            
-            JButton updateButton = new JButton("Update Status");
-            updateButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            updateButton.setBackground(new Color(0, 120, 215));
-            updateButton.setForeground(Color.WHITE);
-            updateButton.addActionListener(e -> updateStatus(notificationTextArea.getText()));
-            
-            buttonPanel.add(cancelButton);
-            buttonPanel.add(updateButton);
-            
-            // Add all panels
-            add(headerPanel, BorderLayout.NORTH);
-            add(formPanel, BorderLayout.CENTER);
-            add(buttonPanel, BorderLayout.SOUTH);
-        }
-        
-        private void loadStatusOptions() {
-            // Load status names from database
-            List<StatusName> statusNames = Data.StatusName.getAllStatusNames();
-            for (StatusName status : statusNames) {
-                statusComboBox.addItem(status.getStatusName());
-            }
-        }
-        
-        private void loadCurrentStatus() {
-            IDStatus currentStatus = Data.IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-            if (currentStatus != null) {
-                String status = currentStatus.getStatus();
-                currentStatusLabel.setText("Current Status: " + (status != null ? status : "Not set"));
-                
-                // Set combo box to current status
-                if (status != null) {
-                    statusComboBox.setSelectedItem(status);
-                }
-            }
-        }
-        
-        private void updateStatus(String citizenNotification) {
-            String newStatus = (String) statusComboBox.getSelectedItem();
-            String notes = notesTextArea.getText().trim();
-
-            if (newStatus == null || newStatus.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please select a status", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            try {
-                // Get status name from database
-                List<StatusName> allStatuses = Data.StatusName.getAllStatusNames();
-                StatusName selectedStatus = null;
-                
-                for (StatusName status : allStatuses) {
-                    if (newStatus.equals(status.getStatusName())) {
-                        selectedStatus = status;
-                        break;
-                    }
-                }
-                
-                if (selectedStatus == null) {
-                    JOptionPane.showMessageDialog(this, "Invalid status selected", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // Get existing transaction ID or generate new one
-                IDStatus existingStatus = Data.IDStatus.getStatusByCitizenId(citizen.getCitizenId());
-                String transactionId = Data.IDStatus.generateTransactionId(citizen.getCitizenId());
-
-                if (existingStatus != null && existingStatus.getTransactionId() != null) {
-                    transactionId = existingStatus.getTransactionId();
-                }
-
-                // Create new status record
-                IDStatus newStatusRecord = new IDStatus();
-                newStatusRecord.setCitizenId(citizen.getCitizenId());
-                newStatusRecord.setStatusNameId(selectedStatus.getStatusNameId());
-                newStatusRecord.setTransactionId(transactionId);
-                newStatusRecord.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
-                newStatusRecord.setNotes("Updated by " + staffUser.getUsername() + 
-                    " (" + staffUser.getFullName() + "): " + notes);
-
-                // Save to database
-                boolean success = Data.IDStatus.addStatus(newStatusRecord);
-
-                if (success) {
-                    updated = true;
-
-                    // Log activity
-                    Data.ActivityLog.logActivity(staffUser.getUserId(),
-                        "Updated status for citizen " + citizen.getCitizenId() + 
-                        " (" + citizen.getFullName() + ") to: " + newStatus);
-
-                    // Send notification to citizen if email exists
-                    if (citizen.getEmail() != null && !citizen.getEmail().isEmpty()) {
-                        sendStatusNotification(citizen, newStatus, citizenNotification);
-                    }
-
-                    JOptionPane.showMessageDialog(this,
-                        "Status updated successfully to: " + newStatus,
-                        "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                    dispose();
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                        "Failed to update status. Please try again.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
-                }
-
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this,
-                    "Error updating status: " + e.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
-            }
-        }
-        
-        private void sendStatusNotification(Citizen citizen, String newStatus, String message) {
-            // Create notification record
-            Notification notification = new Notification();
-            notification.setCitizenId(citizen.getCitizenId());
-            notification.setNotificationDate(new java.sql.Date(System.currentTimeMillis()));
-            notification.setNotificationTime(new SimpleDateFormat("HH:mm").format(new java.util.Date()));
-            notification.setMessage("Status Update: " + message);
-            notification.setType("Status Update");
-            notification.setReadStatus("Unread");
-            
-            Data.Notification.addNotification(notification);
+            // Add your dialog components here
         }
         
         public boolean isUpdated() {
@@ -1036,7 +1100,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     
     // Public method to get active filter
     public String getActiveFilter() {
-        return customFilterBar1 != null ? customFilterBar1.getActiveFilter() : "ALL";
+        return customFilterBar != null ? customFilterBar.getActiveFilter() : "ALL";
     }
 
     @SuppressWarnings("unchecked")
@@ -1062,7 +1126,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         NotificationsBoxPanel = new javax.swing.JPanel();
         NotificationsValueLabel = new javax.swing.JLabel();
         NotificationsTitleLabel = new javax.swing.JLabel();
-        customFilterBar1 = new component.filter.CustomFilterBar();
+        customFilterBar = new component.filter.CustomFilterBar();
 
         setBackground(new java.awt.Color(250, 250, 250));
         setPreferredSize(new java.awt.Dimension(1000, 550));
@@ -1100,7 +1164,13 @@ public class UpdateIDStatus extends javax.swing.JPanel {
             }
         });
         customTable1.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
-        customTable1.setRowHeight(40);
+        customTable1.setHeaderColor(new java.awt.Color(150, 220, 240));
+        customTable1.setHoverColor(java.awt.Color.white);
+        customTable1.setSelectedRowColor(java.awt.Color.white);
+        customTable1.setSelectedRowTextColor(java.awt.Color.black);
+        customTable1.setShowGrid(false);
+        customTable1.getTableHeader().setResizingAllowed(false);
+        customTable1.getTableHeader().setReorderingAllowed(false);
         customScrollPane1.setViewportView(customTable1);
         if (customTable1.getColumnModel().getColumnCount() > 0) {
             customTable1.getColumnModel().getColumn(0).setResizable(false);
@@ -1120,7 +1190,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
             customTable1.getColumnModel().getColumn(7).setResizable(false);
             customTable1.getColumnModel().getColumn(7).setPreferredWidth(50);
             customTable1.getColumnModel().getColumn(8).setResizable(false);
-            customTable1.getColumnModel().getColumn(8).setPreferredWidth(50);
+            customTable1.getColumnModel().getColumn(8).setPreferredWidth(15);
         }
 
         searchField.setExpandedHeight(50);
@@ -1137,7 +1207,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
         });
 
         jLayeredPane1.setPreferredSize(new java.awt.Dimension(1000, 100));
-        jLayeredPane1.setLayout(new java.awt.GridLayout());
+        jLayeredPane1.setLayout(new java.awt.GridLayout(1, 0));
 
         MyApplicationStatusBoxPanel.setBackground(new java.awt.Color(254, 161, 156));
         MyApplicationStatusBoxPanel.setPreferredSize(new java.awt.Dimension(200, 100));
@@ -1173,7 +1243,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
                 .addGap(0, 0, 0)
                 .addComponent(MyApplicationStatusValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(MyApplicationStatusTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(MyApplicationStatusTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -1212,7 +1282,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
             .addGroup(DaySinceApplicationBoxPanelLayout.createSequentialGroup()
                 .addGap(0, 0, 0)
                 .addComponent(DaySinceApplicationValueLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(DaySinceApplicationTitleLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
@@ -1299,8 +1369,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
 
         jLayeredPane1.add(NotificationsBoxPanel);
 
-        customFilterBar1.setMinimumSize(new java.awt.Dimension(500, 48));
-        customFilterBar1.setPreferredSize(new java.awt.Dimension(500, 48));
+        customFilterBar.setAutoResizeButtons(true);
 
         javax.swing.GroupLayout MainIDStatusDetailsLayout = new javax.swing.GroupLayout(MainIDStatusDetails);
         MainIDStatusDetails.setLayout(MainIDStatusDetailsLayout);
@@ -1309,9 +1378,9 @@ public class UpdateIDStatus extends javax.swing.JPanel {
             .addGroup(MainIDStatusDetailsLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(searchField, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(customFilterBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(customFilterBar, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(RefreshButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
             .addComponent(jLayeredPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1321,13 +1390,17 @@ public class UpdateIDStatus extends javax.swing.JPanel {
             MainIDStatusDetailsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MainIDStatusDetailsLayout.createSequentialGroup()
                 .addComponent(jLayeredPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(32, 32, 32)
-                .addGroup(MainIDStatusDetailsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(searchField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(RefreshButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(customFilterBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(MainIDStatusDetailsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(MainIDStatusDetailsLayout.createSequentialGroup()
+                        .addGap(12, 12, 12)
+                        .addGroup(MainIDStatusDetailsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(searchField, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(RefreshButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addGroup(MainIDStatusDetailsLayout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(customFilterBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(customScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(customScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 381, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         MainContentsTabbedPane.addTab("tab2", MainIDStatusDetails);
@@ -1366,7 +1439,7 @@ public class UpdateIDStatus extends javax.swing.JPanel {
     private javax.swing.JLabel NotificationsTitleLabel;
     private javax.swing.JLabel NotificationsValueLabel;
     private component.Button.FlatButton RefreshButton;
-    private component.filter.CustomFilterBar customFilterBar1;
+    private component.filter.CustomFilterBar customFilterBar;
     private component.Scroll.CustomScrollPane customScrollPane1;
     private component.Table.CustomTable customTable1;
     private javax.swing.JLayeredPane jLayeredPane1;

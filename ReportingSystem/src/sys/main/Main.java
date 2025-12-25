@@ -469,7 +469,7 @@ public class Main extends javax.swing.JFrame {
         showForm(updateidstatus);
     }
     
-    private void showForm(Component com) {
+    public void showForm(Component com) {
         System.out.println("showForm() called with component: " + com.getClass().getSimpleName());
 
         // Remove all components from body
@@ -515,7 +515,7 @@ public class Main extends javax.swing.JFrame {
                 }
             });
         }
-        
+
         System.out.println("Body child count: " + body.getComponentCount());
         System.out.println("Component size: " + com.getWidth() + "x" + com.getHeight());
         System.out.println("Component visible: " + com.isVisible());

@@ -8,6 +8,7 @@ import javax.swing.table.DefaultTableModel;
 import java.util.List;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import sys.main.Main;
 
 public class IDStatus extends javax.swing.JPanel {
     
@@ -318,27 +319,27 @@ public class IDStatus extends javax.swing.JPanel {
         // Color coding based on simplified steps
         switch (currentStep) {
             case 1: // Application Submitted
-                jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue
+                jLabel3.setForeground(new java.awt.Color(255, 193, 7)); // Amber
                 break;
                 
             case 2: // Processing & Validation
-                jLabel3.setForeground(new java.awt.Color(255, 165, 0)); // Orange
+                jLabel3.setForeground(new java.awt.Color(0, 120, 215)); // Blue
                 break;
                 
             case 3: // Printing & Packaging
-                jLabel3.setForeground(new java.awt.Color(255, 140, 0)); // Dark Orange
+                jLabel3.setForeground(new java.awt.Color(204, 85, 0)); // Orange
                 break;
                 
             case 4: // Ready for Pickup
-                jLabel3.setForeground(new java.awt.Color(0, 150, 0)); // Green
+                jLabel3.setForeground(new java.awt.Color(40, 167, 69)); // Green
                 break;
                 
             case 5: // ID Claimed
-                jLabel3.setForeground(new java.awt.Color(0, 100, 0)); // Dark Green
+                jLabel3.setForeground(new java.awt.Color(111, 66, 193)); // Purple
                 break;
                 
             case 0: // Rejected
-                jLabel3.setForeground(new java.awt.Color(220, 0, 0)); // Red
+                jLabel3.setForeground(new java.awt.Color(220, 53, 69)); // Red
                 break;
                 
             default:
@@ -998,18 +999,22 @@ public class IDStatus extends javax.swing.JPanel {
 
         FullStatusHistoryTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+
             },
             new String [] {
                 "Date", "Status", "Description", "Notes / Updated By"
             }
         ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
             boolean[] canEdit = new boolean [] {
                 false, false, false, false
             };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit [columnIndex];
@@ -1045,10 +1050,11 @@ public class IDStatus extends javax.swing.JPanel {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addComponent(customScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addContainerGap())
+                    .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(customScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1065,10 +1071,10 @@ public class IDStatus extends javax.swing.JPanel {
                 .addComponent(customStepProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(10, 10, 10)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(5, 5, 5)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(5, 5, 5)
-                .addComponent(customScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 124, Short.MAX_VALUE)
+                .addGap(0, 0, 0)
+                .addComponent(customScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 128, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -1079,6 +1085,19 @@ public class IDStatus extends javax.swing.JPanel {
                 "Please submit an application first.",
                 "No Application",
                 javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Check ID status eligibility first
+        if (!isIDReadyForPickup()) {
+            String currentStatus = getCurrentIDStatus();
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Your ID is not ready for pickup yet.\n\n" +
+                "Current Status: " + currentStatus + "\n" +
+                "You can only schedule a pickup appointment when your ID status is 'Ready for Pickup'.\n\n" +
+                "Please check back later or contact support for more information.",
+                "ID Not Ready",
+                javax.swing.JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -1093,9 +1112,12 @@ public class IDStatus extends javax.swing.JPanel {
             }
         }
 
+        // Get a reference to the Main window
+        java.awt.Window mainWindow = javax.swing.SwingUtilities.getWindowAncestor(this);
+
         if (existingAppointment != null && "SCHEDULED".equalsIgnoreCase(existingAppointment.getStatus())) {
             // Show existing appointment details
-            javax.swing.JOptionPane.showMessageDialog(this,
+            int option = javax.swing.JOptionPane.showConfirmDialog(this,
                 "You already have a scheduled appointment:\n\n" +
                 "Transaction ID: " + transactionId + "\n" +
                 "Date: " + existingAppointment.getAppDate() + "\n" +
@@ -1103,26 +1125,51 @@ public class IDStatus extends javax.swing.JPanel {
                 "Name: " + citizen.getFname() + " " + citizen.getLname() + "\n\n" +
                 "Would you like to reschedule?",
                 "Existing Appointment Found",
-                javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                javax.swing.JOptionPane.YES_NO_OPTION);
 
-            // TODO: Navigate to rescheduling page
+            if (option == javax.swing.JOptionPane.YES_OPTION && mainWindow instanceof Main) {
+                // Navigate to rescheduling page
+                Scheduling scheduling = new Scheduling(user, citizen, existingAppointment);
+                ((Main) mainWindow).showForm(scheduling);
+            }
         } else {
-            // Navigate to scheduling page
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "Redirecting to scheduling page...\n\n" +
-                "Transaction ID: " + transactionId + "\n" +
-                "Citizen: " + citizen.getFullName() + "\n" +
-                "First Name: " + citizen.getFname() + "\n" +
-                "Last Name: " + citizen.getLname(),
-                "Schedule Pickup",
-                javax.swing.JOptionPane.INFORMATION_MESSAGE);
-
-                // In Main class, it would call:
-                // main.showForm(new Scheduling(user));
+            // Navigate to scheduling page for new appointment
+            if (mainWindow instanceof Main) {
+                Scheduling scheduling = new Scheduling(user, citizen, null);
+                ((Main) mainWindow).showForm(scheduling);
+            } else {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Unable to navigate to scheduling page.",
+                    "Navigation Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
         }
     }//GEN-LAST:event_SchedulePickupActionPerformed
 
+    private boolean isIDReadyForPickup() {
+        if (idStatus == null || citizen == null) {
+            return false;
+        }
 
+        String currentStatus = getCurrentIDStatus();
+        if (currentStatus == null) {
+            return false;
+        }
+
+        String normalizedStatus = currentStatus.toUpperCase().trim();
+        return normalizedStatus.contains("READY") || 
+               normalizedStatus.contains("READY FOR PICKUP") ||
+               normalizedStatus.equals("READY_FOR_PICKUP") ||
+               normalizedStatus.equals("STAT-009");
+    }
+
+    private String getCurrentIDStatus() {
+        if (idStatus != null && idStatus.getStatus() != null) {
+            return idStatus.getStatus();
+        }
+        return "No status found";
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private component.Table.CustomTable FullStatusHistoryTable;
     private component.Button.FlatButton SchedulePickup;
@@ -1134,7 +1181,6 @@ public class IDStatus extends javax.swing.JPanel {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JSeparator jSeparator1;
     // End of variables declaration//GEN-END:variables
 }

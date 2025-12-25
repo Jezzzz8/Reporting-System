@@ -602,12 +602,20 @@ public class CustomTable extends JTable {
     
     // ========== GETTERS AND SETTERS ==========
     
+    public Color getHeaderColor() {
+        return headerColor;
+    }
+    
     public void setHeaderColor(Color headerColor) {
         this.headerColor = headerColor;
         if (initialized) {
             customizeTableHeader();
             repaint();
         }
+    }
+    
+    public Color getOddRowColor() {
+        return oddRowColor;
     }
     
     public void setOddRowColor(Color oddRowColor) {
@@ -620,6 +628,10 @@ public class CustomTable extends JTable {
         }
     }
     
+    public Color getEvenRowColor() {
+        return evenRowColor;
+    }
+    
     public void setEvenRowColor(Color evenRowColor) {
         this.evenRowColor = evenRowColor;
         if (initialized) {
@@ -627,11 +639,19 @@ public class CustomTable extends JTable {
         }
     }
     
+    public Color getHoverColor() {
+        return hoverColor;
+    }
+    
     public void setHoverColor(Color hoverColor) {
         this.hoverColor = hoverColor;
         if (initialized) {
             repaint();
         }
+    }
+    
+    public Color getSelectedRowColor() {
+        return selectedRowColor;
     }
     
     public void setSelectedRowColor(Color selectedRowColor) {
@@ -642,6 +662,10 @@ public class CustomTable extends JTable {
         }
     }
     
+    public Color getSelectedRowTextColor() {
+        return selectedRowTextColor;
+    }
+    
     public void setSelectedRowTextColor(Color selectedRowTextColor) {
         this.selectedRowTextColor = selectedRowTextColor;
         if (initialized) {
@@ -650,11 +674,19 @@ public class CustomTable extends JTable {
         }
     }
     
+    public Color getNormalTextColor() {
+        return normalTextColor;
+    }
+    
     public void setNormalTextColor(Color normalTextColor) {
         this.normalTextColor = normalTextColor;
         if (initialized) {
             repaint();
         }
+    }
+    
+    public Font getHeaderFont() {
+        return headerFont;
     }
     
     public void setHeaderFont(Font headerFont) {
@@ -665,12 +697,20 @@ public class CustomTable extends JTable {
         }
     }
     
+    public Font getCellFont() {
+        return cellFont;
+    }
+    
     public void setCellFont(Font cellFont) {
         this.cellFont = cellFont;
         if (initialized) {
             super.setFont(cellFont);  // Use super.setFont instead of setFont
             repaint();
         }
+    }
+    
+    public int getCustomRowHeight() {
+        return rowHeight;
     }
     
     public void setCustomRowHeight(int rowHeight) {
@@ -680,6 +720,10 @@ public class CustomTable extends JTable {
             revalidate();
             repaint();
         }
+    }
+    
+    public boolean isShowGrid() {
+        return showGrid;
     }
     
     public void setShowGrid(boolean showGrid) {

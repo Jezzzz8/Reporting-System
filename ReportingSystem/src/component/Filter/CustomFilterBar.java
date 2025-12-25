@@ -9,33 +9,98 @@ import java.util.List;
 
 public class CustomFilterBar extends JPanel {
     
-    // Properties (using your color scheme)
+    // Configuration Properties - Can be easily modified
+    public static class FilterProperties {
+        // Button dimensions
+        public int defaultButtonWidth = 110;
+        public int buttonHeight = 36;
+        
+        // Button padding
+        public int horizontalPadding = 12;
+        public int verticalPadding = 8;
+        
+        // Spacing between buttons
+        public int buttonSpacing = 8;
+        
+        // Font sizes
+        public Font normalFont = new Font("Segoe UI", Font.PLAIN, 13);
+        public Font selectedFont = new Font("Segoe UI", Font.BOLD, 13);
+        
+        // Border radius
+        public int borderRadius = 8;
+        
+        // Colors
+        public Color normalColor = new Color(70, 70, 70);
+        public Color primaryColor = new Color(0, 120, 215);
+        public Color hoverColor = new Color(0, 100, 180);
+        public Color backgroundColor = Color.WHITE;
+        public Color borderColor = new Color(150, 150, 150);
+        public Color errorColor = new Color(220, 53, 69);
+        public Color selectedBackground = new Color(0, 120, 215, 20);
+        
+        // Individual filter colors (can be customized)
+        public Color pendingColor = new Color(255, 193, 7); // Amber
+        public Color processingColor = new Color(0, 120, 215); // Blue
+        public Color productionColor = new Color(204, 85, 0); // Orange
+        public Color readyColor = new Color(40, 167, 69); // Green
+        public Color completedColor = new Color(111, 66, 193); // Purple
+        public Color rejectedColor = new Color(220, 53, 69); // Red
+        public Color allColor = new Color(70, 70, 70); // Dark gray
+        
+        // Show counts option
+        public boolean showCounts = true;
+        
+        // Show tooltips option
+        public boolean showTooltips = true;
+        
+        // Enable hover effects
+        public boolean enableHover = true;
+        
+        // Enable context menu
+        public boolean enableContextMenu = true;
+        
+        // Auto-resize buttons based on text length
+        public boolean autoResizeButtons = true; // Changed to true by default
+        
+        // Minimum button width when auto-resizing
+        public int minButtonWidth = 80;
+        
+        // Maximum button width when auto-resizing
+        public int maxButtonWidth = 160;
+        
+        // Additional padding when showing counts
+        public int countExtraPadding = 15;
+        
+        // Calculate button width dynamically for specific filters
+        public Map<String, Integer> customWidths = new HashMap<>();
+        
+        // Text width multiplier for safety margin
+        public float textWidthMultiplier = 1.2f;
+    }
+    
+    // Instance variables
     private List<FilterButton> filterButtons;
     private FilterModel filterModel;
     private FilterListener listener;
     private String activeFilter;
+    private FilterProperties properties;
     
-    // Colors from your CustomCheckBox
-    private final Color NORMAL_COLOR = new Color(70, 70, 70); // #464646
-    private static final Color PRIMARY_COLOR = new Color(0, 120, 215); // #0078D7
-    private final Color HOVER_COLOR = new Color(0, 100, 180); // #0064B4
-    private final Color BACKGROUND_COLOR = Color.WHITE;
-    private final Color BORDER_COLOR = new Color(150, 150, 150); // #969696
-    private static final Color ERROR_COLOR = new Color(220, 53, 69); // #DC3545
-    private final Color SELECTED_BG = new Color(0, 120, 215, 20); // Light blue background
-    
-    // Fonts from your CustomCheckBox
-    private final Font TEXT_FONT = new Font("Segoe UI", Font.PLAIN, 12);
-    private final Font SELECTED_FONT = new Font("Segoe UI", Font.BOLD, 12);
-    
+    // Default constructor with default properties
     public CustomFilterBar() {
+        this(new FilterProperties());
+    }
+    
+    // Constructor with custom properties
+    public CustomFilterBar(FilterProperties properties) {
+        this.properties = properties;
         initComponents();
         setupDefaults();
     }
     
     private void initComponents() {
-        setLayout(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        setBackground(BACKGROUND_COLOR);
+        // Use FlowLayout with LEFT alignment
+        setLayout(new FlowLayout(FlowLayout.LEFT, properties.buttonSpacing, 0));
+        setBackground(properties.backgroundColor);
         setBorder(new EmptyBorder(8, 12, 8, 12));
         
         filterButtons = new ArrayList<>();
@@ -46,21 +111,31 @@ public class CustomFilterBar extends JPanel {
     
     private void setupDefaults() {
         activeFilter = "ALL";
+        
+        // Set custom widths for longer filter names
+        properties.customWidths.put("PENDING", 95);
+        properties.customWidths.put("PROCESSING", 110);
+        properties.customWidths.put("PRODUCTION", 105);
+        properties.customWidths.put("COMPLETED", 105);
+        properties.customWidths.put("REJECTED", 100);
+        properties.customWidths.put("READY", 85);
+        properties.customWidths.put("ALL", 75);
     }
-    
+
     private void setupDefaultFilters() {
         // Default status filters
-        String[] filters = {"ALL", "PENDING", "PROCESSING", "READY", "COMPLETED", "REJECTED"};
-        
+        String[] filters = {"ALL", "PENDING", "PROCESSING", "PRODUCTION", "READY", "COMPLETED", "REJECTED"};
+
         for (String filter : filters) {
             addFilterOption(filter, getDisplayText(filter), getFilterColor(filter));
         }
     }
-    
+
     private String getDisplayText(String filter) {
         switch (filter.toUpperCase()) {
             case "PENDING": return "Pending";
             case "PROCESSING": return "Processing";
+            case "PRODUCTION": return "Production";
             case "READY": return "Ready";
             case "COMPLETED": return "Completed";
             case "REJECTED": return "Rejected";
@@ -70,17 +145,37 @@ public class CustomFilterBar extends JPanel {
     
     private Color getFilterColor(String filter) {
         switch (filter.toUpperCase()) {
-            case "PENDING": return new Color(255, 193, 7); // Amber
-            case "PROCESSING": return PRIMARY_COLOR; // Blue
-            case "READY": return new Color(40, 167, 69); // Green
-            case "COMPLETED": return new Color(111, 66, 193); // Purple
-            case "REJECTED": return ERROR_COLOR; // Red
-            default: return PRIMARY_COLOR;
+            case "PENDING": return properties.pendingColor;
+            case "PROCESSING": return properties.processingColor;
+            case "PRODUCTION": return properties.productionColor;
+            case "READY": return properties.readyColor;
+            case "COMPLETED": return properties.completedColor;
+            case "REJECTED": return properties.rejectedColor;
+            default: return properties.allColor;
         }
     }
     
+    // Calculate optimal width for a button based on text
+    private int calculateOptimalWidth(String text, Font font, boolean hasCount) {
+        FontMetrics fm = getFontMetrics(font);
+        int textWidth = fm.stringWidth(text);
+        
+        // Add extra padding if showing counts
+        int extraPadding = hasCount ? properties.countExtraPadding : 0;
+        
+        // Calculate required width with padding
+        int requiredWidth = textWidth + (properties.horizontalPadding * 2) + extraPadding;
+        
+        // Apply multiplier for safety margin
+        requiredWidth = (int)(requiredWidth * properties.textWidthMultiplier);
+        
+        // Clamp to min/max width
+        return Math.max(properties.minButtonWidth, Math.min(requiredWidth, properties.maxButtonWidth));
+    }
+    
+    // Public methods for adding filters
     public void addFilterOption(String name, String displayText) {
-        addFilterOption(name, displayText, PRIMARY_COLOR);
+        addFilterOption(name, displayText, getFilterColor(name));
     }
     
     public void addFilterOption(String name, String displayText, Color color) {
@@ -94,15 +189,55 @@ public class CustomFilterBar extends JPanel {
         repaint();
     }
     
+    // Method to remove a filter
+    public void removeFilterOption(String name) {
+        FilterButton toRemove = null;
+        for (FilterButton button : filterButtons) {
+            if (button.getName().equalsIgnoreCase(name)) {
+                toRemove = button;
+                break;
+            }
+        }
+        
+        if (toRemove != null) {
+            filterButtons.remove(toRemove);
+            remove(toRemove);
+            filterModel.removeFilter(name);
+            revalidate();
+            repaint();
+        }
+    }
+    
     public void setFilterCounts(Map<String, Integer> counts) {
+        System.out.println("CustomFilterBar: Setting filter counts: " + counts);
+        
+        // Store counts in the model first
+        filterModel.setCounts(counts);
+        
+        // Update each button
         for (FilterButton button : filterButtons) {
             Integer count = counts.get(button.getName());
             if (count != null) {
                 button.setCount(count);
-                button.setToolTipText(button.getDisplayText() + ": " + count + " items");
+                if (properties.showTooltips) {
+                    button.setToolTipText(button.getDisplayText() + ": " + count + " items");
+                }
+            } else {
+                button.setCount(0);
+                if (properties.showTooltips) {
+                    button.setToolTipText(button.getDisplayText() + ": 0 items");
+                }
             }
+            
+            // Update button text and width
+            button.updateButtonText();
         }
-        filterModel.setCounts(counts);
+        
+        // Force UI update
+        revalidate();
+        repaint();
+        
+        System.out.println("CustomFilterBar: Filter counts updated and UI refreshed");
     }
     
     public void setActiveFilter(String filterName) {
@@ -133,7 +268,31 @@ public class CustomFilterBar extends JPanel {
         this.listener = listener;
     }
     
-    // Filter Button class with your exact styling
+    // Getter for properties
+    public FilterProperties getProperties() {
+        return properties;
+    }
+    
+    // Method to update properties and refresh UI
+    public void updateProperties(FilterProperties newProperties) {
+        this.properties = newProperties;
+        refreshUI();
+    }
+    
+    private void refreshUI() {
+        // Update layout spacing
+        ((FlowLayout) getLayout()).setHgap(properties.buttonSpacing);
+        
+        // Update all buttons
+        for (FilterButton button : filterButtons) {
+            button.updateProperties();
+        }
+        
+        revalidate();
+        repaint();
+    }
+    
+    // Filter Button class
     class FilterButton extends JButton {
         private String name;
         private String displayText;
@@ -152,69 +311,102 @@ public class CustomFilterBar extends JPanel {
         }
         
         private void initButton() {
-            setText(getButtonText());
-            setFont(TEXT_FONT);
+            updateButtonText();
+            setFont(properties.normalFont);
             setFocusPainted(false);
             setBorderPainted(false);
             setContentAreaFilled(false);
-            setOpaque(true);
+            setOpaque(false);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setMargin(new Insets(6, 12, 6, 12));
+            setMargin(new Insets(properties.verticalPadding, properties.horizontalPadding, 
+                                properties.verticalPadding, properties.horizontalPadding));
+            setHorizontalAlignment(SwingConstants.CENTER);
             updateAppearance();
         }
         
-        private void setupListeners() {
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    hover = true;
-                    updateAppearance();
-                    if (listener != null) {
-                        listener.onFilterHover(name);
-                    }
-                }
-                
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    hover = false;
-                    updateAppearance();
-                }
-                
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        // Scale effect like your checkbox
-                        setSize((int)(getWidth() * 0.98), (int)(getHeight() * 0.98));
-                    }
-                }
-                
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        setSize((int)(getWidth() / 0.98), (int)(getHeight() / 0.98));
-                        setActiveFilter(name);
-                    } else if (SwingUtilities.isRightMouseButton(e)) {
-                        showContextMenu(e);
-                    }
-                }
-            });
+        public void updateProperties() {
+            setFont(properties.normalFont);
+            setMargin(new Insets(properties.verticalPadding, properties.horizontalPadding, 
+                                properties.verticalPadding, properties.horizontalPadding));
+            updateButtonText();
+            updateAppearance();
+            repaint();
         }
         
-        private String getButtonText() {
-            if (count > 0) {
-                return displayText + " (" + count + ")";
+        private void setupListeners() {
+            if (properties.enableHover) {
+                addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        hover = true;
+                        updateAppearance();
+                        if (listener != null) {
+                            listener.onFilterHover(name);
+                        }
+                    }
+                    
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        hover = false;
+                        updateAppearance();
+                    }
+                    
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+                            setActiveFilter(name);
+                        } else if (SwingUtilities.isRightMouseButton(e) && properties.enableContextMenu) {
+                            showContextMenu(e);
+                        }
+                    }
+                });
             }
-            return displayText;
+        }
+        
+        private String getFullButtonText() {
+            if (properties.showCounts) {
+                return displayText + " (" + count + ")";
+            } else {
+                return displayText;
+            }
+        }
+        
+        public void updateButtonText() {
+            String fullText = getFullButtonText();
+            setText(fullText);
+            
+            // Calculate optimal button width
+            int optimalWidth;
+            
+            if (properties.autoResizeButtons) {
+                // Calculate based on text length
+                Font font = active ? properties.selectedFont : properties.normalFont;
+                optimalWidth = calculateOptimalWidth(fullText, font, properties.showCounts);
+            } else if (properties.customWidths.containsKey(name.toUpperCase())) {
+                // Use custom width if specified
+                optimalWidth = properties.customWidths.get(name.toUpperCase());
+            } else {
+                // Use default width
+                optimalWidth = properties.defaultButtonWidth;
+            }
+            
+            // Update button size
+            setPreferredSize(new Dimension(optimalWidth, properties.buttonHeight));
+            
+            repaint();
         }
         
         public void setActive(boolean active) {
             this.active = active;
             updateAppearance();
+            // Recalculate width when active state changes (font changes)
+            updateButtonText();
         }
         
         public void setCount(int count) {
             this.count = count;
-            setText(getButtonText());
+            // Recalculate width when count changes
+            updateButtonText();
         }
         
         public String getName() {
@@ -228,18 +420,20 @@ public class CustomFilterBar extends JPanel {
         private void updateAppearance() {
             if (active) {
                 setForeground(color);
-                setFont(SELECTED_FONT);
-            } else if (hover) {
-                setForeground(HOVER_COLOR);
-                setFont(TEXT_FONT);
+                setFont(properties.selectedFont);
+            } else if (hover && properties.enableHover) {
+                setForeground(properties.hoverColor);
+                setFont(properties.normalFont);
             } else {
-                setForeground(NORMAL_COLOR);
-                setFont(TEXT_FONT);
+                setForeground(properties.normalColor);
+                setFont(properties.normalFont);
             }
             repaint();
         }
         
         private void showContextMenu(MouseEvent e) {
+            if (!properties.enableContextMenu) return;
+            
             JPopupMenu menu = new JPopupMenu();
             
             JMenuItem viewItem = new JMenuItem("View Details");
@@ -265,34 +459,25 @@ public class CustomFilterBar extends JPanel {
             int width = getWidth();
             int height = getHeight();
             
-            // Draw background based on state
+            // Only draw background for active state (transparent otherwise)
             if (active) {
-                // Light blue background for active state (like your selected checkbox)
-                g2.setColor(SELECTED_BG);
-                g2.fillRoundRect(0, 0, width, height, 6, 6);
+                // Light background for active state
+                g2.setColor(properties.selectedBackground);
+                g2.fillRoundRect(0, 0, width, height, properties.borderRadius, properties.borderRadius);
                 
-                // Primary color border (like your checkbox selected border)
+                // Color border
                 g2.setColor(color);
                 g2.setStroke(new BasicStroke(1.5f));
-                g2.drawRoundRect(1, 1, width - 3, height - 3, 4, 4);
-            } else if (hover) {
-                // Light hover background
-                g2.setColor(new Color(248, 249, 250));
-                g2.fillRoundRect(0, 0, width, height, 6, 6);
+                g2.drawRoundRect(1, 1, width - 3, height - 3, properties.borderRadius - 2, properties.borderRadius - 2);
+            } else if (hover && properties.enableHover) {
+                // Very light hover background (semi-transparent)
+                g2.setColor(new Color(248, 249, 250, 100));
+                g2.fillRoundRect(0, 0, width, height, properties.borderRadius, properties.borderRadius);
                 
                 // Hover color border
-                g2.setColor(HOVER_COLOR);
+                g2.setColor(properties.hoverColor);
                 g2.setStroke(new BasicStroke(1));
-                g2.drawRoundRect(0, 0, width - 1, height - 1, 4, 4);
-            } else {
-                // Normal state
-                g2.setColor(BACKGROUND_COLOR);
-                g2.fillRoundRect(0, 0, width, height, 6, 6);
-                
-                // Light gray border (like your checkbox normal border)
-                g2.setColor(BORDER_COLOR);
-                g2.setStroke(new BasicStroke(1));
-                g2.drawRoundRect(0, 0, width - 1, height - 1, 4, 4);
+                g2.drawRoundRect(0, 0, width - 1, height - 1, properties.borderRadius - 1, properties.borderRadius - 1);
             }
             
             g2.dispose();
@@ -300,7 +485,7 @@ public class CustomFilterBar extends JPanel {
             // Paint text
             super.paintComponent(g);
             
-            // Add subtle checkmark for active state (like your checkbox)
+            // Add subtle checkmark for active state
             if (active) {
                 g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -308,7 +493,7 @@ public class CustomFilterBar extends JPanel {
                 g2.setStroke(new BasicStroke(2f));
                 
                 // Draw checkmark in bottom right corner
-                int checkSize = 8;
+                int checkSize = 10;
                 int x = width - checkSize - 4;
                 int y = height - checkSize - 4;
                 
@@ -321,8 +506,33 @@ public class CustomFilterBar extends JPanel {
         
         @Override
         public Dimension getPreferredSize() {
-            Dimension size = super.getPreferredSize();
-            return new Dimension(size.width + 8, 32); // Fixed height matching your checkbox style
+            // Return calculated size
+            String fullText = getFullButtonText();
+            Font font = active ? properties.selectedFont : properties.normalFont;
+            FontMetrics fm = getFontMetrics(font);
+            int textWidth = fm.stringWidth(fullText);
+            int extraPadding = properties.showCounts ? properties.countExtraPadding : 0;
+            int requiredWidth = textWidth + (properties.horizontalPadding * 2) + extraPadding;
+            requiredWidth = (int)(requiredWidth * properties.textWidthMultiplier);
+            
+            int optimalWidth = Math.max(properties.minButtonWidth, Math.min(requiredWidth, properties.maxButtonWidth));
+            
+            // Use custom width if specified
+            if (properties.customWidths.containsKey(name.toUpperCase())) {
+                optimalWidth = properties.customWidths.get(name.toUpperCase());
+            }
+            
+            return new Dimension(optimalWidth, properties.buttonHeight);
+        }
+        
+        @Override
+        public Dimension getMinimumSize() {
+            return new Dimension(properties.minButtonWidth, properties.buttonHeight);
+        }
+        
+        @Override
+        public Dimension getMaximumSize() {
+            return new Dimension(properties.maxButtonWidth, properties.buttonHeight);
         }
     }
     
@@ -351,6 +561,7 @@ public class CustomFilterBar extends JPanel {
         }
         
         public void setCounts(Map<String, Integer> counts) {
+            this.counts.clear();
             this.counts.putAll(counts);
         }
         
@@ -367,21 +578,51 @@ public class CustomFilterBar extends JPanel {
         void onFilterContextMenu(String filterName, String action);
     }
     
-    // Factory methods for common filter types
-    public static CustomFilterBar createStatusFilterBar() {
-        CustomFilterBar bar = new CustomFilterBar();
+    // Factory method for flexible status filter bar
+    public static CustomFilterBar createFlexibleStatusFilterBar() {
+        FilterProperties props = new FilterProperties();
+        
+        // Enable auto-resize
+        props.autoResizeButtons = true;
+        
+        // Set appropriate min/max widths
+        props.minButtonWidth = 85;
+        props.maxButtonWidth = 140;
+        
+        // Set custom widths for specific filters
+        props.customWidths.put("PENDING", 100);
+        props.customWidths.put("PROCESSING", 115);
+        props.customWidths.put("PRODUCTION", 115);
+        props.customWidths.put("READY", 90);
+        props.customWidths.put("COMPLETED", 115);
+        props.customWidths.put("REJECTED", 105);
+        props.customWidths.put("ALL", 80);
+        
+        // Button dimensions
+        props.buttonHeight = 38;
+        
+        // Padding
+        props.horizontalPadding = 12;
+        props.verticalPadding = 10;
+        
+        // Font
+        props.normalFont = new Font("Segoe UI", Font.PLAIN, 14);
+        props.selectedFont = new Font("Segoe UI", Font.BOLD, 14);
+        
+        CustomFilterBar bar = new CustomFilterBar(props);
         
         // Clear default filters first
         bar.clearFilters();
         
-        // Add status filters with your color scheme
+        // Add status filters
         Map<String, Color> statusColors = new LinkedHashMap<>();
-        statusColors.put("ALL", new Color(70, 70, 70)); // Dark gray like your normal text
-        statusColors.put("PENDING", new Color(255, 193, 7)); // Amber
-        statusColors.put("PROCESSING", PRIMARY_COLOR); // Using your primary blue
-        statusColors.put("READY", new Color(40, 167, 69)); // Green
-        statusColors.put("COMPLETED", new Color(111, 66, 193)); // Purple
-        statusColors.put("REJECTED", ERROR_COLOR); // Using your error red
+        statusColors.put("ALL", props.allColor);
+        statusColors.put("PENDING", props.pendingColor);
+        statusColors.put("PROCESSING", props.processingColor);
+        statusColors.put("PRODUCTION", props.productionColor);
+        statusColors.put("READY", props.readyColor);
+        statusColors.put("COMPLETED", props.completedColor);
+        statusColors.put("REJECTED", props.rejectedColor);
         
         for (Map.Entry<String, Color> entry : statusColors.entrySet()) {
             String displayText = entry.getKey().charAt(0) + 
@@ -389,7 +630,31 @@ public class CustomFilterBar extends JPanel {
             bar.addFilterOption(entry.getKey(), displayText, entry.getValue());
         }
         
+        // Initialize all counts to 0
+        Map<String, Integer> initialCounts = new HashMap<>();
+        for (String filter : statusColors.keySet()) {
+            initialCounts.put(filter, 0);
+        }
+        bar.setFilterCounts(initialCounts);
+        
         return bar;
+    }
+    
+    // Method to manually adjust button widths
+    public void adjustButtonWidths(Map<String, Integer> widths) {
+        for (Map.Entry<String, Integer> entry : widths.entrySet()) {
+            properties.customWidths.put(entry.getKey().toUpperCase(), entry.getValue());
+        }
+        refreshUI();
+    }
+    
+    // Method to recalculate all button widths
+    public void recalculateButtonWidths() {
+        for (FilterButton button : filterButtons) {
+            button.updateButtonText();
+        }
+        revalidate();
+        repaint();
     }
     
     public void clearFilters() {
@@ -410,12 +675,13 @@ public class CustomFilterBar extends JPanel {
                 } else {
                     // Reset to original color
                     switch (filterName.toUpperCase()) {
-                        case "PENDING": button.color = new Color(255, 193, 7); break;
-                        case "PROCESSING": button.color = PRIMARY_COLOR; break;
-                        case "READY": button.color = new Color(40, 167, 69); break;
-                        case "COMPLETED": button.color = new Color(111, 66, 193); break;
-                        case "REJECTED": button.color = ERROR_COLOR; break;
-                        default: button.color = new Color(70, 70, 70);
+                        case "PENDING": button.color = properties.pendingColor; break;
+                        case "PROCESSING": button.color = properties.processingColor; break;
+                        case "PRODUCTION": button.color = properties.productionColor; break;
+                        case "READY": button.color = properties.readyColor; break;
+                        case "COMPLETED": button.color = properties.completedColor; break;
+                        case "REJECTED": button.color = properties.rejectedColor; break;
+                        default: button.color = properties.allColor;
                     }
                 }
                 button.updateAppearance();
@@ -428,21 +694,47 @@ public class CustomFilterBar extends JPanel {
         for (FilterButton button : filterButtons) {
             if (button.getName().equalsIgnoreCase(filterName)) {
                 button.setEnabled(enabled);
-                button.setForeground(enabled ? NORMAL_COLOR : BORDER_COLOR);
+                button.setForeground(enabled ? properties.normalColor : properties.borderColor);
                 break;
             }
         }
+    }
+    
+    // New method to refresh counts display
+    public void refreshCountsDisplay() {
+        for (FilterButton button : filterButtons) {
+            button.updateButtonText();
+        }
+        revalidate();
+        repaint();
+    }
+    
+    // New method to get count for specific filter
+    public int getFilterCount(String filterName) {
+        return filterModel.getCount(filterName);
+    }
+    
+    // Method to change auto-resize setting
+    public void setAutoResizeButtons(boolean autoResize) {
+        properties.autoResizeButtons = autoResize;
+        refreshUI();
+    }
+    
+    // Method to toggle count display
+    public void setShowCounts(boolean show) {
+        properties.showCounts = show;
+        refreshCountsDisplay();
     }
     
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
         
-        // Draw clean white background (like your CustomCheckBox)
-        g2.setColor(BACKGROUND_COLOR);
+        // Draw clean white background
+        g2.setColor(properties.backgroundColor);
         g2.fillRect(0, 0, getWidth(), getHeight());
         
-        // Draw subtle top border (optional)
+        // Draw subtle top border
         g2.setColor(new Color(240, 240, 240));
         g2.drawLine(0, 0, getWidth(), 0);
         
@@ -452,6 +744,8 @@ public class CustomFilterBar extends JPanel {
     
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension(super.getPreferredSize().width, 48);
+        // Calculate preferred height based on button height and padding
+        int preferredHeight = properties.buttonHeight + 16;
+        return new Dimension(super.getPreferredSize().width, Math.max(48, preferredHeight));
     }
 }
