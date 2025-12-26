@@ -197,10 +197,10 @@ public class UpdateIDStatus extends javax.swing.JPanel {
             // Adjust custom widths for better display
             Map<String, Integer> customWidths = new HashMap<>();
             customWidths.put("PENDING", 130);
-            customWidths.put("PROCESSING", 150);
-            customWidths.put("PRODUCTION", 150);
+            customWidths.put("PROCESSING", 140);
+            customWidths.put("PRODUCTION", 145);
             customWidths.put("READY", 120);
-            customWidths.put("COMPLETED", 150);
+            customWidths.put("COMPLETED", 140);
             customWidths.put("REJECTED", 125);
             customWidths.put("ALL", 90);
 
