@@ -1271,7 +1271,7 @@ public class Data {
         private String lname;
         private String nationalId;
         private Date birthDate;
-        private String gender; // NEW FIELD
+        private String gender;
         private String phone;
         private String email;
         private Date applicationDate;

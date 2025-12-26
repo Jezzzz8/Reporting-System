@@ -645,9 +645,13 @@ public class Dashboard extends javax.swing.JPanel {
 
             // Update search label to include name details
             String shortTransactionId = transactionId;
-            if (transactionId.length() > 15) {
+
+            // FIXED: Check if transactionId is long enough before substring
+            if (transactionId != null && transactionId.length() > 19) {
                 // Show first 4 segments: 1234-5678-9012-3456...
                 shortTransactionId = transactionId.substring(0, 19) + "...";
+            } else if (transactionId == null || transactionId.trim().isEmpty()) {
+                shortTransactionId = "TXN-Not-Assigned";
             }
 
             // Get first and last name safely

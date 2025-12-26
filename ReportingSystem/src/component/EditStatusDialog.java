@@ -218,9 +218,19 @@ public class EditStatusDialog extends javax.swing.JDialog {
             IDStatus existingStatus = Data.IDStatus.getStatusByCitizenId(citizen.getCitizenId());
             String transactionId = null;
 
+            // First, try to find any existing transaction ID for this citizen
+            transactionId = findExistingTransactionId(citizen.getCitizenId());
+
             if (existingStatus == null) {
-                // If no status exists, create a new one
-                transactionId = Data.IDStatus.generateTransactionId(citizen.getCitizenId());
+                // No current status record exists
+
+                if (transactionId == null) {
+                    // No transaction ID found anywhere, generate a new one
+                    transactionId = Data.IDStatus.generateTransactionId(citizen.getCitizenId());
+                    System.out.println("Generated new TRN for citizen " + citizen.getCitizenId() + ": " + transactionId);
+                } else {
+                    System.out.println("Using existing TRN from history for citizen " + citizen.getCitizenId() + ": " + transactionId);
+                }
 
                 // Truncate notes if too long
                 String finalNotes = truncateNotes(
@@ -231,7 +241,7 @@ public class EditStatusDialog extends javax.swing.JDialog {
 
                 IDStatus newStatusRecord = new IDStatus(
                     0, // status_id will be auto-generated
-                    transactionId,
+                    transactionId, // Use existing or new transaction ID
                     citizen.getCitizenId(),
                     statusName.getStatusNameId(),
                     new java.sql.Date(System.currentTimeMillis()),
@@ -250,8 +260,29 @@ public class EditStatusDialog extends javax.swing.JDialog {
                         JOptionPane.ERROR_MESSAGE);
                 }
             } else {
-                // Update the existing status record
-                transactionId = existingStatus.getTransactionId();
+                // Update the existing status record - PRESERVE TRANSACTION ID
+
+                if (transactionId == null) {
+                    // No transaction ID found in history, use the current one
+                    transactionId = existingStatus.getTransactionId();
+
+                    if (transactionId == null || transactionId.isEmpty()) {
+                        // Still no TRN, generate one
+                        transactionId = Data.IDStatus.generateTransactionId(citizen.getCitizenId());
+                        System.out.println("Generated new TRN for existing status: " + transactionId);
+                        existingStatus.setTransactionId(transactionId);
+                    }
+                } else if (existingStatus.getTransactionId() == null || existingStatus.getTransactionId().isEmpty()) {
+                    // Found TRN in history but not in current record, update it
+                    existingStatus.setTransactionId(transactionId);
+                    System.out.println("Updated existing status with TRN from history: " + transactionId);
+                } else {
+                    // Use the current transaction ID
+                    transactionId = existingStatus.getTransactionId();
+                    System.out.println("Using current TRN: " + transactionId);
+                }
+
+                // Update status fields
                 existingStatus.setStatusNameId(statusName.getStatusNameId());
                 existingStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
 
@@ -310,6 +341,33 @@ public class EditStatusDialog extends javax.swing.JDialog {
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+        }
+    }
+
+    // Helper method to find existing transaction ID
+    private String findExistingTransactionId(int citizenId) {
+        try {
+            // Check current status first
+            IDStatus currentStatus = Data.IDStatus.getStatusByCitizenId(citizenId);
+            if (currentStatus != null && currentStatus.getTransactionId() != null && 
+                !currentStatus.getTransactionId().isEmpty()) {
+                return currentStatus.getTransactionId();
+            }
+
+            // Check status history
+            List<IDStatus> statusHistory = Data.IDStatus.getStatusHistoryByCitizenId(citizenId);
+            if (statusHistory != null && !statusHistory.isEmpty()) {
+                for (IDStatus status : statusHistory) {
+                    if (status.getTransactionId() != null && !status.getTransactionId().isEmpty()) {
+                        return status.getTransactionId();
+                    }
+                }
+            }
+
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error finding existing transaction ID: " + e.getMessage());
+            return null;
         }
     }
 

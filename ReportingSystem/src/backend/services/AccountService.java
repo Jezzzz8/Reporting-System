@@ -28,23 +28,15 @@ public class AccountService {
      * @return true if account creation was successful, false otherwise
      */
     public static boolean createAccount(String firstName, String middleName, String lastName,
-                                      String email, String password, String username,
-                                      String gender, String phone, String streetAddress,
-                                      String barangay, String city, String stateProvince,
-                                      String zipCode, String country, java.util.Date dob,
-                                      String transactionRefNumber) {
+                                        String email, String password, String username,
+                                        String gender, String phone, String streetAddress,
+                                        String barangay, String city, String stateProvince,
+                                        String zipCode, String country, java.util.Date dob,
+                                        String transactionRefNumber) {
         
         try {
             System.out.println("=== AccountService: Creating Account ===");
-            System.out.println("First Name: " + firstName);
-            System.out.println("Last Name: " + lastName);
-            System.out.println("Gender: " + gender);
-            System.out.println("Email: " + email);
-            System.out.println("Username: " + username);
-            System.out.println("Password length: " + password.length());
-            System.out.println("Phone: " + phone);
-            System.out.println("Address: " + barangay + ", " + city);
-            
+
             // Format the TRN if provided
             String formattedTrn = null;
             if (transactionRefNumber != null && !transactionRefNumber.trim().isEmpty()) {
@@ -52,7 +44,7 @@ public class AccountService {
                 // Format the TRN using Data.IDStatus method
                 formattedTrn = Data.IDStatus.formatTransactionId(formattedTrn);
                 System.out.println("Formatted TRN: " + formattedTrn);
-                
+
                 // Validate the TRN format
                 String validationResult = validateTransactionReferenceNumber(formattedTrn);
                 if (validationResult != null) {
@@ -62,12 +54,13 @@ public class AccountService {
                         "Validation Error", JOptionPane.WARNING_MESSAGE);
                     return false;
                 }
-                
+
                 // Check if TRN already exists in database
                 if (isTransactionReferenceNumberAlreadyUsed(formattedTrn)) {
                     System.err.println("TRN already exists in database: " + formattedTrn);
                     JOptionPane.showMessageDialog(null, 
-                        "This Transaction Reference Number is already linked to another account.",
+                        "This Transaction Reference Number is already linked to another account.\n" +
+                        "If you have an existing offline transaction, please contact support.",
                         "TRN Already Used", JOptionPane.WARNING_MESSAGE);
                     return false;
                 }
@@ -189,61 +182,56 @@ public class AccountService {
 
             // Step 9: Create ID Status record (with or without TRN)
             System.out.println("Creating ID Status record...");
-            
+
             // Get the initial status from status_names table (ID 1 = "Submitted")
             Data.StatusName initialStatus = Data.StatusName.getStatusNameById(1);
             if (initialStatus == null) {
                 // Fallback to get by code
                 initialStatus = Data.StatusName.getStatusNameByCode("STAT-001");
             }
-            
+
             // Create ID Status object
             Data.IDStatus newStatus = new Data.IDStatus();
-            
+
             // Set transaction ID (can be null if user didn't provide TRN)
             if (formattedTrn != null && !formattedTrn.trim().isEmpty()) {
                 newStatus.setTransactionId(formattedTrn);
+                System.out.println("Using provided TRN: " + formattedTrn);
             } else {
-                // Generate a transaction ID for users without TRN
-                newStatus.setTransactionId(Data.IDStatus.generateTransactionId(citizenId));
+                // Generate a new transaction ID for users without TRN
+                String generatedTrn = Data.IDStatus.generateTransactionId(citizenId);
+                newStatus.setTransactionId(generatedTrn);
+                System.out.println("Generated new TRN: " + generatedTrn);
             }
-            
+
             newStatus.setCitizenId(citizenId);
-            
+
             // Set status_name_id based on your database schema
             if (initialStatus != null) {
                 newStatus.setStatusNameId(initialStatus.getStatusNameId());
             } else {
                 newStatus.setStatusNameId(1); // Default to "Submitted" status
             }
-            
-            newStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
-            newStatus.setNotes("Account created through online registration");
-            
-            // Save to database using the correct method from Data.IDStatus
-            boolean statusCreated = Data.IDStatus.addStatus(newStatus);
-            
-            if (!statusCreated) {
-                System.err.println("Warning: Failed to create ID Status record!");
-                // Don't fail the entire registration, but log this issue
-                JOptionPane.showMessageDialog(null,
-                    "Account created successfully, but there was an issue creating the application status record.\n" +
-                    "Please contact support to update your application status.",
-                    "Partial Success", JOptionPane.WARNING_MESSAGE);
-            } else {
-                System.out.println("ID Status record created successfully!");
-            }
 
+            newStatus.setUpdateDate(new java.sql.Date(System.currentTimeMillis()));
+
+            // Set appropriate notes based on whether TRN was provided
+            if (formattedTrn != null && !formattedTrn.trim().isEmpty()) {
+                newStatus.setNotes("Account created with existing Transaction Reference Number from offline registration");
+            } else {
+                newStatus.setNotes("Account created through online registration. New transaction ID generated.");
+            }
+            
             // Step 10: Send notification
             String notificationMessage = "Welcome! Your account has been successfully created.\n";
             if (formattedTrn != null && !formattedTrn.trim().isEmpty()) {
-                notificationMessage += "Your Transaction Reference Number has been linked: " + formattedTrn + "\n";
+                notificationMessage += "Your existing Transaction Reference Number has been linked: " + formattedTrn + "\n";
+                notificationMessage += "You can now track your existing ID application status.";
+            } else {
+                notificationMessage += "A new Transaction Reference Number has been generated for you.\n";
+                notificationMessage += "You can start your ID application process.";
             }
-            notificationMessage += "Your application status is: " + (initialStatus != null ? initialStatus.getStatusName() : "Submitted");
-            
-            Data.Notification.addNotification(citizenId,
-                notificationMessage,
-                "Account Created");
+            notificationMessage += "\nYour application status is: " + (initialStatus != null ? initialStatus.getStatusName() : "Submitted");
 
             // Step 11: Log activity
             String logMessage = "Registered new account and created citizen record (ID: " + citizenId + ")";

@@ -417,7 +417,7 @@ public class Registration extends javax.swing.JPanel {
 
         BarangayAddressText.setPlaceholder("Barangay*");
 
-        TransactionReferenceNumberText.setPlaceholder("Transaction Reference Number*");
+        TransactionReferenceNumberText.setPlaceholder("Transaction Reference Number (Optional)");
 
         CreateAccountButton.setBackground(new java.awt.Color(0, 120, 215));
         CreateAccountButton.setText("CREATE ACCOUNT");
@@ -469,13 +469,12 @@ public class Registration extends javax.swing.JPanel {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(RIGHTLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(RIGHTLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(RIGHTLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(RIGHTLayout.createSequentialGroup()
+                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(SigninButton, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(CreateAccountButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         RIGHTLayout.setVerticalGroup(
@@ -582,7 +581,7 @@ public class Registration extends javax.swing.JPanel {
         // Get TRN directly from the text field
         String transactionRefNumber = TransactionReferenceNumberText.getText().trim();
 
-        // Format the TRN
+        // Format the TRN if provided
         if (!transactionRefNumber.isEmpty()) {
             transactionRefNumber = Data.IDStatus.formatTransactionId(transactionRefNumber);
             TransactionReferenceNumberText.setText(transactionRefNumber); // Update UI
@@ -662,14 +661,36 @@ public class Registration extends javax.swing.JPanel {
         }
         
         // NEW STEP: Validate Transaction Reference Number format
-        if (!transactionRefNumber.isEmpty()) {
+            if (!transactionRefNumber.isEmpty()) {
             String validationResult = AccountService.validateTransactionReferenceNumber(transactionRefNumber);
             if (validationResult != null) {
                 JOptionPane.showMessageDialog(this, 
-                    "Invalid Transaction Reference Number:\n" + validationResult,
+                    "Invalid Transaction Reference Number:\n" + validationResult +
+                    "\n\nLeave this field empty if you don't have a Transaction Reference Number yet.",
                     "Invalid Format", JOptionPane.WARNING_MESSAGE);
                 TransactionReferenceNumberText.requestFocus();
                 return;
+            }
+
+            // Additional check for citizens who might already have an account
+            Data.IDStatus existingStatus = Data.IDStatus.getStatusByTransactionId(transactionRefNumber);
+            if (existingStatus != null) {
+                int response = JOptionPane.showConfirmDialog(this,
+                    "This Transaction Reference Number is already linked to an existing account.\n\n" +
+                    "Do you want to:\n" +
+                    "1. Leave this field empty to create a new application\n" +
+                    "2. Sign in to your existing account instead",
+                    "TRN Already Exists", JOptionPane.YES_NO_OPTION);
+
+                if (response == JOptionPane.YES_OPTION) {
+                    // Clear the TRN field and continue with new account
+                    TransactionReferenceNumberText.setText("");
+                } else {
+                    // Switch to login tab
+                    javax.swing.JTabbedPane parentTab = (javax.swing.JTabbedPane) this.getParent().getParent();
+                    parentTab.setSelectedIndex(0);
+                    return;
+                }
             }
         }
 
@@ -695,24 +716,34 @@ public class Registration extends javax.swing.JPanel {
         java.util.Date dob = DateOfBirthcustomDatePicker.getDate();
 
         // Step 10: Use AccountService to create the account
-        System.out.println("Calling AccountService.createAccount() with TRN: " + transactionRefNumber);
+        System.out.println("Calling AccountService.createAccount() with TRN: " + 
+            (transactionRefNumber.isEmpty() ? "No TRN provided" : transactionRefNumber));
+
         boolean success = AccountService.createAccount(
             firstName, middleName, lastName, email, password, username,
             selectedGender, phone, streetAddress, barangay, city, 
             stateProvince, zipCode, country, dob,
-            transactionRefNumber
+            transactionRefNumber.isEmpty() ? null : transactionRefNumber
         );
 
         if (success) {
-            JOptionPane.showMessageDialog(this,
-                "✅ Account created successfully!\n\n" +
+            String successMessage = "✅ Account created successfully!\n\n" +
                 "Username: " + username + "\n" +
                 "Email: " + email + "\n" +
                 "Gender: " + selectedGender + "\n" +
-                "Address: " + barangay + ", " + city + "\n\n" +
-                (transactionRefNumber.isEmpty() ? 
-                 "You can now sign in and add your transaction reference number\nin your profile to track your ID application status." :
-                 "Your Transaction Reference Number (" + transactionRefNumber + ") has been linked to your account."),
+                "Address: " + barangay + ", " + city + "\n\n";
+
+            if (!transactionRefNumber.isEmpty()) {
+                successMessage += "Your existing Transaction Reference Number has been linked: " + 
+                    transactionRefNumber + "\n" +
+                    "You can now track your existing ID application status online.";
+            } else {
+                successMessage += "A new Transaction Reference Number has been generated for you.\n" +
+                    "You can start your ID application process.";
+            }
+
+            JOptionPane.showMessageDialog(this,
+                successMessage,
                 "Registration Successful", JOptionPane.INFORMATION_MESSAGE);
 
             clearForm();
@@ -726,6 +757,37 @@ public class Registration extends javax.swing.JPanel {
                 "Failed to create account. Please try again or contact support.",
                 "Registration Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+    
+    private boolean checkForExistingCitizenRecord(String firstName, String lastName, String dob) {
+        // This method would check if there's already a citizen record
+        // based on name and date of birth
+
+        try {
+            // Check citizens table for matching records
+            java.util.List<Data.Citizen> citizens = Data.Citizen.searchCitizens(firstName + " " + lastName);
+
+            for (Data.Citizen citizen : citizens) {
+                if (citizen.getFname().equalsIgnoreCase(firstName) && 
+                    citizen.getLname().equalsIgnoreCase(lastName)) {
+
+                    // Check date of birth if provided
+                    if (dob != null && citizen.getBirthDate() != null) {
+                        // Simple date comparison
+                        String citizenDob = citizen.getBirthDate().toString();
+                        if (citizenDob.equals(dob)) {
+                            return true;
+                        }
+                    } else {
+                        return true; // Name match found
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error checking existing citizen: " + e.getMessage());
+        }
+
+        return false;
     }
     
     private boolean isValidEmail(String email) {
